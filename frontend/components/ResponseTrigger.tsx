@@ -156,6 +156,13 @@ function Modal({
   onClose: () => void;
 }) {
   const [lang, setLang] = useState("English");
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
   const content = (
     <motion.div
       initial={{ opacity: 0 }}

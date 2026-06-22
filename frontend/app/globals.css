@@ -38,6 +38,7 @@ body {
 body {
   background-color: var(--bg);
   color: var(--text);
+  overflow-x: auto;
   font-family: var(--font-sans), system-ui, sans-serif;
   /* a single soft glow — no busy grid */
   background-image: radial-gradient(1100px 720px at 80% -10%, rgba(52, 211, 189, 0.05), transparent 62%);

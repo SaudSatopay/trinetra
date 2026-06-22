@@ -8,6 +8,7 @@ export function TopBar({
   topLevel,
   compound,
   scenario,
+  zone,
   shiftHandover,
   onJudgeMode,
 }: {
@@ -15,6 +16,7 @@ export function TopBar({
   topLevel: Level;
   compound: boolean;
   scenario: string;
+  zone?: string;
   shiftHandover?: boolean;
   onJudgeMode?: () => void;
 }) {
@@ -36,7 +38,7 @@ export function TopBar({
             Shift handover
           </span>
         )}
-        <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} />
+        <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} zone={zone} />
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}

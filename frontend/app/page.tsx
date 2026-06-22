@@ -12,6 +12,7 @@ import { ScenarioEditor } from "@/components/ScenarioEditor";
 import { Connector } from "@/components/Connector";
 import { Logo } from "@/components/Logo";
 import { CCTVTile } from "@/components/CCTVTile";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -137,7 +138,7 @@ export default function Page() {
             <br />
             <br />
             Start it from <span className="font-mono text-ink">trinetra/backend</span>:<br />
-            <span className="font-mono text-brand">uvicorn app.api.server:app --reload</span>
+            <span className="font-mono text-brand">uvicorn app.api.server:app</span>
           </p>
         </div>
       </Screen>
@@ -153,19 +154,23 @@ export default function Page() {
     );
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden">
-      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} />
+    <main className="flex h-screen min-w-[900px] flex-col overflow-hidden">
+      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-          <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} />
+          <ErrorBoundary label="Plant schematic unavailable">
+            <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} />
+          </ErrorBoundary>
           <div className="flex h-[124px] shrink-0 gap-4">
             <CCTVTile />
             <DualStatus history={history} />
           </div>
         </div>
         <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
-          <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />
+          <ErrorBoundary label="Threat panel unavailable">
+            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />
+          </ErrorBoundary>
         </div>
       </div>
 

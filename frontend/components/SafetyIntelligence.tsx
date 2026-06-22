@@ -50,20 +50,28 @@ interface Premortem {
   findings: PremortemFinding[];
   note: string;
 }
+interface AgentsTrace {
+  trace: string[];
+  reasoning: { compound: boolean; score: number; level: string; factors: string[]; top_intervention: string };
+  precedent: { title: string; similarity: number; casualties: string };
+}
 
 export function SafetyIntelligence({
   scenario,
   tMin,
   compound,
+  zone,
 }: {
   scenario: string;
   tMin: number;
   compound: boolean;
+  zone?: string;
 }) {
   const [comp, setComp] = useState<Compliance | null>(null);
   const [patterns, setPatterns] = useState<Patterns | null>(null);
   const [premortem, setPremortem] = useState<Premortem | null>(null);
-  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem">(null);
+  const [reasoning, setReasoning] = useState<AgentsTrace | null>(null);
+  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem" | "reasoning">(null);
   const known = scenario !== "custom" && scenario !== "ingested";
 
   // re-audit on scenario change and when the plant escalates into compound
@@ -94,6 +102,19 @@ export function SafetyIntelligence({
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!known || !zone) {
+      setReasoning(null);
+      return;
+    }
+    const mins = Math.max(12, Math.round(tMin));
+    fetch(`${API_BASE}/api/agents?scenario=${scenario}&zone=${zone}&minutes=${mins}`)
+      .then((r) => r.json())
+      .then((d) => !d.error && setReasoning(d))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario, zone, compound, known]);
+
   const deviations = known ? comp?.summary.deviations ?? 0 : 0;
 
   return (
@@ -102,11 +123,13 @@ export function SafetyIntelligence({
         <Chip label="Compliance" onClick={() => setOpen("compliance")} badge={known ? deviations : null} alert={deviations > 0} />
         <Chip label="Patterns" onClick={() => setOpen("patterns")} badge={patterns ? patterns.patterns.length : null} />
         <Chip label="Pre-mortem" onClick={() => setOpen("premortem")} badge={premortem ? premortem.findings.length : null} />
+        {known && <Chip label="Reasoning" onClick={() => setOpen("reasoning")} badge={reasoning ? reasoning.trace.length : null} />}
       </div>
       <AnimatePresence>
         {open === "compliance" && <ComplianceModal data={comp} onClose={() => setOpen(null)} />}
         {open === "patterns" && <PatternsModal data={patterns} onClose={() => setOpen(null)} />}
         {open === "premortem" && <PremortemModal data={premortem} onClose={() => setOpen(null)} />}
+        {open === "reasoning" && <ReasoningModal data={reasoning} onClose={() => setOpen(null)} />}
       </AnimatePresence>
     </>
   );
@@ -136,6 +159,13 @@ function Chip({ label, onClick, badge, alert }: { label: string; onClick: () => 
 }
 
 function Shell({ title, sub, onClose, children }: { title: string; sub?: string; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
   const content = (
     <motion.div
       initial={{ opacity: 0 }}
@@ -315,6 +345,57 @@ function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: ()
                 </div>
               </div>
             ))}
+          </div>
+        </>
+      )}
+    </Shell>
+  );
+}
+
+function ReasoningModal({ data, onClose }: { data: AgentsTrace | null; onClose: () => void }) {
+  const stages = (data?.trace ?? []).map((s) => {
+    const i = s.indexOf(" - ");
+    return i > 0 ? [s.slice(0, i), s.slice(i + 3)] : [s, ""];
+  });
+  return (
+    <Shell
+      title="Reasoning trace"
+      sub={data ? `6-stage auditable graph — compound ${data.reasoning.compound ? "confirmed" : "not present"}` : "tracing…"}
+      onClose={onClose}
+    >
+      {data && (
+        <>
+          <ol className="mb-4">
+            {stages.map(([name, detail], i) => (
+              <li key={i} className="relative border-l pb-4 pl-5 last:border-l-transparent last:pb-0" style={{ borderColor: "var(--line-2)" }}>
+                <span
+                  className="tnum absolute -left-[9px] top-0 flex h-[18px] w-[18px] items-center justify-center rounded-full text-[9px] font-bold"
+                  style={{ background: "var(--brand)", color: "#04110d" }}
+                >
+                  {i + 1}
+                </span>
+                <div className="font-display text-[12.5px] font-semibold text-ink-bright">{name}</div>
+                {detail && <div className="mt-0.5 text-[11.5px] leading-relaxed text-ink">{detail}</div>}
+              </li>
+            ))}
+          </ol>
+          <div className="rounded-lg p-3.5" style={{ border: "1px solid var(--line-2)" }}>
+            <div className="label mb-2.5">Causal chain · precursors → hazard → precedent</div>
+            <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]">
+              {data.reasoning.factors.map((f, i) => (
+                <span key={i} className="rounded px-2 py-1 text-ink" style={{ background: "color-mix(in srgb, var(--lvl-watch) 14%, transparent)" }}>
+                  {f}
+                </span>
+              ))}
+              <span style={{ color: "var(--text-dim)" }}>→</span>
+              <span className="rounded px-2 py-1 font-semibold" style={{ background: "color-mix(in srgb, var(--lvl-critical) 14%, transparent)", color: "var(--lvl-critical)" }}>
+                COMPOUND {Math.round(data.reasoning.score)}/100
+              </span>
+              <span style={{ color: "var(--text-dim)" }}>→</span>
+              <span className="rounded px-2 py-1" style={{ background: "color-mix(in srgb, var(--brand) 12%, transparent)", color: "var(--brand)" }}>
+                {data.precedent.title} · {Math.round(data.precedent.similarity * 100)}%
+              </span>
+            </div>
           </div>
         </>
       )}
