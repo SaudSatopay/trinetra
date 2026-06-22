@@ -9,6 +9,7 @@ import { ThreatPanel } from "@/components/ThreatPanel";
 import { DualStatus } from "@/components/DualStatus";
 import { Player } from "@/components/Player";
 import { Logo } from "@/components/Logo";
+import { CCTVTile } from "@/components/CCTVTile";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -96,7 +97,10 @@ export default function Page() {
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} />
-          <DualStatus history={history} />
+          <div className="flex h-[124px] shrink-0 gap-4">
+            <CCTVTile />
+            <DualStatus history={history} />
+          </div>
         </div>
         <div className="flex w-[372px] shrink-0 flex-col">
           <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />

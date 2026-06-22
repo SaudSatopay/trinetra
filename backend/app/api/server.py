@@ -141,6 +141,35 @@ def agents(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     return result
 
 
+_vision_cache: dict | None = None
+
+
+@app.get("/api/vision")
+def vision():
+    """Run YOLOv8 person + zone-intrusion detection on a sample CCTV frame."""
+    global _vision_cache
+    if _vision_cache is not None:
+        return _vision_cache
+    try:
+        # lazy import: the heavy CV deps load only on demand, so the server
+        # still starts (and every other route works) even without them installed.
+        from ..vision.detector import annotated_jpeg_b64, detect, sample_frame, zone_intrusion
+
+        frame = sample_frame()
+        det = detect(frame)
+        _vision_cache = {
+            "persons": det["persons"],
+            "intruders": zone_intrusion(det),
+            "boxes": det["boxes"],
+            "width": det["width"],
+            "height": det["height"],
+            "image_b64": annotated_jpeg_b64(frame),
+        }
+        return _vision_cache
+    except Exception as e:
+        return {"error": f"vision unavailable: {e}"}
+
+
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
     await websocket.accept()

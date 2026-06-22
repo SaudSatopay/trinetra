@@ -14,7 +14,7 @@ export function DualStatus({ history }: { history: Frame[] }) {
     lead = Math.round(firstBaseline - firstCompound);
 
   return (
-    <div className="hud-panel flex items-center justify-between px-7 py-4">
+    <div className="hud-panel flex h-full flex-1 items-center justify-between px-7 py-4">
       <Side
         title="Legacy single-sensor"
         active={cur?.summary.baseline_alarm ?? false}
