@@ -23,7 +23,7 @@
 ### 1:30 – 2:05 · "We've seen this death before"
 > "And it recognises it. Trinetra matched these live conditions against a library of real industrial disasters."
 
-**On screen:** the **Disaster Memory** card — **"81% match — Visakhapatnam Steel Plant coke-oven explosion, 8 killed"** — and read one line of the AI briefing. Note the precedents below (hot-work ignition 73%, confined-space H2S 71%).
+**On screen:** the **Disaster Memory** card — **"81% match — Visakhapatnam Steel Plant coke-oven explosion, 8 killed"** — and read one line of the AI briefing. Note the precedents below (Texas City 73%, hot-work ignition 71%).
 
 ### 2:05 – 2:35 · The autonomous response
 > "Because it's caught early, the system doesn't just alarm — it responds."

@@ -162,7 +162,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addText("GROUNDED BRIEFING", { x: 5.3, y: 2.55, w: 7, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
   s.addText("“The present condition echoes the Visakhapatnam coke-oven explosion — rising CH4 alongside an active ignition source mirrors the precedent's root cause of unacted-upon warnings. The single most important action is the immediate cessation of hot-work and evacuation of personnel.”", { x: 5.3, y: 3.0, w: 7.05, h: 1.7, fontFace: BODY, fontSize: 16, color: BRIGHT, italic: true, margin: 0, valign: "top" });
   // other precedents
-  const others = [["73%", "Hot-work ignition"], ["71%", "Confined-space H2S"], ["—", "Piper Alpha"]];
+  const others = [["73%", "Texas City refinery"], ["71%", "Hot-work ignition"], ["—", "Piper Alpha"]];
   let x = 5.0;
   others.forEach(([n, l]) => {
     panel(s, x, 5.05, 2.45, 0.95, PANEL2);
