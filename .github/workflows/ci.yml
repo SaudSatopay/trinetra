@@ -6,7 +6,7 @@ on:
 
 jobs:
   backend:
-    name: Backend — engine, ablation, robustness, API
+    name: Backend — engine, ablation, robustness, generalization, API
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -26,6 +26,8 @@ jobs:
         run: python ablation.py
       - name: Robustness checks (sensor / permit fault modes)
         run: python test_robustness.py
+      - name: Generalization (held-out randomized scenarios, unseen seeds)
+        run: python test_generalization.py
       - name: API smoke test (REST + WebSocket)
         run: python smoke_api.py
 

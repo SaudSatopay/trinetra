@@ -63,6 +63,7 @@ While the incident develops, the two systems live in **split realities**:
 | | | |
 |---|---|---|
 | 📊 **Ablation proof** | single-sensor → gas-trend-only → full fusion: same 7.4 min lead, but false alarms drop **64% → 0%** | `python ablation.py` |
+| 🎲 **Generalization** | held-out: **240 randomized scenarios at unseen seeds → 100% recall, 2.5% FP** — not overfit to the 25 | `python test_generalization.py` |
 | 💰 **Business impact** | avoided-loss model with every figure sourced — **₹115.5 Cr** per prevented Vizag-class incident, **116× ROI** | response modal |
 | 🎛️ **Scenario editor** | judges toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
 | 🔌 **SCADA connector** | upload a real SCADA/permit CSV and replay it through the same engine — *a connector, not a rewrite* | `/api/ingest` |

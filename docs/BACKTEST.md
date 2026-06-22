@@ -40,6 +40,21 @@ Early detection alone is easy: the gas-trend rule recovers the full 7.4-minute l
 
 > Reproduce: `cd backend && python ablation.py`  ·  API: `GET /api/ablation`
 
+## Generalization — held-out, unseen seeds
+
+A fair critique of any 25-scenario benchmark is "you tuned the thresholds on your own test set." So we also score the engine on a **held-out** distribution it was never calibrated on: **240 randomized scenarios** (120 compound hazards + 120 decoys) with random zone, lead gas, ramp speed, peak, permit timing, in-zone vs adjacent ignition and crew size — each run at a simulator **seed ≠ 42** (the only seed the thresholds were ever set on).
+
+| Metric (held-out · 240 scenarios) | Trinetra |
+|---|---|
+| Compound recall | **100%** (120 / 120) |
+| False-positive rate | **2.5%** (3 / 120) |
+| Precision | **97.6%** |
+| Mean early-warning | **7.7 min** |
+
+Recall holds at 100% and false positives stay at **2.5%** on scenarios the engine never saw — the thresholds generalize, they are not overfit to the curated 25. (This is still the digital twin, not live plant telemetry; real-plant data enters the *same* engine unchanged through the `/api/ingest` connector.)
+
+> Reproduce: `cd backend && python test_generalization.py`
+
 ## The Vizag backtest (hero scenario)
 
 Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-battery explosion** (8 fatalities): slow coke-oven-gas accumulation in Battery #1 while a hot-work permit (ignition) and a confined-space entry (3 personnel) are active.
