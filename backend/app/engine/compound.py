@@ -71,6 +71,7 @@ class ZoneRisk:
     score: float                         # 0..100 (capped, for display)
     level: RiskLevel
     compound: bool                       # the specific lethal pattern is present
+    gas_anomaly: bool                    # context-blind signal: anomalous flammable gas (level/trend) alone
     factors: list                        # human-readable contributing factors
     time_to_threshold_min: Optional[float]
     interventions: list                  # ranked list[Intervention]
@@ -215,5 +216,5 @@ class CompoundRiskEngine:
         elif f.ignition_adj:
             ignition_ref = "adjacent"
 
-        return ZoneRisk(zid, z.name, round(score, 1), level, compound, factors,
-                        ttt, interventions, ignition_ref, f.personnel)
+        return ZoneRisk(zid, z.name, round(score, 1), level, compound, flammable_evidence,
+                        factors, ttt, interventions, ignition_ref, f.personnel)

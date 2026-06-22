@@ -26,6 +26,20 @@ Most industrial fatalities are caused not by one sensor crossing a threshold, bu
 
 Crucially, the 11 hard negatives include scenarios that **do** trip the legacy baseline (a real gas release with nobody around) — Trinetra correctly raises the ordinary gas alarm but does **not** escalate to a compound life-safety alert. It discriminates; it doesn't just fire on everything.
 
+## Ablation — is the full fusion necessary?
+
+A fair reviewer question: would a simpler system do? We re-ran the **same** 25 scenarios under three progressively richer detectors.
+
+| Detector tier | Recall | False-alarm rate | Precision | Mean lead |
+|---|---|---|---|---|
+| Single-sensor threshold (incumbent) | 100% | 64% | 67% | 0 min |
+| Gas-trend rule (level + trend, **no context**) | 100% | 64% | 67% | **7.4 min** |
+| **Trinetra (full compound fusion)** | 100% | **0%** | **100%** | **7.4 min** |
+
+Early detection alone is easy: the gas-trend rule recovers the full 7.4-minute lead. But with no context (ignition, personnel, blast-radius) it fires on **64% of benign gas events** — releases with nobody present, transient spikes — so two of every three alerts are false. That is the definition of alarm fatigue, and alarm fatigue is why alarms get ignored. Only the contextual fusion keeps the lead **and** drops false alarms to **zero**. Context is what turns early detection into *actionable* early detection.
+
+> Reproduce: `cd backend && python ablation.py`  ·  API: `GET /api/ablation`
+
 ## The Vizag backtest (hero scenario)
 
 Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-battery explosion** (8 fatalities): slow coke-oven-gas accumulation in Battery #1 while a hot-work permit (ignition) and a confined-space entry (3 personnel) are active.

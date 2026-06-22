@@ -251,6 +251,23 @@ def knowledge_graph():
     return kg_export()
 
 
+_ablation_cache: dict | None = None
+
+
+@app.get("/api/ablation")
+def ablation():
+    """Ablation study: single-sensor vs gas-trend-only vs full compound fusion.
+
+    Proves the contextual fusion earns its complexity — same lead time as a naive
+    gas-trend rule, but 0% false alarms instead of 64%."""
+    global _ablation_cache
+    if _ablation_cache is None:
+        from ablation import run_ablation  # lazy: benchmark eval set built on first call
+        res = run_ablation()
+        _ablation_cache = {k: res[k] for k in ("tiers", "n_positive", "n_negative")}
+    return _ablation_cache
+
+
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
     await websocket.accept()
