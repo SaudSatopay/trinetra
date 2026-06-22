@@ -1,16 +1,19 @@
 import { Level } from "@/lib/types";
 import { levelColor, levelLabel } from "@/lib/risk";
 import { Logo } from "./Logo";
+import { SafetyIntelligence } from "./SafetyIntelligence";
 
 export function TopBar({
   tMin,
   topLevel,
   compound,
+  scenario,
   onJudgeMode,
 }: {
   tMin: number;
   topLevel: Level;
   compound: boolean;
+  scenario: string;
   onJudgeMode?: () => void;
 }) {
   const color = levelColor[topLevel];
@@ -20,7 +23,8 @@ export function TopBar({
     <header className="flex items-center justify-between px-7 py-4">
       <Logo />
 
-      <div className="flex items-center gap-7">
+      <div className="flex items-center gap-5">
+        <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} />
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}

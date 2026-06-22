@@ -24,8 +24,10 @@ from ..agents import run_pipeline
 from ..ai import golden
 from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..ai.incident import draft_incident_report, evacuation_alert
+from ..ai.patterns import pattern_intelligence
 from ..constants import GAS_THRESHOLDS, PLANT_NAME, ZONES
 from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
+from ..compliance import audit as compliance_audit
 from ..engine import CompoundRiskEngine
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
@@ -374,6 +376,45 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
 def knowledge_graph():
     """The domain knowledge graph: precursors -> compound hazard -> precedents + zones."""
     return kg_export()
+
+
+_patterns_cache: dict | None = None
+
+
+@app.get("/api/patterns")
+def patterns():
+    """Incident Pattern Intelligence: recurring causal patterns mined across the
+    near-miss + incident corpus, ranked as prevention priorities."""
+    global _patterns_cache
+    if _patterns_cache is None:
+        _patterns_cache = pattern_intelligence()
+    return _patterns_cache
+
+
+_compliance_cache: dict[tuple, dict] = {}
+
+
+@app.get("/api/compliance")
+def compliance(scenario: str = "vizag", minutes: int = 13):
+    """Continuous compliance audit of the live plant state vs OISD / DGMS / Factory Act."""
+    if scenario not in SCENARIOS:
+        return {"error": f"unknown scenario '{scenario}'"}
+    key = (scenario, minutes)
+    if key in _compliance_cache:
+        return _compliance_cache[key]
+    sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    snap = None
+    risks: dict = {}
+    for snap in sim.run(max(1, minutes)):
+        risks = engine.assess(snap)
+    if snap is None:
+        return {"error": "no frames"}
+    result = compliance_audit(snap, risks)
+    result["scenario"] = scenario
+    result["t_min"] = int(snap.t_min)
+    _compliance_cache[key] = result
+    return result
 
 
 _ablation_cache: dict | None = None
