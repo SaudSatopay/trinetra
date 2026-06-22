@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repo, regardless of OS checkout.
+* text=auto eol=lf
+
+# Treat these as binary (never normalize).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pt   binary
+*.onnx binary
+*.mp4  binary
+*.mov  binary
+*.ico  binary

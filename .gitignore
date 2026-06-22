@@ -1,0 +1,35 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# --- Secrets ---
+.env
+*.local
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+dist/
+build/
+npm-debug.log*
+
+# --- AI artifacts ---
+*.pt                # YOLO weights
+chroma_db/          # vector store
+.cache/
+models/cache/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Internal working docs (kept OUT of the repo: strategy + handoff) ---
+HANDOFF.md
+*.private.md
