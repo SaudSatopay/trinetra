@@ -33,7 +33,7 @@ export function RiskGauge({ score, level, size = 168 }: { score: number; level: 
             strokeWidth="9"
             strokeDasharray={`${val} ${C}`}
             strokeLinecap="round"
-            style={{ transition: "stroke-dasharray .55s cubic-bezier(.4,0,.2,1), stroke .3s", filter: `drop-shadow(0 0 6px ${color})` }}
+            style={{ transition: "stroke-dasharray .55s cubic-bezier(.4,0,.2,1), stroke .3s", filter: `drop-shadow(0 0 11px ${color})` }}
           />
         </g>
         {/* tick marks */}
@@ -49,8 +49,8 @@ export function RiskGauge({ score, level, size = 168 }: { score: number; level: 
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <AnimatedNumber
           value={score}
-          className="tnum text-[40px] font-semibold leading-none text-ink-bright"
-          style={{ textShadow: `0 0 18px ${color}66` }}
+          className="tnum text-[42px] font-bold leading-none text-ink-bright"
+          style={{ textShadow: `0 0 22px ${color}88` }}
         />
         <div className="mt-1 font-display text-[12px] font-bold tracking-[0.18em]" style={{ color }}>
           {levelLabel[level]}

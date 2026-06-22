@@ -6,7 +6,7 @@ export function Logo({ size = 34 }: { size?: number }) {
           d="M24 5 L43 39 L5 39 Z"
           stroke="var(--brand)"
           strokeWidth="1.8"
-          fill="rgba(45,212,191,0.05)"
+          fill="rgba(255,106,26,0.07)"
           strokeLinejoin="round"
         />
         <ellipse cx="24" cy="30" rx="11.5" ry="7" stroke="var(--brand)" strokeWidth="1.5" fill="none" />
@@ -15,10 +15,13 @@ export function Logo({ size = 34 }: { size?: number }) {
         <line x1="24" y1="13" x2="24" y2="20" stroke="var(--brand)" strokeWidth="1.4" opacity="0.7" />
       </svg>
       <div className="leading-none">
-        <div className="font-display text-[19px] font-bold tracking-[0.24em] text-ink-bright">
+        <div
+          className="font-display text-[21px] font-extrabold tracking-[0.12em] text-ink-bright"
+          style={{ textShadow: "0 0 26px var(--brand-glow)" }}
+        >
           TRINETRA
         </div>
-        <div className="label mt-[5px]">Compound-Risk Intelligence</div>
+        <div className="label mt-[6px]">Compound-Risk Intelligence</div>
       </div>
     </div>
   );

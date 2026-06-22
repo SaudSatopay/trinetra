@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, Bricolage_Grotesque, Space_Mono } from "next/font/google";
 import "./globals.css";
 
-// Inter for UI + headings (mainstream, professional); IBM Plex Mono for numeric
-// telemetry only. --font-display maps to Inter via globals.css.
-const sans = Inter({
+// Foundry type system — distinctive + industrial, NOT Inter/Roboto:
+// Archivo (body/UI) · Bricolage Grotesque (display + wordmark) · Space Mono (telemetry/labels).
+const sans = Archivo({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
 });
-const mono = IBM_Plex_Mono({
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["600", "700", "800"],
+  variable: "--font-display",
+});
+const mono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
   variable: "--font-mono",
 });
 
@@ -23,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${mono.variable} ${sans.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );
