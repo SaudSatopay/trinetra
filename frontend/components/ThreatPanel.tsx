@@ -1,13 +1,18 @@
 import { Gas, Threshold, Zone } from "@/lib/types";
 import { levelColor, levelLabel, GAS_ORDER } from "@/lib/risk";
 import { RiskGauge } from "./RiskGauge";
+import { DisasterMemory } from "./DisasterMemory";
 
 export function ThreatPanel({
   zone,
   thresholds,
+  scenario,
+  tMin,
 }: {
   zone: Zone | null;
   thresholds: Record<string, Threshold>;
+  scenario: string;
+  tMin: number;
 }) {
   if (!zone) {
     return (
@@ -60,6 +65,8 @@ export function ThreatPanel({
             </span>
           </div>
         )}
+
+        <DisasterMemory scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound} />
 
         {/* factors */}
         {r.factors.length > 0 && (

@@ -99,7 +99,7 @@ export default function Page() {
           <DualStatus history={history} />
         </div>
         <div className="flex w-[372px] shrink-0 flex-col">
-          <ThreatPanel zone={activeZone} thresholds={plant.thresholds} />
+          <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />
         </div>
       </div>
 

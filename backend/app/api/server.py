@@ -19,6 +19,7 @@ import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..engine import CompoundRiskEngine
 from ..scenarios import SCENARIOS
 from ..simulator import PlantSimulator
@@ -60,6 +61,54 @@ def get_frames(scenario_name: str, minutes: int = 45):
     if scenario_name not in SCENARIOS:
         return {"error": f"unknown scenario '{scenario_name}'", "available": list(SCENARIOS)}
     return {"scenario": scenario_name, "minutes": minutes, "frames": _run(scenario_name, minutes)}
+
+
+_memory = DisasterMemory()
+_mem_cache: dict[tuple[str, str], dict] = {}
+
+
+@app.get("/api/disaster-memory")
+def disaster_memory(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
+    """Match the live compound condition in a zone to the closest historical disaster."""
+    if scenario not in SCENARIOS:
+        return {"error": f"unknown scenario '{scenario}'"}
+    key = (scenario, zone)
+    if key in _mem_cache:
+        return _mem_cache[key]
+
+    sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    risk = None
+    zone_name = zone
+    for snap in sim.run(max(1, minutes)):
+        risks = engine.assess(snap)
+        if zone in risks:
+            risk = risks[zone]
+            zone_name = snap.zones[zone].name
+    if risk is None:
+        return {"error": f"unknown zone '{zone}'"}
+
+    condition = condition_from_factors(zone_name, risk.factors)
+    try:
+        matches = _memory.match(condition, k=3)
+        briefing = _memory.briefing(condition, matches[0])
+    except Exception as e:  # Gemini/network hiccup — fail soft so the UI degrades gracefully
+        return {"error": f"analysis unavailable: {e}"}
+
+    result = {
+        "condition": condition,
+        "briefing": briefing,
+        "matches": [
+            {
+                "title": m.incident["title"], "date": m.incident["date"],
+                "location": m.incident["location"], "casualties": m.incident["casualties"],
+                "source": m.incident["source"], "similarity": round(m.similarity, 3),
+            }
+            for m in matches
+        ],
+    }
+    _mem_cache[key] = result
+    return result
 
 
 @app.websocket("/ws")
