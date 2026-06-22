@@ -48,7 +48,7 @@ export function Player({
               key={s.name}
               onClick={() => onScenario(s.name)}
               title={s.title}
-              className="rounded-md px-3 py-1.5 font-mono text-[10px] lowercase tracking-wide transition-colors"
+              className="rounded-md px-3 py-1.5 font-sans text-[11px] font-medium lowercase tracking-wide transition-colors"
               style={{
                 color: on ? "var(--brand)" : "var(--text-dim)",
                 background: on ? "color-mix(in srgb, var(--brand) 11%, transparent)" : "transparent",

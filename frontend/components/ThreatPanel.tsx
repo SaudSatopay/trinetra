@@ -114,7 +114,13 @@ export function ThreatPanel({
           </div>
         )}
 
-        <ResponseTrigger scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom" && scenario !== "ingested"} />
+        <ResponseTrigger
+          scenario={scenario}
+          zoneId={zone.id}
+          tMin={tMin}
+          active={r.compound && scenario !== "custom" && scenario !== "ingested"}
+          auto={r.compound && r.level === "critical" && scenario !== "custom" && scenario !== "ingested"}
+        />
 
         {/* atmosphere */}
         <div className="border-t border-line pt-4">

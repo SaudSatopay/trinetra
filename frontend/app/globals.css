@@ -20,6 +20,8 @@
   --lvl-high: #ef5530;
   --lvl-critical: #fb3b4e;
   --legacy: #586674;
+  /* headings/wordmark use the same professional sans as the body */
+  --font-display: var(--font-sans);
 }
 
 * {
@@ -94,9 +96,10 @@ main {
 }
 
 .label {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-weight: 600;
   font-size: 10px;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-dim);
 }

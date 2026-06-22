@@ -40,7 +40,7 @@ export function PlantSchematic({
     <div className="hud-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex items-center justify-between px-6 pt-5">
         <span className="label">Plant Overview</span>
-        <span className="font-mono text-[10px] text-ink-dim">{plant.name}</span>
+        <span className="font-sans text-[11px] text-ink-dim">{plant.name}</span>
       </div>
 
       <div className="relative min-h-0 flex-1">

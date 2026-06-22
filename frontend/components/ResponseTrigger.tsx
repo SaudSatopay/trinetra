@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { API_BASE } from "@/lib/api";
@@ -57,17 +57,18 @@ export function ResponseTrigger({
   zoneId,
   tMin,
   active,
+  auto,
 }: {
   scenario: string;
   zoneId: string;
   tMin: number;
   active: boolean;
+  auto?: boolean; // true when the response auto-initiates (zone compound + CRITICAL)
 }) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<ResponseData | null>(null);
   const [loading, setLoading] = useState(false);
-
-  if (!active) return null;
+  const armed = useRef(true);
 
   const openModal = () => {
     setOpen(true);
@@ -83,6 +84,29 @@ export function ResponseTrigger({
         .catch(() => setLoading(false));
     }
   };
+
+  // fresh scenario/zone → drop stale data and re-arm the auto-popup
+  useEffect(() => {
+    setData(null);
+    setOpen(false);
+    armed.current = true;
+  }, [scenario, zoneId]);
+
+  // auto-pop the response modal the moment the autonomous response fires, so the
+  // operator sees it happened. Re-arms when the zone leaves CRITICAL (e.g. replay).
+  useEffect(() => {
+    if (!auto) {
+      armed.current = true;
+      return;
+    }
+    if (armed.current) {
+      armed.current = false;
+      openModal();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto]);
+
+  if (!active) return null;
 
   return (
     <div className="rise-in border-t border-line pt-4">

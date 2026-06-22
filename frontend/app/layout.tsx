@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Chakra_Petch({
+// Inter for UI + headings (mainstream, professional); IBM Plex Mono for numeric
+// telemetry only. --font-display maps to Inter via globals.css.
+const sans = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-display",
+  variable: "--font-sans",
 });
 const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-mono",
-});
-const sans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -26,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${mono.variable} ${sans.variable}`}>
+    <html lang="en" className={`${mono.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );
