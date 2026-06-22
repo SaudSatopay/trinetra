@@ -185,21 +185,27 @@ class CompoundRiskEngine:
                 ttt = round((thr.danger - current) / f.fastest_slope_raw, 1)
 
         interventions: list[Intervention] = []
-        if score >= INTERVENTION_MIN_SCORE:
+        if score >= INTERVENTION_MIN_SCORE and raw > 0:
             base = raw
+
+            def reduction(s: float) -> float:
+                # percentage of the (uncapped) risk this single action removes — stays
+                # meaningful even when the displayed score is saturated at 100.
+                return round(max(0.0, min(100.0, (base - s) / base * 100.0)))
+
             cands: list[Intervention] = []
             if ignition:
                 s = self._score(f, drop_ignition=True)
                 pid = next((p.id for p in z.active_permits if p.type in IGNITION_PERMITS), None)
                 label = f"Suspend hot-work permit {pid}" if pid else "Clear ignition source in adjacent zone"
-                cands.append(Intervention(label, self._level(min(100.0, s)), round(base - s, 1)))
+                cands.append(Intervention(label, self._level(min(100.0, s)), reduction(s)))
             if f.personnel > 0:
                 s = self._score(f, drop_personnel=True)
                 cands.append(Intervention("Evacuate personnel from zone",
-                                          self._level(min(100.0, s)), round(base - s, 1)))
+                                          self._level(min(100.0, s)), reduction(s)))
             s = self._score(f, ventilate=True)
             cands.append(Intervention("Force ventilation / gas purge",
-                                      self._level(min(100.0, s)), round(base - s, 1)))
+                                      self._level(min(100.0, s)), reduction(s)))
             interventions = sorted(cands, key=lambda i: -i.delta)
 
         ignition_ref = ""
