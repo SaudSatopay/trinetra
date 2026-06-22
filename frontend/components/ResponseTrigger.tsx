@@ -33,6 +33,7 @@ interface ResponseData {
   analysis_mode?: "live" | "cached";
   impact?: Impact;
   evidence_timeline?: TimelineEvent[];
+  channels?: { channel: string; status: string }[];
   actions: string[];
   incident_report: string;
   alert: Record<string, string>;
@@ -313,6 +314,24 @@ function Modal({
                   {data.alert[lang]}
                 </p>
               </div>
+
+              {data.channels && data.channels.length > 0 && (
+                <div>
+                  <div className="label mb-2">Dispatched across channels</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.channels.map((c, i) => (
+                      <span
+                        key={i}
+                        className="flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] text-ink"
+                        style={{ border: "1px solid var(--line-2)" }}
+                      >
+                        <span style={{ color: "var(--brand)" }}>✓</span>
+                        {c.channel}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <div className="label mb-2">Evidence preserved</div>

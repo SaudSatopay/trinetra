@@ -71,6 +71,9 @@ def permit_agent(state: AgentState) -> dict:
     note = f"Permit agent - {where}; {len(z.active_permits)} active permit(s)."
     if conflict:
         note += " CONFLICT: hot-work and confined-space entry co-active."
+    if getattr(snap, "shift_handover", False):
+        findings["shift_handover"] = True
+        note += " Shift changeover active - heightened permit-accountability risk."
     return {"permit": findings, "trace": [note]}
 
 

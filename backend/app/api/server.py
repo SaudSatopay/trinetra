@@ -362,6 +362,13 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
         "analysis_mode": "cached" if degraded else "live",
         "impact": impact,
         "evidence_timeline": _evidence_timeline(scenario, zone),
+        "channels": [
+            {"channel": "Plant PA / siren", "status": "broadcast"},
+            {"channel": "Worker mobile-app push", "status": "sent"},
+            {"channel": "SMS — on-shift roster", "status": "sent"},
+            {"channel": "Email — safety officer + ERT", "status": "sent"},
+            {"channel": "SCADA control-room banner", "status": "active"},
+        ],
         "actions": actions, "incident_report": report, "alert": alert,
         "evidence": {
             "sensor_snapshot": f"T+{int(snap.t_min)} min telemetry frozen",

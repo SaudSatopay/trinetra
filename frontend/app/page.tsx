@@ -154,7 +154,7 @@ export default function Page() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} onJudgeMode={judgeMode} />
+      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">

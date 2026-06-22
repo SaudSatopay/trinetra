@@ -105,6 +105,7 @@ class PlantSnapshot:
     zones: dict          # zone_id -> ZoneState
     permits: list        # all permits active plant-wide
     workers: list        # Worker registry (names/roles)
+    shift_handover: bool = False  # a shift-changeover window is active (reduced supervision)
 
     def zone(self, zone_id: str) -> ZoneState:
         return self.zones[zone_id]

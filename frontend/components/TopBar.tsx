@@ -8,12 +8,14 @@ export function TopBar({
   topLevel,
   compound,
   scenario,
+  shiftHandover,
   onJudgeMode,
 }: {
   tMin: number;
   topLevel: Level;
   compound: boolean;
   scenario: string;
+  shiftHandover?: boolean;
   onJudgeMode?: () => void;
 }) {
   const color = levelColor[topLevel];
@@ -24,6 +26,16 @@ export function TopBar({
       <Logo />
 
       <div className="flex items-center gap-5">
+        {shiftHandover && (
+          <span
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider"
+            style={{ color: "var(--lvl-watch)", background: "color-mix(in srgb, var(--lvl-watch) 12%, transparent)" }}
+            title="A shift changeover is in progress — reduced supervision / permit-accountability gap"
+          >
+            <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--lvl-watch)" }} />
+            Shift handover
+          </span>
+        )}
         <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} />
         {onJudgeMode && (
           <button

@@ -51,6 +51,7 @@ export interface Summary {
   top_level: Level;
   compound_alert: boolean;
   baseline_alarm: boolean;
+  shift_handover?: boolean;
 }
 
 export interface Frame {

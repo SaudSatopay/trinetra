@@ -83,6 +83,7 @@ class PlantSimulator:
         snapshot = PlantSnapshot(
             t_min=t, scenario=self.scenario.name, zones=zones,
             permits=active_permits, workers=list(self.scenario.workers),
+            shift_handover=self.scenario.in_handover(t),
         )
         self.t_min += self.dt_min
         return snapshot

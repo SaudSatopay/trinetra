@@ -44,6 +44,30 @@ export function PlantSchematic({
       </div>
 
       <div className="relative min-h-0 flex-1">
+        {/* continuous risk heat-field — blooms scale with each zone's live risk */}
+        {plant.zones.map((spec) => {
+          const z = zoneById[spec.id];
+          if (levelRank(z.risk.level) < 1) return null; // keep clean: only above-normal zones radiate
+          const col = levelColor[z.risk.level];
+          const intensity = Math.min(0.5, 0.12 + (z.risk.score / 100) * 0.4);
+          return (
+            <div
+              key={spec.id + "-heat"}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                left: `${nx(spec.x)}%`,
+                top: `${ny(spec.y)}%`,
+                width: 240,
+                height: 170,
+                background: `radial-gradient(ellipse at center, ${col}, transparent 66%)`,
+                opacity: intensity,
+                filter: "blur(26px)",
+                transition: "opacity .6s ease, background .6s ease",
+              }}
+            />
+          );
+        })}
+
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           {pairs.map(([a, b]) => {
             const za = zoneById[a], zb = zoneById[b];
@@ -155,6 +179,14 @@ function ZoneNode({
           style={{ color: active ? col : "var(--text-dim)", transition: "color .5s ease" }}
         />
       </div>
+      {z.workers.length > 0 && (
+        <div className="mt-2 flex items-center gap-1" title={`${z.workers.length} personnel on site`}>
+          {z.workers.slice(0, 5).map((_, i) => (
+            <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: active ? col : "var(--text-dim)" }} />
+          ))}
+          <span className="ml-0.5 text-[8px] text-ink-dim">{z.workers.length} on site</span>
+        </div>
+      )}
     </button>
   );
 }

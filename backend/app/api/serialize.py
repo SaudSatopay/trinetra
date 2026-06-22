@@ -64,5 +64,6 @@ def serialize_frame(snap: PlantSnapshot, risks: dict[str, ZoneRisk]) -> dict:
             "top_level": top["risk"]["level"] if top else "normal",
             "compound_alert": compound_alert,     # Trinetra is escalating now
             "baseline_alarm": baseline_alarm,     # a legacy single-sensor system would alarm now
+            "shift_handover": snap.shift_handover,  # a shift changeover is in progress
         },
     }

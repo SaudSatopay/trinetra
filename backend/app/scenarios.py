@@ -32,9 +32,13 @@ class Scenario:
     permits: List[Permit] = field(default_factory=list)
     workers: List[Worker] = field(default_factory=list)
     inject: Callable[[float], Offsets] = lambda t: {}
+    shift_handover_windows: List[Tuple[float, float]] = field(default_factory=list)
 
     def gas_injection(self, t_min: float) -> Offsets:
         return self.inject(t_min)
+
+    def in_handover(self, t_min: float) -> bool:
+        return any(a <= t_min <= b for a, b in self.shift_handover_windows)
 
 
 def ramp(t: float, start: float, peak: float, ramp_min: float, ease: float = 1.5) -> float:
@@ -104,6 +108,7 @@ VIZAG_COMPOUND = Scenario(
     permits=_VIZAG_PERMITS,
     workers=_VIZAG_WORKERS,
     inject=_vizag_inject,
+    shift_handover_windows=[(6, 18)],  # changeover overlapping the build-up (reduced supervision)
 )
 
 
