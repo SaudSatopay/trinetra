@@ -1,5 +1,6 @@
 "use client";
 
+import { ReactNode } from "react";
 import { Frame, ScenarioInfo } from "@/lib/types";
 
 const SPEEDS = [1, 2, 4, 8];
@@ -16,6 +17,7 @@ export function Player({
   index,
   frames,
   onSeek,
+  extra,
 }: {
   scenarios: ScenarioInfo[];
   scenario: string;
@@ -28,6 +30,7 @@ export function Player({
   index: number;
   frames: Frame[];
   onSeek: (i: number) => void;
+  extra?: ReactNode;
 }) {
   const len = frames.length;
   const tNow = frames[index]?.t_min ?? 0;
@@ -56,6 +59,8 @@ export function Player({
           );
         })}
       </div>
+
+      {extra}
 
       <div className="h-6 w-px bg-line" />
 

@@ -9,6 +9,7 @@ import { ThreatPanel } from "@/components/ThreatPanel";
 import { DualStatus } from "@/components/DualStatus";
 import { Player } from "@/components/Player";
 import { ScenarioEditor } from "@/components/ScenarioEditor";
+import { Connector } from "@/components/Connector";
 import { Logo } from "@/components/Logo";
 import { CCTVTile } from "@/components/CCTVTile";
 
@@ -25,8 +26,19 @@ export default function Page() {
   const [speed, setSpeed] = useState(4);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [ingestSummary, setIngestSummary] = useState<string | null>(null);
   const prevScenario = useRef("");
   const wantMoneyShot = useRef(false);
+
+  const handleIngest = (f: Frame[], summary: string) => {
+    prevScenario.current = "ingested";
+    setIngestSummary(summary);
+    setFrames(f);
+    setIndex(0);
+    setPlaying(true);
+    setSelected(null);
+    setScenario("ingested");
+  };
 
   useEffect(() => {
     (async () => {
@@ -41,6 +53,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    if (scenario === "ingested") return; // frames are supplied by the connector upload
     let cancelled = false;
     (async () => {
       try {
@@ -87,14 +100,18 @@ export default function Page() {
 
   const frame = frames[index] ?? null;
   const history = useMemo(() => frames.slice(0, index + 1), [frames, index]);
-  const playerScenarios = useMemo<ScenarioInfo[]>(
-    () => [
+  const playerScenarios = useMemo<ScenarioInfo[]>(() => {
+    const list: ScenarioInfo[] = [
       ...scenarios,
       { name: "custom", title: "Custom scenario — you control the factors", description: "",
         expected_compound: false, hazard_zone: "COB-1" },
-    ],
-    [scenarios],
-  );
+    ];
+    if (scenario === "ingested") {
+      list.push({ name: "ingested", title: "Ingested SCADA feed", description: "",
+        expected_compound: false, hazard_zone: "COB-1" });
+    }
+    return list;
+  }, [scenarios, scenario]);
   const activeZoneId = selected ?? frame?.summary.top_zone ?? null;
   const activeZone: Zone | null = frame ? frame.zones.find((z) => z.id === activeZoneId) ?? null : null;
 
@@ -160,7 +177,16 @@ export default function Page() {
             compoundNow={!!frame?.summary.compound_alert}
           />
         )}
+        {scenario === "ingested" && (
+          <div className="hud-panel flex items-center gap-3 px-5 py-2.5">
+            <span className="label">Ingested SCADA feed</span>
+            <span className="font-mono text-[10px] text-ink-dim">
+              {ingestSummary} · replayed through the live compound engine, unchanged
+            </span>
+          </div>
+        )}
         <Player
+          extra={<Connector onIngest={handleIngest} />}
           scenarios={playerScenarios}
           scenario={scenario}
           onScenario={setScenario}

@@ -67,7 +67,7 @@ export function ThreatPanel({
           </div>
         )}
 
-        <DisasterMemory scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom"} />
+        <DisasterMemory scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom" && scenario !== "ingested"} />
 
         {/* factors */}
         {r.factors.length > 0 && (
@@ -109,7 +109,7 @@ export function ThreatPanel({
           </div>
         )}
 
-        <ResponseTrigger scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom"} />
+        <ResponseTrigger scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom" && scenario !== "ingested"} />
 
         {/* atmosphere */}
         <div className="border-t border-line pt-4">

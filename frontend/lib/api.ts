@@ -34,3 +34,12 @@ export async function getSimulate(c: SimConfig, minutes = 50): Promise<Frame[]> 
   const data = await j<{ frames: Frame[] }>(`/api/simulate?${q.toString()}`);
   return data.frames;
 }
+
+export async function ingestCsv(text: string): Promise<{ frames: Frame[]; summary: string }> {
+  const r = await fetch(`${API_BASE}/api/ingest`, {
+    method: "POST", headers: { "Content-Type": "text/csv" }, body: text,
+  });
+  const d = await r.json();
+  if (!r.ok || d.error) throw new Error(d.error || `ingest -> ${r.status}`);
+  return { frames: d.frames as Frame[], summary: `${d.rows} rows · ${d.minutes} min` };
+}

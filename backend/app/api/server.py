@@ -16,8 +16,9 @@ from __future__ import annotations
 import asyncio
 import json
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 
 from ..agents import run_pipeline
 from ..ai import golden
@@ -28,6 +29,7 @@ from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
 from ..engine import CompoundRiskEngine
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
+from ..replay import parse_csv, sample_csv
 from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
@@ -127,6 +129,29 @@ def simulate(zone: str = "COB-1", gas: str = "CH4", leak: bool = True,
         "config": {"zone": zone, "gas": gas, "leak": leak, "ignition": ignition,
                    "adjacent": adjacent, "workers": workers},
     }
+
+
+@app.get("/api/ingest/sample")
+def ingest_sample():
+    """Download a realistic sample SCADA CSV (the Vizag scenario exported as a feed)."""
+    return PlainTextResponse(
+        sample_csv(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=trinetra_sample_scada.csv"},
+    )
+
+
+@app.post("/api/ingest")
+async def ingest(request: Request):
+    """Replay an uploaded SCADA/permit CSV through the SAME compound engine — proving
+    that ingesting real plant data is a connector, not a rewrite."""
+    text = (await request.body()).decode("utf-8", errors="replace")
+    try:
+        snaps, meta = parse_csv(text)
+    except ValueError as e:
+        return {"error": str(e)}
+    engine = CompoundRiskEngine()
+    frames = [serialize_frame(s, engine.assess(s)) for s in snaps]
+    return {"scenario": "ingested", "minutes": len(frames), "frames": frames, **meta}
 
 
 _memory = DisasterMemory()
