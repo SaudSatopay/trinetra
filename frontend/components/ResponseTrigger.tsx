@@ -3,11 +3,27 @@
 import { useState } from "react";
 import { API_BASE } from "@/lib/api";
 
+interface ImpactItem {
+  key: string;
+  label: string;
+  value_cr: number;
+  basis: string;
+}
+interface Impact {
+  currency: string;
+  total_cr: number;
+  items: ImpactItem[];
+  fatalities_at_risk: number;
+  precedent_toll: number;
+  system_cost_annual_cr: number;
+  payback_years: number;
+}
 interface ResponseData {
   zone_name: string;
   level: string;
   auto_executed: boolean;
   analysis_mode?: "live" | "cached";
+  impact?: Impact;
   actions: string[];
   incident_report: string;
   alert: Record<string, string>;
@@ -114,6 +130,34 @@ function Modal({
             ✕
           </button>
         </div>
+
+        {data?.impact && (
+          <div
+            className="border-b border-line px-6 py-4"
+            style={{ background: "color-mix(in srgb, var(--brand) 6%, transparent)" }}
+          >
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="label mb-1">Avoided loss · prevented incident</div>
+                <div className="font-display text-[30px] font-bold leading-none" style={{ color: "var(--brand)" }}>
+                  ₹{data.impact.total_cr} Cr
+                </div>
+              </div>
+              <div className="text-right font-mono text-[10px] leading-relaxed text-ink-dim">
+                {data.impact.fatalities_at_risk} personnel in zone · precedent killed {data.impact.precedent_toll}
+                <br />
+                platform ₹{data.impact.system_cost_annual_cr} Cr/yr → {data.impact.payback_years}× return
+              </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+              {data.impact.items.map((it, i) => (
+                <span key={i} className="font-mono text-[10px] text-ink-dim" title={it.basis}>
+                  {it.label.replace(/\s*\(.*\)/, "")} <span className="text-ink-bright">₹{it.value_cr} Cr</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {loading || !data ? (
           <div className="flex h-64 items-center justify-center">

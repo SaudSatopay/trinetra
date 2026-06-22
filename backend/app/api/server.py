@@ -25,6 +25,7 @@ from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..ai.incident import draft_incident_report, evacuation_alert
 from ..constants import PLANT_NAME, ZONES
 from ..engine import CompoundRiskEngine
+from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..scenarios import SCENARIOS
 from ..simulator import PlantSimulator
@@ -231,10 +232,13 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
         "File the preliminary incident report with the safety officer",
     ]
 
+    impact = compute_impact(len(z.worker_ids), precedent_toll=parse_toll(m.incident.get("casualties", "")))
+
     package = {
         "zone": zone, "zone_name": z.name, "level": risk.level.value,
         "auto_executed": risk.level.value == "critical",
         "analysis_mode": "cached" if degraded else "live",
+        "impact": impact,
         "actions": actions, "incident_report": report, "alert": alert,
         "evidence": {
             "sensor_snapshot": f"T+{int(snap.t_min)} min telemetry frozen",
