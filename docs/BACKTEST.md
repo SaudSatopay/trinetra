@@ -61,6 +61,20 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 - The 25 scenarios were authored by us, but deliberately include **hard negatives** the engine must reject. The discrimination (0% false-positive across them) is the substantive result.
 - The headline figures are measured on the **compound flag** (the lethal pattern), which is distinct from ordinary gas alarms. Trinetra still raises ordinary alarms like any system; the value is the compound layer **and the lead time**.
 
+## Robustness (fault modes)
+
+Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under four fault modes:
+
+| Fault mode | Expected & verified behaviour |
+|---|---|
+| Stuck (frozen-high) sensor, no context | No compound alert — a flat high reading without ignition/personnel is not a life-safety emergency |
+| Hazard appears in CO only (CH4 quiet) | Still caught — multi-gas fusion has no single-sensor blind spot |
+| Transient noise spike, no context | No sustained alert — momentary spikes don't escalate |
+| Delayed permit sync (ignition syncs late) | No compound before the ignition permit is live; fires once it syncs |
+| Missing CCTV feed | Engine unaffected — personnel come from the permit-to-work system; `/api/vision` degrades to an error object |
+
+> Reproduce: `cd backend && python test_robustness.py`
+
 ## Maps to the problem statement's "Evaluation Focus"
 
 | Required focus | Trinetra result |

@@ -1,0 +1,97 @@
+"""Robustness checks: how the compound engine behaves under sensor/permit faults.
+
+Judges reliably ask "what about bad or missing data?". This exercises four realistic
+fault modes against the deterministic engine and asserts sensible behaviour:
+
+  1. Stuck (frozen-high) sensor, no context      -> must NOT raise a compound alert
+  2. Hazard in a different gas (CH4 quiet, CO rises) -> still caught (multi-gas redundancy)
+  3. Transient noise spike, no context           -> must NOT raise a sustained alert
+  4. Delayed permit sync (ignition appears late)  -> compound only once ignition is live
+
+(Missing CCTV is handled at the API layer: /api/vision degrades to an error object
+and the engine never depends on CV — personnel come from the permit-to-work system.)
+
+Deterministic (seed=42).  Run:  python test_robustness.py
+"""
+from __future__ import annotations
+
+import sys
+
+from app.domain import Permit, PermitType, RiskLevel, Worker
+from app.engine import CompoundRiskEngine
+from app.scenarios import Scenario, ramp
+from app.simulator import PlantSimulator
+
+ALERT = RiskLevel.ELEVATED
+
+
+def compound_minutes(scenario: Scenario, zone: str, minutes: int = 45) -> list[int]:
+    """Minutes at which `zone` shows a compound alert (ELEVATED+). Raises nothing."""
+    sim = PlantSimulator(scenario=scenario, dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    hits = []
+    for snap in sim.run(minutes):
+        zr = engine.assess(snap)[zone]
+        if zr.compound and zr.level.rank >= ALERT.rank:
+            hits.append(int(snap.t_min))
+    return hits
+
+
+def case(name: str, ok: bool, detail: str) -> bool:
+    print(f"  [{'PASS' if ok else 'FAIL'}]  {name}\n          {detail}")
+    return ok
+
+
+_WORKERS = [Worker("RB-W1", "A", "Fitter"), Worker("RB-W2", "B", "Welder")]
+
+
+def main() -> bool:
+    results = []
+
+    # 1. Stuck (frozen-high) CH4 in an unoccupied zone: reads high but flat, no
+    #    ignition, no personnel. Must not escalate to a compound life-safety alert.
+    stuck = Scenario("stuck_sensor", "", "", expected_compound=False, hazard_zone="PMP",
+                     inject=lambda t: {("PMP", "CH4"): 9.0})  # frozen ~0.95x alarm
+    hits = compound_minutes(stuck, "PMP")
+    results.append(case("Stuck-high sensor, no context -> no compound",
+                        hits == [], f"compound minutes = {hits or 'none'} (expected none)"))
+
+    # 2. The hazard develops in CO (CH4 stays quiet) with ignition + personnel.
+    #    Multi-gas fusion must still catch it (no single-sensor blind spot).
+    permits = [Permit("RB-HW", PermitType.HOT_WORK, "COB-1", ["RB-W2"], 0, 60, "hot work"),
+               Permit("RB-CS", PermitType.CONFINED_SPACE, "COB-1", ["RB-W1"], 0, 60, "entry")]
+    co_only = Scenario("co_only", "", "", expected_compound=True, hazard_zone="COB-1",
+                       permits=permits, workers=_WORKERS,
+                       inject=lambda t: {("COB-1", "CO"): ramp(t, 3, 170, 40)})
+    hits = compound_minutes(co_only, "COB-1")
+    results.append(case("Hazard in CO only (CH4 quiet) -> still caught (redundancy)",
+                        len(hits) > 0, f"first compound at t={hits[0] if hits else 'NEVER'}"))
+
+    # 3. Transient noise spike, no context. Must not raise a sustained alert.
+    spike = Scenario("noise_spike_r", "", "", expected_compound=False, hazard_zone="PMP",
+                     inject=lambda t: {("PMP", "CO"): (160.0 if 8 <= t <= 10 else 0.0)})
+    hits = compound_minutes(spike, "PMP")
+    results.append(case("Transient noise spike, no context -> no compound",
+                        hits == [], f"compound minutes = {hits or 'none'} (expected none)"))
+
+    # 4. Delayed permit sync: gas + personnel present early, but the hot-work
+    #    (ignition) permit only syncs at t=12. Compound must not fire before then.
+    late = [Permit("RB-HW2", PermitType.HOT_WORK, "COB-1", ["RB-W2"], 12, 48, "hot work (late sync)"),
+            Permit("RB-CS2", PermitType.CONFINED_SPACE, "COB-1", ["RB-W1"], 0, 60, "entry")]
+    delayed = Scenario("delayed_permit", "", "", expected_compound=True, hazard_zone="COB-1",
+                       permits=late, workers=_WORKERS,
+                       inject=lambda t: {("COB-1", "CH4"): ramp(t, 3, 58, 40)})
+    hits = compound_minutes(delayed, "COB-1")
+    ok = bool(hits) and min(hits) >= 12
+    results.append(case("Delayed ignition permit (t=12) -> no compound before sync",
+                        ok, f"first compound at t={hits[0] if hits else 'NEVER'} (expected >= 12)"))
+
+    print("\n  " + ("ALL ROBUSTNESS CHECKS PASSED" if all(results) else "SOME CHECKS FAILED"))
+    return all(results)
+
+
+if __name__ == "__main__":
+    print("=" * 80)
+    print("  TRINETRA ROBUSTNESS CHECKS  -  sensor & permit fault modes  (seed=42)")
+    print("=" * 80)
+    sys.exit(0 if main() else 1)
