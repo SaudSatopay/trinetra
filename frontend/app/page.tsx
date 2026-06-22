@@ -26,6 +26,7 @@ export default function Page() {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const prevScenario = useRef("");
+  const wantMoneyShot = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -47,11 +48,17 @@ export default function Page() {
         if (cancelled) return;
         setFrames(f);
         if (prevScenario.current !== scenario) {
-          // switched scenario: start from the top
-          setIndex(0);
-          setPlaying(true);
           setSelected(null);
           prevScenario.current = scenario;
+          if (wantMoneyShot.current) {
+            // judge mode: land on the money shot (legacy still blind, Trinetra alerting)
+            wantMoneyShot.current = false;
+            setIndex(moneyShotIndex(f));
+            setPlaying(false);
+          } else {
+            setIndex(0);
+            setPlaying(true);
+          }
         } else {
           // a custom toggle changed: hold the clock so the effect is visible at the same moment
           setIndex((i) => Math.min(i, Math.max(0, f.length - 1)));
@@ -91,6 +98,18 @@ export default function Page() {
   const activeZoneId = selected ?? frame?.summary.top_zone ?? null;
   const activeZone: Zone | null = frame ? frame.zones.find((z) => z.id === activeZoneId) ?? null : null;
 
+  const judgeMode = () => {
+    setSpeed(4);
+    setSelected(null);
+    if (scenario === "vizag" && frames.length) {
+      setIndex(moneyShotIndex(frames));
+      setPlaying(false);
+    } else {
+      wantMoneyShot.current = true;
+      setScenario("vizag");
+    }
+  };
+
   if (error)
     return (
       <Screen>
@@ -118,7 +137,7 @@ export default function Page() {
 
   return (
     <main className="flex h-screen flex-col overflow-hidden">
-      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} />
+      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} onJudgeMode={judgeMode} />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -167,4 +186,12 @@ export default function Page() {
 
 function Screen({ children }: { children: React.ReactNode }) {
   return <main className="flex h-screen flex-col items-center justify-center">{children}</main>;
+}
+
+// The demo "money shot": legacy single-sensor still blind, Trinetra already alerting.
+function moneyShotIndex(frames: Frame[]): number {
+  const firstBaseline = frames.findIndex((f) => f.summary.baseline_alarm);
+  if (firstBaseline > 0) return firstBaseline - 1;
+  const firstCompound = frames.findIndex((f) => f.summary.compound_alert);
+  return firstCompound >= 0 ? Math.min(firstCompound + 3, frames.length - 1) : 0;
 }

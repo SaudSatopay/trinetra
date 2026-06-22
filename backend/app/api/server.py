@@ -23,8 +23,8 @@ from ..agents import run_pipeline
 from ..ai import golden
 from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..ai.incident import draft_incident_report, evacuation_alert
-from ..constants import PLANT_NAME, ZONES
-from ..domain import Permit, PermitType, Worker
+from ..constants import GAS_THRESHOLDS, PLANT_NAME, ZONES
+from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
 from ..engine import CompoundRiskEngine
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
@@ -242,6 +242,41 @@ def vision():
 _response_cache: dict = {}
 
 
+def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list[dict]:
+    """Reconstruct the chain of events a safety officer would review: which permits
+    opened when, when Trinetra escalated, and when the legacy single-sensor finally
+    alarmed — so the lead time is visible as a sequence, not just a number."""
+    scn = SCENARIOS[scenario_name]
+    near = set(ZONES[zone].neighbours) | {zone}
+    events: list[dict] = []
+    for p in scn.permits:
+        if p.zone_id in near:
+            kind = "ignition" if p.type in IGNITION_PERMITS else "personnel"
+            label = f"{p.type.value.replace('_', ' ')} permit {p.id} opened"
+            if p.worker_ids:
+                label += f" — {len(p.worker_ids)} personnel"
+            events.append({"t": int(p.start_min), "label": label, "kind": kind})
+
+    sim = PlantSimulator(scenario=scn, dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    comp_t = single_t = None
+    for snap in sim.run(horizon):
+        risks = engine.assess(snap)
+        if comp_t is None and zone in risks:
+            zr = risks[zone]
+            if zr.compound and zr.level.rank >= RiskLevel.ELEVATED.rank:
+                comp_t = int(snap.t_min)
+        if single_t is None and any(GAS_THRESHOLDS[sp].in_alarm(r.value)
+                                    for sp, r in snap.zone(zone).gases.items()):
+            single_t = int(snap.t_min)
+    if comp_t is not None:
+        events.append({"t": comp_t, "label": "Trinetra raises compound alert", "kind": "trinetra"})
+    if single_t is not None:
+        events.append({"t": single_t, "label": "Legacy single-sensor gas alarm", "kind": "legacy"})
+    events.sort(key=lambda e: (e["t"], 0 if e["kind"] != "legacy" else 1))
+    return events
+
+
 @app.get("/api/response")
 def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     """Orchestrate the autonomous response: actions + incident report + multilingual alert."""
@@ -299,6 +334,7 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
         "auto_executed": risk.level.value == "critical",
         "analysis_mode": "cached" if degraded else "live",
         "impact": impact,
+        "evidence_timeline": _evidence_timeline(scenario, zone),
         "actions": actions, "incident_report": report, "alert": alert,
         "evidence": {
             "sensor_snapshot": f"T+{int(snap.t_min)} min telemetry frozen",

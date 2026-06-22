@@ -18,16 +18,35 @@ interface Impact {
   system_cost_annual_cr: number;
   payback_years: number;
 }
+interface TimelineEvent {
+  t: number;
+  label: string;
+  kind: string;
+}
 interface ResponseData {
   zone_name: string;
   level: string;
   auto_executed: boolean;
   analysis_mode?: "live" | "cached";
   impact?: Impact;
+  evidence_timeline?: TimelineEvent[];
   actions: string[];
   incident_report: string;
   alert: Record<string, string>;
   evidence: { sensor_snapshot: string; cctv: string; permits: string[] };
+}
+
+function kindColor(kind: string): string {
+  switch (kind) {
+    case "trinetra":
+      return "var(--brand)";
+    case "legacy":
+      return "var(--legacy)";
+    case "ignition":
+      return "var(--lvl-high)";
+    default:
+      return "var(--lvl-watch)"; // personnel
+  }
 }
 
 export function ResponseTrigger({
@@ -177,6 +196,28 @@ function Modal({
                   ))}
                 </ul>
               </div>
+
+              {data.evidence_timeline && data.evidence_timeline.length > 0 && (
+                <div>
+                  <div className="label mb-3">Sequence of events</div>
+                  <ol className="space-y-2.5 border-l pl-4" style={{ borderColor: "var(--line-2)" }}>
+                    {data.evidence_timeline.map((e, i) => (
+                      <li key={i} className="relative">
+                        <span
+                          className="absolute -left-[21px] top-[5px] h-2 w-2 rounded-full"
+                          style={{ background: kindColor(e.kind), boxShadow: `0 0 6px ${kindColor(e.kind)}` }}
+                        />
+                        <div className="flex items-baseline gap-2">
+                          <span className="tnum text-[11px]" style={{ color: kindColor(e.kind) }}>
+                            T+{String(e.t).padStart(2, "0")}
+                          </span>
+                          <span className="text-[11.5px] leading-snug text-ink">{e.label}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
 
               <div>
                 <div className="label mb-2 flex items-center justify-between">
