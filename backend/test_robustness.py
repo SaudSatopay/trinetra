@@ -19,7 +19,7 @@ import sys
 
 from app.domain import Permit, PermitType, RiskLevel, Worker
 from app.engine import CompoundRiskEngine
-from app.scenarios import Scenario, ramp
+from app.scenarios import CROSS_ZONE_EXPOSURE, Scenario, ramp
 from app.simulator import PlantSimulator
 
 ALERT = RiskLevel.ELEVATED
@@ -85,6 +85,20 @@ def main() -> bool:
     ok = bool(hits) and min(hits) >= 12
     results.append(case("Delayed ignition permit (t=12) -> no compound before sync",
                         ok, f"first compound at t={hits[0] if hits else 'NEVER'} (expected >= 12)"))
+
+    # 5. Cross-zone exposure: flammable gas + ignition in COB-1 but NOBODY inside it;
+    #    the crew is next door in GCP, within the blast radius. The gate must escalate
+    #    on blast-radius exposure, not just in-zone occupancy (an in-zone-only gate misses it).
+    sim = PlantSimulator(scenario=CROSS_ZONE_EXPOSURE, dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    fired_t = in_zone_at_fire = None
+    for snap in sim.run(45):
+        zr = engine.assess(snap)["COB-1"]
+        if fired_t is None and zr.compound and zr.level.rank >= ALERT.rank:
+            fired_t, in_zone_at_fire = int(snap.t_min), snap.zone("COB-1").worker_count
+    ok = fired_t is not None and in_zone_at_fire == 0
+    results.append(case("Cross-zone exposure (empty zone, crew next door) -> compound on blast radius",
+                        ok, f"first compound at t={fired_t}, in-zone workers={in_zone_at_fire} (expected fired & 0 in-zone)"))
 
     print("\n  " + ("ALL ROBUSTNESS CHECKS PASSED" if all(results) else "SOME CHECKS FAILED"))
     return all(results)

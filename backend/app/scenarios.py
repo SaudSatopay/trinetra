@@ -173,6 +173,49 @@ NOISE_SPIKE = Scenario(
 )
 
 
+# --- Cross-zone exposure: gas + ignition here, the crew is NEXT DOOR ----------
+# The blast-radius case a zone-by-zone view misses: an (unmanned) coke-oven bay
+# fills with flammable gas while the crew works hot work in the adjoining Gas
+# Cleaning Plant. Nobody is *inside* the gas zone — but they are squarely within
+# its blast radius. A single-zone occupancy check says "COB-1 is empty, no
+# compound"; the compound engine must still escalate.
+_CROSSZONE_WORKERS = [
+    Worker("W-301", "B. Naidu", "Welder"),
+    Worker("W-302", "P. Rao", "Fitter"),
+]
+
+_CROSSZONE_PERMITS = [
+    Permit("PTW-9051", PermitType.HOT_WORK, "GCP", ["W-301"], start_min=0, duration_min=60,
+           description="Hot work: pipe welding in the Gas Cleaning Plant"),
+    Permit("PTW-9052", PermitType.MAINTENANCE, "GCP", ["W-302"], start_min=0, duration_min=60,
+           description="Maintenance support, Gas Cleaning Plant"),
+]
+
+
+def _crosszone_inject(t: float) -> Offsets:
+    return {
+        ("COB-1", "CH4"): ramp(t, 3, 58, 42),    # unmanned bay fills; crosses 10 %LEL only ~t13
+        ("COB-1", "CO"):  ramp(t, 3, 150, 44),
+        ("COB-1", "TEMP"): ramp(t, 3, 16, 44),
+    }
+
+
+CROSS_ZONE_EXPOSURE = Scenario(
+    name="cross_zone",
+    title="Cross-zone exposure — the crew is next door",
+    description="Flammable gas builds in an unmanned coke-oven bay (COB-1) while the crew runs "
+                "hot work in the adjoining Gas Cleaning Plant. No one is inside the gas zone, but "
+                "they are within its blast radius. A zone-by-zone view says 'COB-1 is empty, not a "
+                "compound hazard'; Trinetra escalates because people are in the blast radius.",
+    expected_compound=True,
+    hazard_zone="COB-1",
+    permits=_CROSSZONE_PERMITS,
+    workers=_CROSSZONE_WORKERS,
+    inject=_crosszone_inject,
+)
+
+
 SCENARIOS: dict[str, Scenario] = {
-    s.name: s for s in (NORMAL, VIZAG_COMPOUND, GAS_NO_IGNITION, HOTWORK_NO_GAS, NOISE_SPIKE)
+    s.name: s for s in (NORMAL, VIZAG_COMPOUND, GAS_NO_IGNITION, HOTWORK_NO_GAS, NOISE_SPIKE,
+                        CROSS_ZONE_EXPOSURE)
 }

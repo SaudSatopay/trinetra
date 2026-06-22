@@ -63,7 +63,7 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 
 ## Robustness (fault modes)
 
-Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under four fault modes:
+Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under five fault modes:
 
 | Fault mode | Expected & verified behaviour |
 |---|---|
@@ -71,6 +71,7 @@ Real plants have flaky sensors and out-of-sync permits. A dedicated check (`back
 | Hazard appears in CO only (CH4 quiet) | Still caught — multi-gas fusion has no single-sensor blind spot |
 | Transient noise spike, no context | No sustained alert — momentary spikes don't escalate |
 | Delayed permit sync (ignition syncs late) | No compound before the ignition permit is live; fires once it syncs |
+| Cross-zone exposure (gas + ignition here, crew next door) | Compound fires on blast-radius exposure — escalates even when the gas zone itself is unmanned |
 | Missing CCTV feed | Engine unaffected — personnel come from the permit-to-work system; `/api/vision` degrades to an error object |
 
 > Reproduce: `cd backend && python test_robustness.py`

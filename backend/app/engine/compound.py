@@ -13,7 +13,8 @@ Differentiators vs a generic threshold dashboard:
   * predictive time-to-threshold — extrapolate the trend, don't wait for the alarm;
   * prescriptive interventions — counterfactual "which single action cuts risk most",
     computed on the uncapped score so it stays meaningful even at saturation;
-  * cross-zone blast-radius reasoning — ignition in an ADJACENT zone still counts.
+  * cross-zone blast-radius reasoning — ignition OR exposed personnel in an ADJACENT
+    zone still counts (people next door to a blast are inside the blast radius too).
 
 Deterministic given the simulator seed → the WP2 benchmark numbers are reproducible.
 """
@@ -58,7 +59,8 @@ class _Features:
     o2_deficit: float       # 0..1 toward the 16% danger floor
     ignition_same: bool
     ignition_adj: bool
-    personnel: int
+    personnel: int          # personnel inside the hazard zone
+    personnel_adj: int      # personnel in adjacent zones — exposed within the blast radius
     confined: bool
     fastest_gas: Optional[str]
     fastest_slope_raw: float  # in the gas's own unit per minute
@@ -120,10 +122,13 @@ class CompoundRiskEngine:
             any(p.type in IGNITION_PERMITS for p in snap.zones[n].active_permits)
             for n in ZONES[zid].neighbours if n in snap.zones
         )
+        # personnel in adjacent zones are within the blast radius of an explosion here
+        personnel_adj = sum(snap.zones[n].worker_count
+                            for n in ZONES[zid].neighbours if n in snap.zones)
         confined = (ZONES[zid].kind == "confined_space"
                     or any(p.type == PermitType.CONFINED_SPACE for p in z.active_permits))
         return _Features(flam_level, flam_slope, toxic_level, o2_deficit,
-                         ignition_same, ignition_adj, z.worker_count, confined,
+                         ignition_same, ignition_adj, z.worker_count, personnel_adj, confined,
                          fastest, fastest_raw)
 
     # -- scoring (uncapped; with counterfactual switches) --------------------
@@ -159,7 +164,9 @@ class CompoundRiskEngine:
         flammable_evidence = ((f.flam_level >= COMPOUND_PRESENT_FRAC and f.flam_slope > COMPOUND_SLOPE)
                               or f.flam_level >= COMPOUND_HIGH_FRAC)
         ignition = f.ignition_same or f.ignition_adj
-        compound = bool(flammable_evidence and ignition and f.personnel > 0)
+        # people are in danger inside the zone OR within the blast radius next door
+        personnel_exposed = f.personnel > 0 or f.personnel_adj > 0
+        compound = bool(flammable_evidence and ignition and personnel_exposed)
 
         factors: list[str] = []
         if f.flam_slope > COMPOUND_SLOPE and f.fastest_gas and f.flam_level >= COMPOUND_PRESENT_FRAC:
@@ -174,6 +181,8 @@ class CompoundRiskEngine:
             factors.append("ignition source in adjacent zone (within blast radius)")
         if f.personnel > 0:
             factors.append(f"{f.personnel} personnel present")
+        elif f.personnel_adj > 0:
+            factors.append(f"{f.personnel_adj} personnel in an adjacent zone (within blast radius)")
         if f.confined and f.o2_deficit > 0.1:
             factors.append(f"confined space, O2 down to {z.gases['O2'].value:.1f}%")
         if f.toxic_level >= 1.0:
