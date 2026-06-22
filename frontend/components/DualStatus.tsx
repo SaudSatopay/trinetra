@@ -1,6 +1,7 @@
 "use client";
 
 import { Frame } from "@/lib/types";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 export function DualStatus({ history }: { history: Frame[] }) {
   const cur = history[history.length - 1];
@@ -27,12 +28,17 @@ export function DualStatus({ history }: { history: Frame[] }) {
 
       <div className="flex flex-col items-center px-5">
         <div className="flex items-baseline gap-1">
-          <span
-            className="tnum text-[27px] font-semibold leading-none"
-            style={{ color: lead ? "var(--brand)" : "var(--text-dim)" }}
-          >
-            {lead !== null ? `+${lead}` : "—"}
-          </span>
+          {lead !== null ? (
+            <AnimatedNumber
+              value={lead}
+              prefix="+"
+              duration={0.5}
+              className="tnum text-[27px] font-semibold leading-none"
+              style={{ color: "var(--brand)" }}
+            />
+          ) : (
+            <span className="tnum text-[27px] font-semibold leading-none text-ink-dim">—</span>
+          )}
           {lead !== null && <span className="text-[12px] text-ink-dim">min</span>}
         </div>
         <span className="label mt-1.5 !text-[8px]">early warning</span>
@@ -75,9 +81,12 @@ function Side({
       <div className={`flex items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
         <span
           className={`h-2 w-2 rounded-full ${active ? "soft-pulse" : ""}`}
-          style={{ background: c, boxShadow: `0 0 8px ${c}` }}
+          style={{ background: c, boxShadow: `0 0 8px ${c}`, transition: "background .4s ease, box-shadow .4s ease" }}
         />
-        <span className="font-display text-[15px] font-semibold tracking-wide" style={{ color: c }}>
+        <span
+          className="font-display text-[15px] font-semibold tracking-wide"
+          style={{ color: c, transition: "color .4s ease" }}
+        >
           {active ? on : off}
         </span>
       </div>

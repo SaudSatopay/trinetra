@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { API_BASE } from "@/lib/api";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 interface ImpactItem {
   key: string;
@@ -99,7 +101,9 @@ export function ResponseTrigger({
         </span>
         <span className="font-mono text-[10px] text-ink-dim">view →</span>
       </button>
-      {open && <Modal data={data} loading={loading} onClose={() => setOpen(false)} />}
+      <AnimatePresence>
+        {open && <Modal key="resp-modal" data={data} loading={loading} onClose={() => setOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
@@ -115,12 +119,20 @@ function Modal({
 }) {
   const [lang, setLang] = useState("English");
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
       style={{ background: "rgba(2,5,8,0.78)", backdropFilter: "blur(3px)" }}
       onClick={onClose}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 6 }}
+        transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
         className="hud-panel flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -159,7 +171,7 @@ function Modal({
               <div>
                 <div className="label mb-1">Avoided loss · prevented incident</div>
                 <div className="font-display text-[30px] font-bold leading-none" style={{ color: "var(--brand)" }}>
-                  ₹{data.impact.total_cr} Cr
+                  <AnimatedNumber value={data.impact.total_cr} from={0} decimals={1} duration={0.9} prefix="₹" suffix=" Cr" />
                 </div>
               </div>
               <div className="text-right font-mono text-[10px] leading-relaxed text-ink-dim">
@@ -266,7 +278,7 @@ function Modal({
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

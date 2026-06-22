@@ -3,6 +3,7 @@ import { levelColor, levelLabel, GAS_ORDER } from "@/lib/risk";
 import { RiskGauge } from "./RiskGauge";
 import { DisasterMemory } from "./DisasterMemory";
 import { ResponseTrigger } from "./ResponseTrigger";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 export function ThreatPanel({
   zone,
@@ -35,7 +36,7 @@ export function ThreatPanel({
         <span className="label">Active threat</span>
         {r.compound && (
           <span
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+            className="rise-in flex items-center gap-1.5 rounded-full px-2.5 py-1"
             style={{ background: "color-mix(in srgb, var(--lvl-critical) 13%, transparent)" }}
           >
             <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--lvl-critical)" }} />
@@ -61,7 +62,7 @@ export function ThreatPanel({
           <div className="flex items-baseline justify-between border-t border-line pt-4">
             <span className="label">Projected breach</span>
             <span className="tnum text-[18px]" style={{ color: "var(--lvl-elevated)" }}>
-              ~{Math.round(r.time_to_threshold_min)}
+              <AnimatedNumber value={r.time_to_threshold_min} prefix="~" duration={0.5} />
               <span className="ml-1 text-[10px] text-ink-dim">min</span>
             </span>
           </div>
@@ -89,12 +90,14 @@ export function ThreatPanel({
           <div className="border-t border-line pt-4">
             <div className="label mb-3">Recommended action</div>
             <div
-              className="rounded-lg p-3.5"
+              className="card-hover rounded-lg p-3.5"
               style={{ background: "color-mix(in srgb, var(--brand) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--brand) 35%, transparent)" }}
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="text-[13px] font-medium leading-snug text-ink-bright">{top.action}</span>
-                <span className="tnum shrink-0 text-[14px] font-semibold" style={{ color: "var(--brand)" }}>−{Math.round(top.delta)}%</span>
+                <span className="tnum shrink-0 text-[14px] font-semibold" style={{ color: "var(--brand)" }}>
+                  <AnimatedNumber value={top.delta} prefix="−" suffix="%" />
+                </span>
               </div>
               <div className="mt-2 font-mono text-[9px] uppercase tracking-wider text-ink-dim">
                 risk → <span style={{ color: levelColor[top.resulting_level] }}>{levelLabel[top.resulting_level]}</span>
@@ -103,7 +106,9 @@ export function ThreatPanel({
             {rest.map((iv, i) => (
               <div key={i} className="flex items-center justify-between px-1 pt-2.5 text-[11.5px] text-ink-dim">
                 <span>{iv.action}</span>
-                <span className="tnum">−{Math.round(iv.delta)}%</span>
+                <span className="tnum">
+                  <AnimatedNumber value={iv.delta} prefix="−" suffix="%" />
+                </span>
               </div>
             ))}
           </div>

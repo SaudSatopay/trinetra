@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 interface MemMatch {
   title: string;
@@ -86,7 +87,7 @@ export function DisasterMemory({
 
       {top && (
         <div
-          className="rounded-lg p-3.5"
+          className="rise-in card-hover rounded-lg p-3.5"
           style={{
             background: "color-mix(in srgb, var(--lvl-critical) 7%, transparent)",
             border: "1px solid color-mix(in srgb, var(--lvl-critical) 26%, transparent)",
@@ -95,7 +96,7 @@ export function DisasterMemory({
           <div className="flex items-start justify-between gap-3">
             <span className="text-[12.5px] font-medium leading-snug text-ink-bright">{top.title}</span>
             <span className="tnum shrink-0 text-[15px] font-semibold" style={{ color: "var(--lvl-critical)" }}>
-              {Math.round(top.similarity * 100)}%
+              <AnimatedNumber value={Math.round(top.similarity * 100)} from={0} suffix="%" duration={0.9} />
             </span>
           </div>
           <div className="mt-1 font-mono text-[9px] text-ink-dim">

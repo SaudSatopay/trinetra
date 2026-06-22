@@ -1,5 +1,6 @@
 import { Level } from "@/lib/types";
 import { levelColor, levelLabel } from "@/lib/risk";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 export function RiskGauge({ score, level, size = 168 }: { score: number; level: Level; size?: number }) {
   const R = 52;
@@ -46,9 +47,11 @@ export function RiskGauge({ score, level, size = 168 }: { score: number; level: 
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="tnum text-[40px] font-semibold leading-none text-ink-bright" style={{ textShadow: `0 0 18px ${color}66` }}>
-          {Math.round(score)}
-        </div>
+        <AnimatedNumber
+          value={score}
+          className="tnum text-[40px] font-semibold leading-none text-ink-bright"
+          style={{ textShadow: `0 0 18px ${color}66` }}
+        />
         <div className="mt-1 font-display text-[12px] font-bold tracking-[0.18em]" style={{ color }}>
           {levelLabel[level]}
         </div>

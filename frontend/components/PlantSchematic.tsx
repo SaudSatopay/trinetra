@@ -3,6 +3,7 @@
 import { Level, Plant, Zone } from "@/lib/types";
 import { levelColor, levelRank } from "@/lib/risk";
 import { Frame } from "@/lib/types";
+import { AnimatedNumber } from "./AnimatedNumber";
 
 export function PlantSchematic({
   plant,
@@ -50,15 +51,29 @@ export function PlantSchematic({
             const hotLevel: Level =
               levelRank(za.risk.level) >= levelRank(zb.risk.level) ? za.risk.level : zb.risk.level;
             const hot = levelRank(hotLevel) >= 3; // only high/critical links light up
+            const x1 = nx(sa.x), y1 = ny(sa.y), x2 = nx(sb.x), y2 = ny(sb.y);
+            const col = hot ? levelColor[hotLevel] : "var(--line-2)";
             return (
-              <line
-                key={a + b}
-                x1={nx(sa.x)} y1={ny(sa.y)} x2={nx(sb.x)} y2={ny(sb.y)}
-                stroke={hot ? levelColor[hotLevel] : "var(--line-2)"}
-                strokeWidth={hot ? 1.4 : 1}
-                vectorEffect="non-scaling-stroke"
-                opacity={hot ? 0.6 : 0.22}
-              />
+              <g key={a + b}>
+                <line
+                  x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke={col}
+                  strokeWidth={hot ? 1.4 : 1}
+                  vectorEffect="non-scaling-stroke"
+                  opacity={hot ? 0.5 : 0.22}
+                  style={{ transition: "stroke .5s ease, opacity .5s ease" }}
+                />
+                {hot && (
+                  <line
+                    x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke={col}
+                    strokeWidth={1.8}
+                    vectorEffect="non-scaling-stroke"
+                    className="flow-line"
+                    opacity={0.95}
+                  />
+                )}
+              </g>
             );
           })}
         </svg>
@@ -100,7 +115,7 @@ function ZoneNode({
   return (
     <button
       onClick={onSelect}
-      className="group absolute -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-left transition-all duration-500"
+      className="group absolute -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-left hover:z-10 hover:scale-[1.04]"
       style={{
         left: `${left}%`,
         top: `${top}%`,
@@ -108,8 +123,16 @@ function ZoneNode({
         background: active ? `color-mix(in srgb, ${col} 8%, var(--panel))` : "var(--panel)",
         border: `1px solid ${active ? col : "var(--line-2)"}`,
         boxShadow: crit ? `0 8px 30px -10px ${col}` : "none",
+        transition:
+          "transform .22s cubic-bezier(.4,0,.2,1), background .5s ease, border-color .5s ease, box-shadow .5s ease",
       }}
     >
+      {crit && (
+        <span
+          className="halo pointer-events-none absolute -inset-1 rounded-2xl"
+          style={{ boxShadow: `0 0 22px -2px ${col}` }}
+        />
+      )}
       {selected && (
         <span
           className="pointer-events-none absolute -inset-[3px] rounded-[14px] border"
@@ -125,9 +148,12 @@ function ZoneNode({
       </div>
       <div className="mt-2 flex items-end justify-between">
         <span className="text-[9px] capitalize text-ink-dim">{z.kind.replace(/_/g, " ")}</span>
-        <span className="tnum text-[13px] leading-none" style={{ color: active ? col : "var(--text-dim)" }}>
-          {Math.round(z.risk.score)}
-        </span>
+        <AnimatedNumber
+          value={z.risk.score}
+          duration={0.4}
+          className="tnum text-[13px] leading-none"
+          style={{ color: active ? col : "var(--text-dim)", transition: "color .5s ease" }}
+        />
       </div>
     </button>
   );
