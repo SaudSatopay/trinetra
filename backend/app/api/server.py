@@ -24,6 +24,7 @@ from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..ai.incident import draft_incident_report, evacuation_alert
 from ..constants import PLANT_NAME, ZONES
 from ..engine import CompoundRiskEngine
+from ..kg import kg_export
 from ..scenarios import SCENARIOS
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
@@ -237,6 +238,12 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     }
     _response_cache[key] = package
     return package
+
+
+@app.get("/api/knowledge-graph")
+def knowledge_graph():
+    """The domain knowledge graph: precursors -> compound hazard -> precedents + zones."""
+    return kg_export()
 
 
 @app.websocket("/ws")
