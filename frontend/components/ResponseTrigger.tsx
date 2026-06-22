@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { API_BASE } from "@/lib/api";
 import { AnimatedNumber } from "./AnimatedNumber";
@@ -122,7 +123,7 @@ function Modal({
   onClose: () => void;
 }) {
   const [lang, setLang] = useState("English");
-  return (
+  const content = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -312,4 +313,6 @@ function Modal({
       </motion.div>
     </motion.div>
   );
+
+  return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 }
