@@ -19,5 +19,6 @@ ultralytics>=8.3
 opencv-python-headless>=4.10
 numpy>=1.26
 
-# --- Optional knowledge graph (WP5) ---
-# neo4j>=5.25
+# --- Knowledge graph (WP5) ---
+networkx>=3.0
+# neo4j>=5.25  # optional — we use in-process networkx instead of a Neo4j server

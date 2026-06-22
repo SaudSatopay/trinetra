@@ -11,6 +11,8 @@ Trinetra fuses gas sensors, permits, CCTV and shift logs into one real-time brai
 
 **100% compound recall** · **0% false-positive** · **7.4 min mean early-warning**
 
+[![CI](https://github.com/SaudSatopay/trinetra/actions/workflows/ci.yml/badge.svg)](https://github.com/SaudSatopay/trinetra/actions/workflows/ci.yml) · MIT licensed
+
 </div>
 
 ---
@@ -51,10 +53,20 @@ While the incident develops, the two systems live in **split realities**:
 | 🟢 **Compound engine** | catches danger *below* single-sensor thresholds | `100% recall · 0% FP` |
 | 👁️ **Computer vision** | YOLOv8 — worker + restricted-zone-intrusion on CCTV | `/api/vision` |
 | 🤖 **Multi-agent** | LangGraph 6-agent auditable pipeline | `/api/agents` |
-| 📚 **Disaster memory (RAG)** | matches live conditions to real disasters via Gemini | `82% Vizag match` |
+| 📚 **Disaster memory (RAG)** | matches live conditions to real disasters via Gemini | `81% Vizag match` |
 | 🚨 **Autonomous response** | OISD/Factory-Act incident report + **Telugu/Hindi** alerts | `/api/response` |
 
-…plus **predictive time-to-threshold**, **prescriptive interventions** ("suspend permit PTW-7741 → −89%"), **cross-zone blast-radius reasoning**, and a **knowledge graph** — all in a clean, instrument-grade control room.
+…plus **predictive time-to-threshold**, **prescriptive interventions** ("suspend permit PTW-7741 → risk CRITICAL→ELEVATED"), **cross-zone blast-radius reasoning**, and a **knowledge graph** — all in a clean, instrument-grade control room.
+
+## Proof, impact, and interactivity
+
+| | | |
+|---|---|---|
+| 📊 **Ablation proof** | single-sensor → gas-trend-only → full fusion: same 7.4 min lead, but false alarms drop **64% → 0%** | `python ablation.py` |
+| 💰 **Business impact** | avoided-loss model with every figure sourced — **₹115.5 Cr** per prevented Vizag-class incident, **116× ROI** | response modal |
+| 🎛️ **Scenario editor** | judges toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
+| 🔌 **SCADA connector** | upload a real SCADA/permit CSV and replay it through the same engine — *a connector, not a rewrite* | `/api/ingest` |
+| 🛟 **Demo-safe** | cached/golden fallbacks keep the room fully functional if the LLM is rate-limited; **Judge Mode** jumps to the money shot in one click | `TRINETRA_DEMO_MODE=1` |
 
 ## Architecture
 
@@ -63,6 +75,13 @@ While the incident develops, the two systems live in **split realities**:
 A **hybrid** brain: a transparent, deterministic scoring backbone makes the life-safety decision (no LLM hallucination in the loop); Gemini only explains, retrieves precedent, and drafts reports.
 
 ## Quickstart
+
+**One command** (Windows) — starts both servers and opens the control room:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/demo.ps1
+```
+
+…or run them manually:
 
 **Backend** (Python 3.10+):
 ```bash
@@ -91,7 +110,7 @@ python benchmark.py                         # the headline metrics
 
 ## API surface
 
-`/api/frames` · `/api/plant` · `/api/scenarios` · `/api/agents` · `/api/disaster-memory` · `/api/vision` · `/api/response` · `/api/knowledge-graph` · `/ws`
+`/api/frames` · `/api/plant` · `/api/scenarios` · `/api/agents` · `/api/disaster-memory` · `/api/vision` · `/api/response` · `/api/knowledge-graph` · `/api/ablation` · `/api/simulate` · `/api/ingest` · `/ws`
 
 ## Tech stack
 

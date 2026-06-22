@@ -28,7 +28,7 @@ def main():
         "ttt": int(risk.time_to_threshold_min or 0),
         "permits": [f"{p.id} ({p.type.value})" for p in z.active_permits],
         "personnel": len(z.worker_ids), "factors": risk.factors,
-        "precedent": "Visakhapatnam Steel Plant coke-oven explosion (2025) - 82% match",
+        "precedent": "Visakhapatnam Steel Plant coke-oven explosion (2025) - 81% match",
     }
 
     report, degraded = draft_incident_report(event)

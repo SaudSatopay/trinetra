@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend — engine, ablation, robustness, API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      # Core deps only — the CV stack (torch/ultralytics) is lazy-imported and not
+      # needed by these checks, so we skip it to keep CI fast and reliable.
+      - name: Install core dependencies
+        run: pip install fastapi "uvicorn[standard]" websockets pydantic python-dotenv httpx langgraph networkx
+      - name: Compound-risk benchmark (100% recall / 0% FP / 7.4 min lead)
+        run: python benchmark.py
+      - name: Ablation study (context fusion vs naive tiers)
+        run: python ablation.py
+      - name: Robustness checks (sensor / permit fault modes)
+        run: python test_robustness.py
+      - name: API smoke test (REST + WebSocket)
+        run: python smoke_api.py
+
+  frontend:
+    name: Frontend — production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build

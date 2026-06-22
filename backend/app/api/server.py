@@ -182,7 +182,7 @@ def disaster_memory(scenario: str = "vizag", zone: str = "COB-1", minutes: int =
     condition = condition_from_factors(zone_name, risk.factors)
     hero = (scenario, zone) == ("vizag", "COB-1")
     matches, deg_m = _memory.match(condition, k=3)
-    if deg_m and hero:  # serve the cached real ranking so the headline stays 82%
+    if deg_m and hero:  # serve the cached real ranking so the headline stays 81%
         matches = _memory.hero_matches(k=3)
     briefing, deg_b = _memory.briefing(condition, matches[0], zone_name)
     degraded = deg_m or deg_b

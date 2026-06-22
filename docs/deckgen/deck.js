@@ -155,7 +155,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   kicker(s, "DIFFERENTIATOR");
   title(s, "We've seen this death before");
   panel(s, 0.7, 2.3, 4.0, 3.7, "190f12", RED);
-  s.addText("82", { x: 0.7, y: 2.85, w: 4.0, h: 1.3, fontFace: HEAD, fontSize: 96, bold: true, color: RED, align: "center", margin: 0 });
+  s.addText("81", { x: 0.7, y: 2.85, w: 4.0, h: 1.3, fontFace: HEAD, fontSize: 96, bold: true, color: RED, align: "center", margin: 0 });
   s.addText("% MATCH", { x: 0.7, y: 4.15, w: 4.0, h: 0.4, fontFace: MONO, fontSize: 16, color: TEAL, align: "center", charSpacing: 2, margin: 0 });
   s.addText("Visakhapatnam coke-oven\nexplosion · 2025 · 8 killed".replace(/\n/g, "  "), { x: 0.9, y: 4.8, w: 3.6, h: 0.8, fontFace: BODY, fontSize: 14, color: TEXT, align: "center", margin: 0 });
   panel(s, 5.0, 2.3, 7.63, 2.55);
