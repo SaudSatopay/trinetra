@@ -21,6 +21,8 @@ export interface ZoneRisk {
   compound: boolean;
   factors: string[];
   time_to_threshold_min: number | null;
+  confidence?: number | null;
+  ttt_spread?: number | null;
   ignition_ref: string;
   interventions: Intervention[];
 }

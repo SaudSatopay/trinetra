@@ -44,7 +44,7 @@ app.add_middleware(
 
 def _run(scenario_name: str, minutes: int) -> list[dict]:
     sim = PlantSimulator(scenario=SCENARIOS[scenario_name], dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     return [serialize_frame(snap, engine.assess(snap)) for snap in sim.run(minutes)]
 
 
@@ -124,7 +124,7 @@ def simulate(zone: str = "COB-1", gas: str = "CH4", leak: bool = True,
     workers = max(0, min(int(workers), 6))
     scenario = _build_custom(zone, gas, leak, ignition, adjacent, workers)
     sim = PlantSimulator(scenario=scenario, dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     frames = [serialize_frame(snap, engine.assess(snap)) for snap in sim.run(minutes)]
     return {
         "scenario": "custom", "minutes": minutes, "frames": frames,
@@ -151,7 +151,7 @@ async def ingest(request: Request):
         snaps, meta = parse_csv(text)
     except ValueError as e:
         return {"error": str(e)}
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     frames = [serialize_frame(s, engine.assess(s)) for s in snaps]
     return {"scenario": "ingested", "minutes": len(frames), "frames": frames, **meta}
 
@@ -170,7 +170,7 @@ def disaster_memory(scenario: str = "vizag", zone: str = "COB-1", minutes: int =
         return _mem_cache[key]
 
     sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     zone_name = zone
     for snap in sim.run(max(1, minutes)):
@@ -221,7 +221,7 @@ def agents(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
         return _agents_cache[key]
 
     sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     snap = None
     for snap in sim.run(max(1, minutes)):
@@ -285,7 +285,7 @@ def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list
             events.append({"t": int(p.start_min), "label": label, "kind": kind})
 
     sim = PlantSimulator(scenario=scn, dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     comp_t = single_t = None
     for snap in sim.run(horizon):
         risks = engine.assess(snap)
@@ -314,7 +314,7 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
         return _response_cache[key]
 
     sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     snap = None
     for snap in sim.run(max(1, minutes)):
@@ -410,7 +410,7 @@ def compliance(scenario: str = "vizag", minutes: int = 13):
     if key in _compliance_cache:
         return _compliance_cache[key]
     sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
-    engine = CompoundRiskEngine()
+    engine = CompoundRiskEngine(compute_confidence=True)
     snap = None
     risks: dict = {}
     for snap in sim.run(max(1, minutes)):

@@ -63,7 +63,23 @@ export function ThreatPanel({
             <span className="label">Projected breach</span>
             <span className="tnum text-[18px]" style={{ color: "var(--lvl-elevated)" }}>
               <AnimatedNumber value={r.time_to_threshold_min} prefix="~" duration={0.5} />
+              {r.ttt_spread ? <span className="ml-0.5 text-[11px] text-ink-dim">±{r.ttt_spread}</span> : null}
               <span className="ml-1 text-[10px] text-ink-dim">min</span>
+            </span>
+          </div>
+        )}
+
+        {/* calibrated confidence — quantified uncertainty over the sensor-noise model */}
+        {r.compound && r.confidence != null && (
+          <div className="flex items-baseline justify-between border-t border-line pt-4">
+            <span
+              className="label"
+              title="Probability the compound verdict holds when every reading is jittered by its sensor's own noise (128-draw Monte Carlo)"
+            >
+              Alert confidence
+            </span>
+            <span className="tnum text-[18px]" style={{ color: "var(--brand)" }}>
+              <AnimatedNumber value={Math.round(r.confidence * 100)} suffix="%" duration={0.5} />
             </span>
           </div>
         )}

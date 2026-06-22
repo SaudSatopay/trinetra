@@ -20,11 +20,12 @@ Deterministic given the simulator seed → the WP2 benchmark numbers are reprodu
 """
 from __future__ import annotations
 
+import random
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Optional
 
-from ..constants import FLAMMABLE_GASES, GAS_THRESHOLDS, ZONES
+from ..constants import FLAMMABLE_GASES, GAS_THRESHOLDS, SENSOR_NOISE, ZONES
 from ..domain import IGNITION_PERMITS, PermitType, PlantSnapshot, RiskLevel
 
 # --- tuning constants (explicit & testable) ---------------------------------
@@ -42,6 +43,7 @@ COMPOUND_HIGH_FRAC = 0.70        # a high flammable level alone qualifies as evi
 COMPOUND_SLOPE = 0.012           # normalized rise/min that counts as "trending up" (noise-robust)
 INTERVENTION_MIN_SCORE = 40      # only surface interventions once it's actionable
 O2_AMBIENT = 20.9
+CONF_SAMPLES = 128               # Monte-Carlo draws for calibrated confidence
 
 
 @dataclass
@@ -79,11 +81,14 @@ class ZoneRisk:
     interventions: list                  # ranked list[Intervention]
     ignition_ref: str                    # permit id / "adjacent" / ""
     personnel: int
+    confidence: Optional[float] = None   # P(the compound call holds) under the sensor-noise model
+    ttt_spread: Optional[float] = None   # std of the projected-breach estimate (minutes)
 
 
 class CompoundRiskEngine:
-    def __init__(self, window: int = WINDOW):
+    def __init__(self, window: int = WINDOW, compute_confidence: bool = False):
         self.window = window
+        self.compute_confidence = compute_confidence  # off in the benchmark (fast, deterministic)
         self._hist: dict[str, deque] = {zid: deque(maxlen=window) for zid in ZONES}
 
     def assess(self, snap: PlantSnapshot) -> dict[str, ZoneRisk]:
@@ -152,6 +157,51 @@ class CompoundRiskEngine:
             if score >= thr:
                 return lvl
         return RiskLevel.NORMAL
+
+    # -- calibrated confidence ----------------------------------------------
+    def _confidence(self, z, f: _Features, seed: int):
+        """Monte-Carlo the compound call over the sensor-noise model: if every reading
+        is jittered by its sensor's own noise, how often does the compound verdict still
+        hold? Returns (confidence 0..1, projected-breach std in minutes). Deterministic
+        given the seed, so it stays reproducible."""
+        nominal = bool(
+            ((f.flam_level >= COMPOUND_PRESENT_FRAC and f.flam_slope > COMPOUND_SLOPE)
+             or f.flam_level >= COMPOUND_HIGH_FRAC)
+            and (f.ignition_same or f.ignition_adj)
+            and (f.personnel > 0 or f.personnel_adj > 0)
+        )
+        rng = random.Random(seed)
+        agree = 0
+        ttts: list[float] = []
+        for _ in range(CONF_SAMPLES):
+            flam = 0.0
+            for sp in FLAMMABLE_GASES:
+                v = z.gases[sp].value + rng.gauss(0.0, SENSOR_NOISE[sp])
+                flam = max(flam, v / GAS_THRESHOLDS[sp].low_alarm)
+            co = (z.gases["CO"].value + rng.gauss(0.0, SENSOR_NOISE["CO"])) / GAS_THRESHOLDS["CO"].low_alarm
+            h2s = (z.gases["H2S"].value + rng.gauss(0.0, SENSOR_NOISE["H2S"])) / GAS_THRESHOLDS["H2S"].low_alarm
+            o2v = z.gases["O2"].value + rng.gauss(0.0, SENSOR_NOISE["O2"])
+            o2d = max(0.0, (O2_AMBIENT - o2v) / (O2_AMBIENT - 16.0))
+            fp = replace(f, flam_level=flam, toxic_level=max(co, h2s), o2_deficit=o2d)
+            ev = ((fp.flam_level >= COMPOUND_PRESENT_FRAC and fp.flam_slope > COMPOUND_SLOPE)
+                  or fp.flam_level >= COMPOUND_HIGH_FRAC)
+            comp = bool(ev and (fp.ignition_same or fp.ignition_adj)
+                        and (fp.personnel > 0 or fp.personnel_adj > 0))
+            if comp == nominal:
+                agree += 1
+            if f.fastest_gas and f.fastest_slope_raw > 0.01:
+                thr = GAS_THRESHOLDS[f.fastest_gas]
+                cur = z.gases[f.fastest_gas].value + rng.gauss(0.0, SENSOR_NOISE[f.fastest_gas])
+                # the trend itself is a finite difference over noisy history -> jitter it too
+                slope = f.fastest_slope_raw + rng.gauss(0.0, SENSOR_NOISE[f.fastest_gas] * 1.414 / self.window)
+                if cur < thr.danger and slope > 0.1:
+                    ttts.append((thr.danger - cur) / slope)
+        conf = round(agree / CONF_SAMPLES, 3)
+        spread = None
+        if len(ttts) >= 8:
+            m = sum(ttts) / len(ttts)
+            spread = round((sum((x - m) ** 2 for x in ttts) / len(ttts)) ** 0.5, 1)
+        return conf, spread
 
     # -- per-zone assessment -------------------------------------------------
     def _assess_zone(self, zid: str, snap: PlantSnapshot) -> ZoneRisk:
@@ -226,5 +276,11 @@ class CompoundRiskEngine:
         elif f.ignition_adj:
             ignition_ref = "adjacent"
 
+        confidence = ttt_spread = None
+        if self.compute_confidence and score >= 20:
+            seed = (int(round(snap.t_min * 100)) * 1000003 + sum(ord(c) for c in zid)) & 0x7FFFFFFF
+            confidence, ttt_spread = self._confidence(z, f, seed)
+
         return ZoneRisk(zid, z.name, round(score, 1), level, compound, flammable_evidence,
-                        factors, ttt, interventions, ignition_ref, f.personnel)
+                        factors, ttt, interventions, ignition_ref, f.personnel,
+                        confidence, ttt_spread)

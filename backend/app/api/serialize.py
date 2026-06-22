@@ -40,6 +40,7 @@ def _zone(z: ZoneState, risk: ZoneRisk) -> dict:
         "risk": {
             "score": risk.score, "level": risk.level.value, "compound": risk.compound,
             "factors": risk.factors, "time_to_threshold_min": risk.time_to_threshold_min,
+            "confidence": risk.confidence, "ttt_spread": risk.ttt_spread,
             "ignition_ref": risk.ignition_ref,
             "interventions": [
                 {"action": i.action, "resulting_level": i.resulting_level.value, "delta": i.delta}
