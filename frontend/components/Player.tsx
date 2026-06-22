@@ -35,66 +35,54 @@ export function Player({
   const firstBaseline = frames.findIndex((f) => f.summary.baseline_alarm);
 
   return (
-    <div className="hud-panel flex items-center gap-4 px-4 py-2.5">
-      {/* scenario segmented */}
-      <div className="flex items-center gap-1.5">
+    <div className="hud-panel flex items-center gap-5 px-5 py-3">
+      {/* scenarios */}
+      <div className="flex items-center gap-1">
         {scenarios.map((s) => {
           const on = s.name === scenario;
           return (
             <button
               key={s.name}
               onClick={() => onScenario(s.name)}
-              className="group relative border px-2.5 py-1.5 transition-colors"
-              style={{
-                borderColor: on ? "var(--brand)" : "var(--line-2)",
-                background: on ? "color-mix(in srgb, var(--brand) 14%, transparent)" : "transparent",
-              }}
               title={s.title}
+              className="rounded-md px-3 py-1.5 font-mono text-[10px] lowercase tracking-wide transition-colors"
+              style={{
+                color: on ? "var(--brand)" : "var(--text-dim)",
+                background: on ? "color-mix(in srgb, var(--brand) 11%, transparent)" : "transparent",
+              }}
             >
-              <span
-                className="font-mono text-[10px] uppercase tracking-wide"
-                style={{ color: on ? "var(--brand)" : "var(--text-dim)" }}
-              >
-                {s.name}
-              </span>
-              <span
-                className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle"
-                style={{ background: s.expected_compound ? "var(--lvl-critical)" : "var(--lvl-normal)" }}
-                title={s.expected_compound ? "compound hazard" : "benign"}
-              />
+              {s.name}
             </button>
           );
         })}
       </div>
 
-      <div className="h-7 w-px bg-line" />
+      <div className="h-6 w-px bg-line" />
 
       {/* transport */}
-      <div className="flex items-center gap-2">
-        <button onClick={onReset} className="grid h-8 w-8 place-items-center border border-line-2 text-ink-dim hover:text-ink" title="Reset">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4" />
-          </svg>
+      <div className="flex items-center gap-3">
+        <button onClick={onReset} className="text-ink-dim transition-colors hover:text-ink" title="Reset">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4" /></svg>
         </button>
         <button
           onClick={onTogglePlay}
-          className="grid h-9 w-9 place-items-center border"
-          style={{ borderColor: "var(--brand)", color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 12%, transparent)" }}
+          className="grid h-9 w-9 place-items-center rounded-full transition-colors"
+          style={{ background: "var(--brand)", color: "#04110e" }}
           title={playing ? "Pause" : "Play"}
         >
           {playing ? (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
           ) : (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z" /></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z" /></svg>
           )}
         </button>
-        <div className="flex border border-line-2">
+        <div className="flex items-center gap-1.5">
           {SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => onSpeed(s)}
-              className="px-2 py-1 font-mono text-[10px]"
-              style={{ color: s === speed ? "var(--brand)" : "var(--text-dim)", background: s === speed ? "color-mix(in srgb, var(--brand) 12%, transparent)" : "transparent" }}
+              className="font-mono text-[10px] transition-colors"
+              style={{ color: s === speed ? "var(--brand)" : "var(--text-dim)" }}
             >
               {s}×
             </button>
@@ -104,20 +92,22 @@ export function Player({
 
       {/* timeline */}
       <div className="flex flex-1 items-center gap-3">
-        <span className="tnum text-[12px] text-ink-bright">T+{String(Math.floor(tNow)).padStart(2, "0")}</span>
-        <div className="relative h-2 flex-1">
+        <span className="tnum w-10 text-[11px] text-ink-dim">T+{String(Math.floor(tNow)).padStart(2, "0")}</span>
+        <div className="relative h-5 flex-1">
           <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line-2" />
-          {/* event markers */}
           {firstCompound >= 0 && len > 1 && (
-            <Marker pos={firstCompound / (len - 1)} color="var(--brand)" label="compound" />
+            <Tick pos={firstCompound / (len - 1)} color="var(--brand)" />
           )}
           {firstBaseline >= 0 && len > 1 && (
-            <Marker pos={firstBaseline / (len - 1)} color="var(--lvl-high)" label="legacy" />
+            <Tick pos={firstBaseline / (len - 1)} color="var(--lvl-high)" />
           )}
-          {/* progress */}
           <div
-            className="absolute top-1/2 h-px -translate-y-1/2 bg-brand"
+            className="absolute top-1/2 h-px -translate-y-1/2 rounded-full bg-brand"
             style={{ left: 0, width: `${len > 1 ? (index / (len - 1)) * 100 : 0}%` }}
+          />
+          <div
+            className="pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand"
+            style={{ left: `${len > 1 ? (index / (len - 1)) * 100 : 0}%`, boxShadow: "0 0 8px var(--brand-glow)" }}
           />
           <input
             type="range"
@@ -128,23 +118,17 @@ export function Player({
             className="absolute inset-0 w-full cursor-pointer opacity-0"
             aria-label="timeline"
           />
-          <div
-            className="pointer-events-none absolute top-1/2 h-3.5 w-1 -translate-y-1/2 bg-brand"
-            style={{ left: `calc(${len > 1 ? (index / (len - 1)) * 100 : 0}% - 1px)`, boxShadow: "0 0 8px var(--brand-glow)" }}
-          />
         </div>
       </div>
     </div>
   );
 }
 
-function Marker({ pos, color, label }: { pos: number; color: string; label: string }) {
+function Tick({ pos, color }: { pos: number; color: string }) {
   return (
-    <div className="absolute top-1/2 -translate-y-1/2" style={{ left: `${pos * 100}%` }}>
-      <div className="h-3 w-px" style={{ background: color }} />
-      <div className="absolute left-1/2 top-3 -translate-x-1/2 whitespace-nowrap font-mono text-[8px]" style={{ color }}>
-        {label}
-      </div>
-    </div>
+    <div
+      className="absolute top-1/2 h-2.5 w-px -translate-y-1/2"
+      style={{ left: `${pos * 100}%`, background: color, opacity: 0.7 }}
+    />
   );
 }
