@@ -441,6 +441,21 @@ def ablation():
     return _ablation_cache
 
 
+_premortem_cache: dict | None = None
+
+
+@app.get("/api/premortem")
+def premortem():
+    """Pre-mortem hazard discovery: search the plant's configuration space for the lethal
+    compound combinations that haven't happened yet, ranked by blast radius. Surfaces the
+    cross-zone hazards (gas here, ignition or crew next door) a zone-by-zone view misses."""
+    global _premortem_cache
+    if _premortem_cache is None:
+        from ..premortem import discover
+        _premortem_cache = discover()
+    return _premortem_cache
+
+
 @app.on_event("startup")
 def _prewarm_caches():
     """Warm the hero-scenario caches in the background so the first demo open is
@@ -454,6 +469,7 @@ def _prewarm_caches():
             (response, ("vizag", "COB-1", 13)),
             (agents, ("vizag", "COB-1", 13)),
             (vision, ()),
+            (premortem, ()),
         ):
             try:
                 fn(*args)

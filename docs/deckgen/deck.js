@@ -173,6 +173,24 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addText("Live conditions embedded with Gemini, matched against a corpus of real industrial disasters.", { x: 0.7, y: 6.3, w: 12, h: 0.4, fontFace: BODY, fontSize: 14, italic: true, color: DIM, margin: 0 });
 }
 
+// ============ PRE-MORTEM (proactive discovery) ============
+{
+  const s = S();
+  kicker(s, "PROACTIVE, NOT REACTIVE");
+  title(s, "Pre-mortem: the hazard that hasn't happened yet");
+  const stats = [["228", "placements searched", TEAL], ["136", "compound hazards found", RED], ["124", "cross-zone (walkdowns miss)", AMBER], ["92", "correctly cleared", GREEN]];
+  stats.forEach(([n, l, c], i) => {
+    const x = 0.7 + i * 3.0;
+    panel(s, x, 2.3, 2.85, 1.55);
+    s.addText(n, { x: x + 0.2, y: 2.5, w: 2.45, h: 0.7, fontFace: HEAD, fontSize: 34, bold: true, color: c, margin: 0 });
+    s.addText(l, { x: x + 0.2, y: 3.22, w: 2.5, h: 0.55, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", margin: 0 });
+  });
+  panel(s, 0.7, 4.1, 11.93, 1.7, "190f12", RED);
+  s.addText("LARGEST-BLAST-RADIUS DISCOVERY", { x: 1.0, y: 4.3, w: 11, h: 0.3, fontFace: MONO, fontSize: 11, color: RED, charSpacing: 1, margin: 0 });
+  s.addText("Rising methane in Coke Oven Battery #1, hot work in the bay, and the crew working next door in the Gas Cleaning Plant — compound CRITICAL by T+10. The blast radius spans the gas-cleaning plant, the confined sump and the maintenance bay. No single zone looks dangerous on its own.", { x: 1.0, y: 4.64, w: 11.3, h: 1.05, fontFace: BODY, fontSize: 15, color: BRIGHT, valign: "top", margin: 0 });
+  s.addText("Trinetra runs its own deterministic engine as an oracle across the plant's blast-radius map — discovering the cross-zone compounds a zone-by-zone walkdown rates safe, before they occur.", { x: 0.7, y: 6.05, w: 12, h: 0.6, fontFace: BODY, fontSize: 13, italic: true, color: DIM, valign: "top", margin: 0 });
+}
+
 // ============ S7 — RESPONSE ============
 {
   const s = S();

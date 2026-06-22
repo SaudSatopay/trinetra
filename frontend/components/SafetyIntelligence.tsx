@@ -32,6 +32,24 @@ interface Patterns {
   patterns: Pattern[];
   briefing: string;
 }
+interface PremortemFinding {
+  zone_name: string;
+  gas: string;
+  cross_zone: boolean;
+  t_critical: number;
+  exposed: number;
+  blast_radius_zones: number;
+  blast_zones: string[];
+  summary: string;
+}
+interface Premortem {
+  explored: number;
+  n_hazard: number;
+  n_cross_zone: number;
+  n_cleared: number;
+  findings: PremortemFinding[];
+  note: string;
+}
 
 export function SafetyIntelligence({
   scenario,
@@ -44,7 +62,8 @@ export function SafetyIntelligence({
 }) {
   const [comp, setComp] = useState<Compliance | null>(null);
   const [patterns, setPatterns] = useState<Patterns | null>(null);
-  const [open, setOpen] = useState<null | "compliance" | "patterns">(null);
+  const [premortem, setPremortem] = useState<Premortem | null>(null);
+  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem">(null);
   const known = scenario !== "custom" && scenario !== "ingested";
 
   // re-audit on scenario change and when the plant escalates into compound
@@ -68,6 +87,13 @@ export function SafetyIntelligence({
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/api/premortem`)
+      .then((r) => r.json())
+      .then((d) => !d.error && setPremortem(d))
+      .catch(() => {});
+  }, []);
+
   const deviations = known ? comp?.summary.deviations ?? 0 : 0;
 
   return (
@@ -75,10 +101,12 @@ export function SafetyIntelligence({
       <div className="flex items-center gap-2">
         <Chip label="Compliance" onClick={() => setOpen("compliance")} badge={known ? deviations : null} alert={deviations > 0} />
         <Chip label="Patterns" onClick={() => setOpen("patterns")} badge={patterns ? patterns.patterns.length : null} />
+        <Chip label="Pre-mortem" onClick={() => setOpen("premortem")} badge={premortem ? premortem.findings.length : null} />
       </div>
       <AnimatePresence>
         {open === "compliance" && <ComplianceModal data={comp} onClose={() => setOpen(null)} />}
         {open === "patterns" && <PatternsModal data={patterns} onClose={() => setOpen(null)} />}
+        {open === "premortem" && <PremortemModal data={premortem} onClose={() => setOpen(null)} />}
       </AnimatePresence>
     </>
   );
@@ -224,6 +252,72 @@ function PatternsModal({ data, onClose }: { data: Patterns | null; onClose: () =
           </div>
         ))}
       </div>
+    </Shell>
+  );
+}
+
+function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: () => void }) {
+  const tiles: [string, number, string][] = data
+    ? [
+        ["searched", data.explored, "var(--brand)"],
+        ["hazards", data.n_hazard, "var(--lvl-critical)"],
+        ["cross-zone", data.n_cross_zone, "var(--lvl-high)"],
+        ["cleared", data.n_cleared, "var(--lvl-elevated)"],
+      ]
+    : [];
+  return (
+    <Shell
+      title="Pre-mortem Hazard Discovery"
+      sub={data ? `${data.explored} placements searched — the engine as its own oracle` : "searching…"}
+      onClose={onClose}
+    >
+      {data && (
+        <>
+          <div className="mb-4 grid grid-cols-4 gap-2">
+            {tiles.map(([l, n, c], i) => (
+              <div key={i} className="rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
+                <div className="tnum text-[22px] font-bold" style={{ color: c }}>
+                  {n}
+                </div>
+                <div className="label !text-[8px] mt-1">{l}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mb-4 text-[11px] leading-relaxed text-ink-dim">{data.note}</p>
+          <div className="label mb-3">Discovered hazards · ranked by blast radius</div>
+          <div className="space-y-2.5">
+            {data.findings.map((f, i) => (
+              <div
+                key={i}
+                className="rounded-lg p-3.5"
+                style={{
+                  background: f.cross_zone ? "color-mix(in srgb, var(--lvl-high) 6%, transparent)" : "transparent",
+                  border: `1px solid ${f.cross_zone ? "color-mix(in srgb, var(--lvl-high) 26%, transparent)" : "var(--line-2)"}`,
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[12.5px] font-medium leading-snug text-ink-bright">
+                    <span className="tnum mr-2 text-ink-dim">{i + 1}.</span>
+                    {f.zone_name} · {f.gas}
+                  </span>
+                  {f.cross_zone && (
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[8px]"
+                      style={{ color: "var(--lvl-high)", border: "1px solid color-mix(in srgb, var(--lvl-high) 32%, transparent)" }}
+                    >
+                      cross-zone
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink">{f.summary}</p>
+                <div className="mt-1.5 font-mono text-[9px] text-ink-dim">
+                  blast radius {f.blast_radius_zones} zones · CRITICAL by T+{f.t_critical} · {f.exposed} exposed
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Shell>
   );
 }
