@@ -19,8 +19,11 @@ build/
 npm-debug.log*
 
 # --- AI artifacts ---
-*.pt                # YOLO weights
-chroma_db/          # vector store
+# YOLO / ONNX weights (auto-downloaded; never commit)
+*.pt
+*.onnx
+# vector store
+chroma_db/
 .cache/
 models/cache/
 
