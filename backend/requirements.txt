@@ -1,7 +1,6 @@
 # Trinetra backend dependencies.
-# NOTE: WP1 (the digital-twin simulator + run_sim.py) needs NONE of these — it is
-# pure standard library so the core demo runs anywhere with Python 3.10+.
-# These are pulled in from WP3 onward.
+# NOTE: WP1 (simulator) + WP2 (compound engine + benchmark) need NONE of these —
+# they are pure standard library, so the core runs anywhere with Python 3.10+.
 
 # --- API + realtime (WP3) ---
 fastapi>=0.115
@@ -9,20 +8,16 @@ uvicorn[standard]>=0.32
 websockets>=13
 pydantic>=2.9
 python-dotenv>=1.0
+httpx>=0.27
 
-# --- Agents + RAG (WP4) ---
+# --- Multi-agent orchestration (WP4) ---
 langgraph>=0.2
-langchain>=0.3
-langchain-google-genai>=2.0
-google-generativeai>=0.8
-chromadb>=0.5
+# Gemini (text + embeddings) is called via the REST API with httpx — no heavy SDK.
 
 # --- Computer vision over CCTV (WP4) ---
 ultralytics>=8.3
 opencv-python-headless>=4.10
-
-# --- Knowledge graph (WP5, optional) ---
-neo4j>=5.25
-
-# --- Utilities ---
 numpy>=1.26
+
+# --- Optional knowledge graph (WP5) ---
+# neo4j>=5.25

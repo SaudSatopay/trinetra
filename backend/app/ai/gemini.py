@@ -7,6 +7,7 @@ GEMINI_API_KEY / GEMINI_MODEL from backend/.env.
 from __future__ import annotations
 
 import os
+import time
 
 import httpx
 from dotenv import load_dotenv
@@ -21,6 +22,24 @@ BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 class GeminiError(RuntimeError):
     pass
+
+
+def _post(url: str, body: dict, timeout: float, retries: int = 3) -> httpx.Response:
+    """POST with retry on transient 429/503 (Gemini load) and network errors."""
+    last: Exception | None = None
+    for attempt in range(retries):
+        try:
+            r = httpx.post(url, json=body, timeout=timeout)
+        except httpx.HTTPError as e:
+            last = GeminiError(f"request failed: {e}")
+            time.sleep(0.8 * (attempt + 1))
+            continue
+        if r.status_code in (429, 503):
+            last = GeminiError(f"HTTP {r.status_code}: {r.text[:160]}")
+            time.sleep(0.8 * (attempt + 1))
+            continue
+        return r
+    raise last or GeminiError("request failed after retries")
 
 
 def generate(
@@ -42,10 +61,7 @@ def generate(
     if system:
         body["systemInstruction"] = {"parts": [{"text": system}]}
 
-    try:
-        r = httpx.post(url, json=body, timeout=timeout)
-    except httpx.HTTPError as e:
-        raise GeminiError(f"request failed: {e}") from e
+    r = _post(url, body, timeout)
     if r.status_code != 200:
         raise GeminiError(f"HTTP {r.status_code}: {r.text[:300]}")
 
@@ -63,10 +79,7 @@ def embed(text: str, model: str = "gemini-embedding-001", timeout: float = 30.0)
         raise GeminiError("GEMINI_API_KEY not set in backend/.env")
     url = f"{BASE}/models/{model}:embedContent?key={API_KEY}"
     body = {"model": f"models/{model}", "content": {"parts": [{"text": text}]}}
-    try:
-        r = httpx.post(url, json=body, timeout=timeout)
-    except httpx.HTTPError as e:
-        raise GeminiError(f"embed request failed: {e}") from e
+    r = _post(url, body, timeout)
     if r.status_code != 200:
         raise GeminiError(f"embed HTTP {r.status_code}: {r.text[:300]}")
     try:

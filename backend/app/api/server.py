@@ -19,6 +19,7 @@ import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from ..agents import run_pipeline
 from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..engine import CompoundRiskEngine
 from ..scenarios import SCENARIOS
@@ -108,6 +109,35 @@ def disaster_memory(scenario: str = "vizag", zone: str = "COB-1", minutes: int =
         ],
     }
     _mem_cache[key] = result
+    return result
+
+
+_agents_cache: dict[tuple, dict] = {}
+
+
+@app.get("/api/agents")
+def agents(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
+    """Run the LangGraph multi-agent pipeline for a zone and return the agent trace."""
+    if scenario not in SCENARIOS:
+        return {"error": f"unknown scenario '{scenario}'"}
+    key = (scenario, zone, minutes)
+    if key in _agents_cache:
+        return _agents_cache[key]
+
+    sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    risk = None
+    snap = None
+    for snap in sim.run(max(1, minutes)):
+        risks = engine.assess(snap)
+        if zone in risks:
+            risk = risks[zone]
+    if risk is None or snap is None:
+        return {"error": f"unknown zone '{zone}'"}
+
+    out = run_pipeline(snap, zone, risk)
+    result = {k: out.get(k) for k in ("trace", "sensor", "permit", "vision", "reasoning", "precedent", "response")}
+    _agents_cache[key] = result
     return result
 
 
