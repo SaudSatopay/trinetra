@@ -51,7 +51,7 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 | 10 | clear | CRITICAL |
 | **14** | **first gas alarm** (CH4) | CRITICAL |
 
-**Lead time: 6 minutes** — every gas reads below its setpoint while the lethal pattern is already forming. Six minutes is the difference between an evacuation and a funeral.
+**Lead time: 6 minutes** — every gas reads below its setpoint while the lethal pattern is already forming. Six minutes is the window an operator gets to suspend the permit and clear the floor before ignition.
 
 > Reproduce: `cd backend && python run_engine.py --scenario vizag`
 

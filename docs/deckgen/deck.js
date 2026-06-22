@@ -60,7 +60,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
     { text: "No layer connected those signals in time.", options: { color: RED, bold: true } },
   ], { x: 0.7, y: 2.2, w: 6.7, h: 3, fontFace: BODY, fontSize: 18, lineSpacingMultiple: 1.25, margin: 0, valign: "top" });
 
-  const cards = [["8", "workers killed at Vizag, Jan 2025", RED], ["6,500+", "fatal workplace accidents / year (India)", AMBER], ["60%", "of large plants rely on manual handoffs", TEAL]];
+  const cards = [["8", "workers killed at Vizag, Jan 2025", RED], ["3 / day", "deaths in India's registered factories (DGFASLI)", AMBER], ["0", "layers connected those signals in time", TEAL]];
   let y = 2.05;
   cards.forEach(([n, l, c]) => {
     panel(s, 7.9, y, 4.7, 1.42);
@@ -89,7 +89,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addShape(p.shapes.RECTANGLE, { x: 6.5, y: 4.32, w: 0.33, h: 0.03, fill: { color: DIM } });
   panel(s, 0.7, 4.55, 11.93, 1.5, "190f12", RED);
   s.addText("A lethal combination no single sensor flags", { x: 1.1, y: 4.75, w: 11, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: RED, margin: 0 });
-  s.addText("Three green lights. One lethal combination — hours before it becomes critical.", { x: 1.1, y: 5.35, w: 11, h: 0.5, fontFace: BODY, fontSize: 15, color: TEXT, margin: 0 });
+  s.addText("Three green lights. One lethal combination — minutes before it becomes critical.", { x: 1.1, y: 5.35, w: 11, h: 0.5, fontFace: BODY, fontSize: 15, color: TEXT, margin: 0 });
 }
 
 // ============ S4 — DEMO MOMENT ============
@@ -115,11 +115,11 @@ function mark(s, cx, cy, sc) { // triangle + eye
   dot(s, 7.93, 3.45, RED, 0.16);
   s.addText("COMPOUND ALERT", { x: 8.43, y: 3.25, w: 4, h: 0.6, fontFace: HEAD, fontSize: 26, bold: true, color: RED, margin: 0 });
   s.addText([
-    { text: "COB-1 critical · breach predicted ~22 min", options: { color: TEXT, breakLine: true } },
+    { text: "COB-1 critical · breach predicted ~36 min", options: { color: TEXT, breakLine: true } },
     { text: "rising CH4 + hot-work permit + 3 personnel", options: { color: DIM } },
   ], { x: 7.93, y: 4.2, w: 4.4, h: 0.8, fontFace: BODY, fontSize: 14, lineSpacingMultiple: 1.2, margin: 0 });
   s.addText("multi-signal fusion", { x: 7.93, y: 5.4, w: 4.4, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, margin: 0 });
-  s.addText("Six minutes is the difference between an evacuation and a funeral.", { x: 0.7, y: 6.45, w: 12, h: 0.4, fontFace: BODY, fontSize: 15, italic: true, color: DIM, margin: 0 });
+  s.addText("Six minutes of warning — while every gas sensor still reads below its setpoint.", { x: 0.7, y: 6.45, w: 12, h: 0.4, fontFace: BODY, fontSize: 15, italic: true, color: DIM, margin: 0 });
 }
 
 // ============ S5 — ARCHITECTURE ============
@@ -130,7 +130,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   const pills = [
     ["Compound\nEngine", "fuses gas trend +\npermits + people", TEAL],
     ["Vision", "YOLOv8 worker &\nzone intrusion", BRIGHT],
-    ["Multi-Agent", "LangGraph 6-agent\npipeline", BRIGHT],
+    ["Reasoning Graph", "LangGraph 6-stage\nauditable trace", BRIGHT],
     ["Disaster RAG", "Gemini precedent\nmatching", BRIGHT],
     ["Response", "report + multilingual\nalerts", RED],
   ];
@@ -162,7 +162,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addText("GROUNDED BRIEFING", { x: 5.3, y: 2.55, w: 7, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
   s.addText("“The present condition echoes the Visakhapatnam coke-oven explosion — rising CH4 alongside an active ignition source mirrors the precedent's root cause of unacted-upon warnings. The single most important action is the immediate cessation of hot-work and evacuation of personnel.”", { x: 5.3, y: 3.0, w: 7.05, h: 1.7, fontFace: BODY, fontSize: 16, color: BRIGHT, italic: true, margin: 0, valign: "top" });
   // other precedents
-  const others = [["73%", "Texas City refinery"], ["72%", "Hot-work ignition"], ["—", "Piper Alpha"]];
+  const others = [["73%", "Hot-work ignition"], ["71%", "Confined-space H2S"], ["—", "Piper Alpha"]];
   let x = 5.0;
   others.forEach(([n, l]) => {
     panel(s, x, 5.05, 2.45, 0.95, PANEL2);
@@ -262,7 +262,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
 {
   const s = S();
   mark(s, 6.66, 1.65, 0.45);
-  s.addText("6,500 deaths a year.\nThe data already exists.".replace(/\n/g, "\n"), { x: 0, y: 2.6, w: W, h: 1.5, fontFace: HEAD, fontSize: 40, bold: true, color: BRIGHT, align: "center", lineSpacingMultiple: 1.05, margin: 0 });
+  s.addText("Three workers a day.\nThe data already exists.".replace(/\n/g, "\n"), { x: 0, y: 2.6, w: W, h: 1.5, fontFace: HEAD, fontSize: 40, bold: true, color: BRIGHT, align: "center", lineSpacingMultiple: 1.05, margin: 0 });
   s.addText("Trinetra is the layer that acts — before, not after.", { x: 0, y: 4.5, w: W, h: 0.6, fontFace: HEAD, fontSize: 26, bold: true, color: TEAL, align: "center", margin: 0 });
   s.addText([
     { text: "100% recall", options: { color: TEAL } }, { text: "   ·   ", options: { color: DIM } },

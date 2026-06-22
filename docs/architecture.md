@@ -18,9 +18,9 @@
 
 ### Intelligence layer (WP2 / WP4)
 - **Deterministic compound-risk engine (WP2):** fuses, per zone, (a) flammable-gas *trend/slope* even below alarm, (b) ignition-source permits, (c) personnel presence, (d) confined-space + O2 depletion, (e) neighbour-zone proximity (blast radius). Emits a `RiskLevel`, the contributing factors, and a **lead-time-to-threshold** estimate by extrapolating the trend.
-- **LangGraph multi-agent wrap (WP4):** Sensor / Permit / Vision / Context-RAG agents feed a Compound-Risk Reasoner; an Emergency Response Orchestrator acts on confirmed threshold breach.
-- **RAG (WP4):** ChromaDB over OISD / Factory Act / DGMS + incident corpus, via Gemini, to answer *why* a combination is dangerous, with citations.
-- **Computer vision (WP4):** YOLOv8 on CCTV clips → worker / PPE / zone-intrusion detections that feed the Vision agent.
+- **LangGraph reasoning graph (WP4):** a compiled 6-stage `StateGraph` with a full auditable trace — Sensor / Permit / Vision / Context-RAG stages feed a Compound-Risk Reasoner; an Emergency Response Orchestrator acts on a confirmed threshold breach. The stages are deterministic feature extractors, not autonomous LLM agents — by design, so the life-safety path stays reproducible.
+- **RAG (WP4):** Gemini embeddings + in-memory cosine similarity over a curated corpus of real industrial-incident precedents (no vector DB needed at this corpus size), with a deterministic lexical fallback when the API is unavailable — to answer *why* a combination is dangerous, grounded in the closest documented disaster.
+- **Computer vision (WP4):** YOLOv8 person + restricted-zone-intrusion detection on a sample frame. PPE classification and a live camera (RTSP) feed are connectors on the same interface, not yet wired; the graph's Vision stage currently uses permit-derived headcount.
 
 ### Presentation layer (WP3)
 - Next.js + React + Tailwind control room.

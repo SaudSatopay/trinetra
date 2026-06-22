@@ -23,7 +23,7 @@
 ### 1:30 – 2:05 · "We've seen this death before"
 > "And it recognises it. Trinetra matched these live conditions against a library of real industrial disasters."
 
-**On screen:** the **Disaster Memory** card — **"81% match — Visakhapatnam Steel Plant coke-oven explosion, 8 killed"** — and read one line of the AI briefing. Note the precedents below (Texas City, hot-work ignition).
+**On screen:** the **Disaster Memory** card — **"81% match — Visakhapatnam Steel Plant coke-oven explosion, 8 killed"** — and read one line of the AI briefing. Note the precedents below (hot-work ignition 73%, confined-space H2S 71%).
 
 ### 2:05 – 2:35 · The autonomous response
 > "Because it's caught early, the system doesn't just alarm — it responds."
@@ -38,7 +38,7 @@
 ### 2:35 – 3:00 · The proof + close
 > "On a 25-scenario benchmark, Trinetra caught every compound hazard with zero false alarms — an average of **seven minutes** before the legacy system. On the Vizag reconstruction: **six minutes** of warning, while every gas sensor still read green. And the context isn't decoration — strip it out and a naive gas-trend rule still false-alarms **64%** of the time. The fusion is what takes that to **zero**."
 >
-> "Six thousand five hundred deaths a year. The data already exists. **Trinetra is the layer that acts on it — before, not after.**"
+> "Three workers die every day in India's factories — and that's just the ones we count. The data to stop it already exists. Six minutes is the difference between an evacuation and a funeral — and **Trinetra is the layer that acts on it: before, not after.**"
 
 *(Optional interactive beats, if time / for live Q&A: hit **`custom`** and toggle ignition off → the compound alert vanishes, on → it returns. Or hit the **connector** and upload a SCADA CSV — the same engine replays real data.)*
 

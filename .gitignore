@@ -22,8 +22,6 @@ npm-debug.log*
 # YOLO / ONNX weights (auto-downloaded; never commit)
 *.pt
 *.onnx
-# vector store
-chroma_db/
 .cache/
 models/cache/
 

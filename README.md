@@ -19,7 +19,7 @@ Trinetra fuses gas sensors, permits, CCTV and shift logs into one real-time brai
 
 ## The 8 minutes that should not have been silent
 
-On **13 January 2025, eight workers died** in a coke-oven-battery explosion at the **Visakhapatnam Steel Plant**. The gas sensors had data. The permits were logged. SCADA was running. **No layer connected those signals in time.** India records **6,500+ fatal workplace accidents a year**. The bottleneck is not missing sensors — it is the missing *intelligence layer*.
+On **13 January 2025, eight workers died** in a coke-oven-battery explosion at the **Visakhapatnam Steel Plant**. The gas sensors had data. The permits were logged. SCADA was running. **No layer connected those signals in time.** In India's registered factories alone, **about three workers die every day** ([DGFASLI / Ministry of Labour data](https://www.indiaspend.com/special-reports/3-workers-die-every-day-in-indian-factories-govt-data-show-850083)) — and that counts only the organised sector. The bottleneck is not missing sensors — it is the missing *intelligence layer*.
 
 ## The thesis: compound risk
 
@@ -44,15 +44,15 @@ While the incident develops, the two systems live in **split realities**:
 | t = 8 min | 🟢 **ALL CLEAR** | 🔴 **COMPOUND ALERT** |
 | | *every gas below its setpoint* | *COB-1 critical · breach predicted · evacuate now* |
 
-**+6 minutes of early warning** — the difference between an evacuation and a funeral.
+**+6 minutes of early warning** — while every gas sensor still reads below its setpoint.
 
 ## Five differentiators (the multi-modal brain)
 
 | | | |
 |---|---|---|
 | 🟢 **Compound engine** | catches danger *below* single-sensor thresholds | `100% recall · 0% FP` |
-| 👁️ **Computer vision** | YOLOv8 — worker + restricted-zone-intrusion on CCTV | `/api/vision` |
-| 🤖 **Multi-agent** | LangGraph 6-agent auditable pipeline | `/api/agents` |
+| 👁️ **Computer vision** | YOLOv8 — worker + restricted-zone-intrusion on a sample frame | `/api/vision` |
+| 🤖 **Reasoning graph** | LangGraph 6-stage auditable trace (deterministic stages) | `/api/agents` |
 | 📚 **Disaster memory (RAG)** | matches live conditions to real disasters via Gemini | `81% Vizag match` |
 | 🚨 **Autonomous response** | OISD/Factory-Act incident report + **Telugu/Hindi** alerts | `/api/response` |
 
@@ -67,10 +67,10 @@ While the incident develops, the two systems live in **split realities**:
 | 🎛️ **Scenario editor** | judges toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
 | 🔌 **SCADA connector** | upload a real SCADA/permit CSV and replay it through the same engine — *a connector, not a rewrite* | `/api/ingest` |
 | 📚 **Pattern intelligence** | mines recurring causal patterns across a near-miss + incident corpus → ranked prevention priorities | `/api/patterns` |
-| ✅ **Compliance & audit** | continuous OISD / DGMS / Factory-Act audit of the live plant — deviations + corrective actions | `/api/compliance` |
+| ✅ **Compliance & audit** | live OISD / DGMS / Factory-Act audit of the plant state — per-zone deviations + corrective actions | `/api/compliance` |
 | 🛟 **Demo-safe** | cached/golden fallbacks keep the room fully functional if the LLM is rate-limited; **Judge Mode** jumps to the money shot in one click | `TRINETRA_DEMO_MODE=1` |
 
-> **Full problem-statement coverage** — Trinetra implements all six illustrative builds: Compound Risk Engine · Geospatial Safety Heatmap · Incident Pattern Intelligence · Digital Permit Intelligence · Emergency Response Orchestrator · Quality & Compliance Audit Agent — and every suggested technology (multi-agent · geospatial · RAG · CV · IoT/SCADA · knowledge graph).
+> **Full problem-statement coverage** — Trinetra spans all six illustrative builds: three as the production core (**Compound Risk Engine · Digital Permit Intelligence · Emergency Response Orchestrator**) and three as focused, working MVPs (**Geospatial Safety Heatmap · Incident Pattern Intelligence · Quality & Compliance Audit Agent**) — across every suggested technology (multi-agent · geospatial · RAG · CV · IoT/SCADA · knowledge graph).
 
 ## Architecture
 
