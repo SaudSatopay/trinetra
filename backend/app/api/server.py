@@ -21,6 +21,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ..agents import run_pipeline
 from ..ai.disaster_memory import DisasterMemory, condition_from_factors
+from ..ai.incident import draft_incident_report, evacuation_alert
+from ..constants import PLANT_NAME, ZONES
 from ..engine import CompoundRiskEngine
 from ..scenarios import SCENARIOS
 from ..simulator import PlantSimulator
@@ -168,6 +170,73 @@ def vision():
         return _vision_cache
     except Exception as e:
         return {"error": f"vision unavailable: {e}"}
+
+
+_response_cache: dict = {}
+
+
+@app.get("/api/response")
+def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
+    """Orchestrate the autonomous response: actions + incident report + multilingual alert."""
+    if scenario not in SCENARIOS:
+        return {"error": f"unknown scenario '{scenario}'"}
+    key = (scenario, zone)
+    if key in _response_cache:
+        return _response_cache[key]
+
+    sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    risk = None
+    snap = None
+    for snap in sim.run(max(1, minutes)):
+        risks = engine.assess(snap)
+        if zone in risks:
+            risk = risks[zone]
+    if risk is None or snap is None or zone not in ZONES:
+        return {"error": f"unknown zone '{zone}'"}
+
+    z = snap.zones[zone]
+    condition = condition_from_factors(z.name, risk.factors)
+    try:
+        m = _memory.match(condition, k=1)[0]
+        precedent = f"{m.incident['title']} ({m.incident['date']}, {m.incident['casualties']}) - {int(m.similarity * 100)}% match"
+    except Exception:
+        precedent = "(unavailable)"
+
+    event = {
+        "facility": PLANT_NAME, "zone": zone, "zone_kind": ZONES[zone].kind,
+        "t_min": int(snap.t_min), "level": risk.level.value, "score": int(risk.score),
+        "ttt": int(risk.time_to_threshold_min or 0),
+        "permits": [f"{p.id} ({p.type.value})" for p in z.active_permits],
+        "personnel": len(z.worker_ids), "factors": risk.factors, "precedent": precedent,
+    }
+    try:
+        report = draft_incident_report(event)
+    except Exception as e:
+        report = f"(report unavailable: {e})"
+    alert = evacuation_alert(z.name)
+
+    actions = []
+    if risk.interventions:
+        actions.append(f"Execute most-effective control: {risk.interventions[0].action}")
+    actions += [
+        f"Broadcast multilingual evacuation alert to {z.name}",
+        "Auto-dispatch emergency response team",
+        "Freeze sensor + CCTV evidence for the investigation record",
+        "File the preliminary incident report with the safety officer",
+    ]
+
+    package = {
+        "zone": zone, "zone_name": z.name, "level": risk.level.value,
+        "auto_executed": risk.level.value == "critical",
+        "actions": actions, "incident_report": report, "alert": alert,
+        "evidence": {
+            "sensor_snapshot": f"T+{int(snap.t_min)} min telemetry frozen",
+            "cctv": "frame captured", "permits": [p.id for p in z.active_permits],
+        },
+    }
+    _response_cache[key] = package
+    return package
 
 
 @app.websocket("/ws")

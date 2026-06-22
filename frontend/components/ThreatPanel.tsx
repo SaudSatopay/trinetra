@@ -2,6 +2,7 @@ import { Gas, Threshold, Zone } from "@/lib/types";
 import { levelColor, levelLabel, GAS_ORDER } from "@/lib/risk";
 import { RiskGauge } from "./RiskGauge";
 import { DisasterMemory } from "./DisasterMemory";
+import { ResponseTrigger } from "./ResponseTrigger";
 
 export function ThreatPanel({
   zone,
@@ -107,6 +108,8 @@ export function ThreatPanel({
             ))}
           </div>
         )}
+
+        <ResponseTrigger scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound} />
 
         {/* atmosphere */}
         <div className="border-t border-line pt-4">
