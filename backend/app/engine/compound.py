@@ -163,8 +163,9 @@ class CompoundRiskEngine:
 
         factors: list[str] = []
         if f.flam_slope > COMPOUND_SLOPE and f.fastest_gas and f.flam_level >= COMPOUND_PRESENT_FRAC:
-            factors.append(f"{f.fastest_gas} rising {f.fastest_slope_raw:+.1f}/min while still only "
-                           f"{int(f.flam_level * 100)}% of alarm (sub-threshold)")
+            pct = int(f.flam_level * 100)
+            qualifier = f"still only {pct}% of alarm (sub-threshold)" if f.flam_level < 1.0 else f"now {pct}% of alarm"
+            factors.append(f"{f.fastest_gas} rising {f.fastest_slope_raw:+.1f}/min, {qualifier}")
         elif f.flam_level >= COMPOUND_HIGH_FRAC:
             factors.append(f"flammable gas at {int(f.flam_level * 100)}% of alarm")
         if f.ignition_same:

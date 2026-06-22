@@ -24,10 +24,11 @@ from ..ai import golden
 from ..ai.disaster_memory import DisasterMemory, condition_from_factors
 from ..ai.incident import draft_incident_report, evacuation_alert
 from ..constants import PLANT_NAME, ZONES
+from ..domain import Permit, PermitType, Worker
 from ..engine import CompoundRiskEngine
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
-from ..scenarios import SCENARIOS
+from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
 
@@ -67,6 +68,65 @@ def get_frames(scenario_name: str, minutes: int = 45):
     if scenario_name not in SCENARIOS:
         return {"error": f"unknown scenario '{scenario_name}'", "available": list(SCENARIOS)}
     return {"scenario": scenario_name, "minutes": minutes, "frames": _run(scenario_name, minutes)}
+
+
+# Peaks chosen so an injected leak stays sub-alarm for several minutes, then crosses
+# its single-sensor setpoint mid-run (the deceptive build-up the engine is built for).
+LEAK_PEAKS = {"CH4": 58.0, "CO": 175.0, "H2S": 24.0}
+
+
+def _build_custom(zone: str, gas: str, leak: bool, ignition: bool, adjacent: bool, workers: int) -> Scenario:
+    """Assemble an ad-hoc scenario from the editor's toggles."""
+    permits: list = []
+    registry: list = []
+    if ignition:
+        # the ignition source itself — personnel are controlled separately (workers toggle)
+        # so each factor of the compound pattern can be toggled independently.
+        ign_zone = ZONES[zone].neighbours[0] if (adjacent and ZONES[zone].neighbours) else zone
+        permits.append(Permit("PTW-SIM-HW", PermitType.HOT_WORK, ign_zone, [], 0, 60, "Hot work / ignition source (sim)"))
+    if workers > 0:
+        wids = [f"SIM-P{i + 1}" for i in range(workers)]
+        permits.append(Permit("PTW-SIM-CS", PermitType.CONFINED_SPACE, zone, wids, 0, 60, "Personnel in zone (sim)"))
+        registry += [Worker(w, f"Worker {i + 1}", "Operator") for i, w in enumerate(wids)]
+
+    confined = ZONES[zone].kind == "confined_space"
+    peak = LEAK_PEAKS[gas]
+
+    def inject(t: float):
+        if not leak:
+            return {}
+        o = {(zone, gas): ramp(t, 3, peak, 42)}
+        if confined and gas != "O2":
+            o[(zone, "O2")] = -ramp(t, 6, 4.0, 42)
+        return o
+
+    expected = bool(leak and ignition and workers > 0)
+    return Scenario("custom", "Custom scenario", "User-controlled scenario.",
+                    expected_compound=expected, hazard_zone=zone,
+                    permits=permits, workers=registry, inject=inject)
+
+
+@app.get("/api/simulate")
+def simulate(zone: str = "COB-1", gas: str = "CH4", leak: bool = True,
+             ignition: bool = True, adjacent: bool = False, workers: int = 3, minutes: int = 45):
+    """Run the engine on an ad-hoc scenario built from the scenario-editor toggles.
+
+    Returns frames in the same shape as /api/frames, so the whole control room
+    renders a user-built scenario with no other changes."""
+    if zone not in ZONES:
+        return {"error": f"unknown zone '{zone}'", "available": list(ZONES)}
+    if gas not in LEAK_PEAKS:
+        gas = "CH4"
+    workers = max(0, min(int(workers), 6))
+    scenario = _build_custom(zone, gas, leak, ignition, adjacent, workers)
+    sim = PlantSimulator(scenario=scenario, dt_min=1.0, seed=42)
+    engine = CompoundRiskEngine()
+    frames = [serialize_frame(snap, engine.assess(snap)) for snap in sim.run(minutes)]
+    return {
+        "scenario": "custom", "minutes": minutes, "frames": frames,
+        "config": {"zone": zone, "gas": gas, "leak": leak, "ignition": ignition,
+                   "adjacent": adjacent, "workers": workers},
+    }
 
 
 _memory = DisasterMemory()

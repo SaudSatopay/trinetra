@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { getFrames, getPlant, getScenarios, API_BASE } from "@/lib/api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getFrames, getPlant, getScenarios, getSimulate, SimConfig, API_BASE } from "@/lib/api";
 import { Frame, Plant, ScenarioInfo, Zone } from "@/lib/types";
 import { TopBar } from "@/components/TopBar";
 import { PlantSchematic } from "@/components/PlantSchematic";
 import { ThreatPanel } from "@/components/ThreatPanel";
 import { DualStatus } from "@/components/DualStatus";
 import { Player } from "@/components/Player";
+import { ScenarioEditor } from "@/components/ScenarioEditor";
 import { Logo } from "@/components/Logo";
 import { CCTVTile } from "@/components/CCTVTile";
 
@@ -15,12 +16,16 @@ export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
   const [scenario, setScenario] = useState("vizag");
+  const [custom, setCustom] = useState<SimConfig>({
+    zone: "COB-1", gas: "CH4", leak: true, ignition: true, adjacent: false, workers: 3,
+  });
   const [frames, setFrames] = useState<Frame[]>([]);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(4);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const prevScenario = useRef("");
 
   useEffect(() => {
     (async () => {
@@ -35,18 +40,31 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
-        const f = await getFrames(scenario, 55);
+        const f = scenario === "custom" ? await getSimulate(custom, 55) : await getFrames(scenario, 55);
+        if (cancelled) return;
         setFrames(f);
-        setIndex(0);
-        setPlaying(true);
-        setSelected(null);
+        if (prevScenario.current !== scenario) {
+          // switched scenario: start from the top
+          setIndex(0);
+          setPlaying(true);
+          setSelected(null);
+          prevScenario.current = scenario;
+        } else {
+          // a custom toggle changed: hold the clock so the effect is visible at the same moment
+          setIndex((i) => Math.min(i, Math.max(0, f.length - 1)));
+          setPlaying(false);
+        }
       } catch {
-        setError(`Cannot load frames from ${API_BASE}.`);
+        if (!cancelled) setError(`Cannot load frames from ${API_BASE}.`);
       }
     })();
-  }, [scenario]);
+    return () => {
+      cancelled = true;
+    };
+  }, [scenario, custom]);
 
   useEffect(() => {
     if (!playing || frames.length === 0) return;
@@ -62,6 +80,14 @@ export default function Page() {
 
   const frame = frames[index] ?? null;
   const history = useMemo(() => frames.slice(0, index + 1), [frames, index]);
+  const playerScenarios = useMemo<ScenarioInfo[]>(
+    () => [
+      ...scenarios,
+      { name: "custom", title: "Custom scenario — you control the factors", description: "",
+        expected_compound: false, hazard_zone: "COB-1" },
+    ],
+    [scenarios],
+  );
   const activeZoneId = selected ?? frame?.summary.top_zone ?? null;
   const activeZone: Zone | null = frame ? frame.zones.find((z) => z.id === activeZoneId) ?? null : null;
 
@@ -107,9 +133,16 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="px-4 py-4">
+      <div className="space-y-3 px-4 py-4">
+        {scenario === "custom" && (
+          <ScenarioEditor
+            config={custom}
+            onChange={setCustom}
+            compoundNow={!!frame?.summary.compound_alert}
+          />
+        )}
         <Player
-          scenarios={scenarios}
+          scenarios={playerScenarios}
           scenario={scenario}
           onScenario={setScenario}
           playing={playing}

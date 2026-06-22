@@ -16,3 +16,21 @@ export async function getFrames(scenario: string, minutes = 50): Promise<Frame[]
   const data = await j<{ frames: Frame[] }>(`/api/frames/${scenario}?minutes=${minutes}`);
   return data.frames;
 }
+
+export interface SimConfig {
+  zone: string;
+  gas: string;
+  leak: boolean;
+  ignition: boolean;
+  adjacent: boolean;
+  workers: number;
+}
+
+export async function getSimulate(c: SimConfig, minutes = 50): Promise<Frame[]> {
+  const q = new URLSearchParams({
+    zone: c.zone, gas: c.gas, leak: String(c.leak), ignition: String(c.ignition),
+    adjacent: String(c.adjacent), workers: String(c.workers), minutes: String(minutes),
+  });
+  const data = await j<{ frames: Frame[] }>(`/api/simulate?${q.toString()}`);
+  return data.frames;
+}
