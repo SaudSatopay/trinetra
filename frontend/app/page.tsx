@@ -157,14 +157,14 @@ export default function Page() {
       <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} onJudgeMode={judgeMode} />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
-        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+        <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} />
           <div className="flex h-[124px] shrink-0 gap-4">
             <CCTVTile />
             <DualStatus history={history} />
           </div>
         </div>
-        <div className="flex w-[372px] shrink-0 flex-col">
+        <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
           <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />
         </div>
       </div>

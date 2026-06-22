@@ -84,15 +84,19 @@ export function ResponseTrigger({
   };
 
   return (
-    <div className="border-t border-line pt-4">
+    <div className="rise-in border-t border-line pt-4">
       <button
         onClick={openModal}
-        className="flex w-full items-center justify-between rounded-lg px-3.5 py-3 transition-colors hover:brightness-125"
+        className="relative flex w-full items-center justify-between rounded-lg px-3.5 py-3 transition-colors hover:brightness-125"
         style={{
           background: "color-mix(in srgb, var(--lvl-critical) 10%, transparent)",
           border: "1px solid color-mix(in srgb, var(--lvl-critical) 32%, transparent)",
         }}
       >
+        <span
+          className="attn-ring pointer-events-none absolute inset-0 rounded-lg"
+          style={{ border: "1px solid var(--lvl-critical)" }}
+        />
         <span className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--lvl-critical)" }} />
           <span className="font-display text-[13px] font-semibold" style={{ color: "var(--lvl-critical)" }}>
@@ -125,15 +129,27 @@ function Modal({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
-      style={{ background: "rgba(2,5,8,0.78)", backdropFilter: "blur(3px)" }}
+      style={{
+        background:
+          "radial-gradient(640px 460px at 50% 46%, rgba(251,59,78,0.12), transparent 62%), rgba(2,5,8,0.82)",
+        backdropFilter: "blur(3px)",
+      }}
       onClick={onClose}
     >
+      <span
+        className="shockwave pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] rounded-full"
+        style={{ border: "2px solid var(--lvl-critical)" }}
+      />
+      <span
+        className="shockwave pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] rounded-full"
+        style={{ border: "2px solid var(--lvl-critical)", animationDelay: "0.13s" }}
+      />
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 6 }}
-        transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
-        className="hud-panel flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden"
+        transition={{ duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
+        className="response-charge hud-panel flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
@@ -199,14 +215,29 @@ function Modal({
             <div className="space-y-6 overflow-y-auto p-6">
               <div>
                 <div className="label mb-3">Actions executed</div>
-                <ul className="space-y-2.5">
+                <motion.ul
+                  className="space-y-2.5"
+                  initial="hidden"
+                  animate="show"
+                  variants={{ show: { transition: { delayChildren: 0.18, staggerChildren: 0.1 } } }}
+                >
                   {data.actions.map((a, i) => (
-                    <li key={i} className="flex gap-2 text-[12px] leading-snug text-ink">
-                      <span style={{ color: "var(--brand)" }}>✓</span>
+                    <motion.li
+                      key={i}
+                      className="flex gap-2 text-[12px] leading-snug text-ink"
+                      variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }}
+                    >
+                      <motion.span
+                        style={{ color: "var(--brand)" }}
+                        variants={{ hidden: { scale: 0 }, show: { scale: 1 } }}
+                        transition={{ type: "spring", stiffness: 500, damping: 18 }}
+                      >
+                        ✓
+                      </motion.span>
                       <span>{a}</span>
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
               </div>
 
               {data.evidence_timeline && data.evidence_timeline.length > 0 && (
