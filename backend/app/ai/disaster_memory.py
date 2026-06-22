@@ -183,7 +183,7 @@ class DisasterMemory:
     # Cached real precedent ranking for the Vizag hero path. These are the live
     # embedding results (kept so the headline 82% stays consistent with the deck
     # and demo when the API is rate-limited).
-    _HERO = [("vizag-coke-2025", 0.82), ("hotwork-flammable-generic", 0.73), ("confined-h2s-o2-generic", 0.72)]
+    _HERO = [("vizag-coke-2025", 0.81), ("hotwork-flammable-generic", 0.73), ("confined-h2s-o2-generic", 0.71)]
 
     def __init__(self) -> None:
         self._vecs: list[tuple[dict, list[float]]] | None = None

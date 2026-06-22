@@ -17,13 +17,14 @@ def main():
     print("LIVE CONDITION:\n ", condition, "\n")
 
     mem = DisasterMemory()
-    matches = mem.match(condition, k=3)
-    print("CLOSEST HISTORICAL PRECEDENTS:")
+    matches, degraded = mem.match(condition, k=3)
+    print(f"CLOSEST HISTORICAL PRECEDENTS  ({'lexical fallback' if degraded else 'live embeddings'}):")
     for m in matches:
-        print(f"  {int(m.similarity * 100):>3}%  {m.incident['title']} ({m.incident['date']})")
+        print(f"  {round(m.similarity * 100):>3}%  {m.incident['title']} ({m.incident['date']})")
 
-    print("\nGEMINI BRIEFING (grounded in the top match):")
-    print(" ", mem.briefing(condition, matches[0]))
+    briefing, brief_degraded = mem.briefing(condition, matches[0], "Coke Oven Battery #1")
+    print(f"\nBRIEFING ({'cached/golden' if brief_degraded else 'live Gemini'}, grounded in the top match):")
+    print(" ", briefing)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,9 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
 API_KEY = os.getenv("GEMINI_API_KEY", "")
 MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 BASE = "https://generativelanguage.googleapis.com/v1beta"
+# Set TRINETRA_DEMO_MODE=1 to skip live text-generation entirely and serve the
+# vetted cached/golden analysis instantly (no 429 wait) — for demo recording.
+DEMO_MODE = bool(os.getenv("TRINETRA_DEMO_MODE"))
 
 
 class GeminiError(RuntimeError):
@@ -53,6 +56,8 @@ def generate(
     timeout: float = 60.0,
 ) -> str:
     """Single-turn text generation. Returns the model's text, or raises GeminiError."""
+    if DEMO_MODE:
+        raise GeminiError("TRINETRA_DEMO_MODE: serving cached analysis")
     if not API_KEY:
         raise GeminiError("GEMINI_API_KEY not set in backend/.env")
     m = model or MODEL

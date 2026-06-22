@@ -332,6 +332,28 @@ def ablation():
     return _ablation_cache
 
 
+@app.on_event("startup")
+def _prewarm_caches():
+    """Warm the hero-scenario caches in the background so the first demo open is
+    instant. The cold path builds corpus embeddings (and may wait on a 429); doing
+    it here in a daemon thread keeps boot fast while the demo path goes warm."""
+    import threading
+
+    def warm():
+        for fn, args in (
+            (disaster_memory, ("vizag", "COB-1", 13)),
+            (response, ("vizag", "COB-1", 13)),
+            (agents, ("vizag", "COB-1", 13)),
+            (vision, ()),
+        ):
+            try:
+                fn(*args)
+            except Exception:
+                pass
+
+    threading.Thread(target=warm, daemon=True).start()
+
+
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):
     await websocket.accept()

@@ -1,4 +1,12 @@
 """Smoke test: auto-drafted incident report + multilingual alert for a Vizag compound state."""
+import sys
+
+# Telugu/Hindi output needs UTF-8; the Windows console defaults to cp1252.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except (AttributeError, ValueError):
+    pass
+
 from app.ai.incident import draft_incident_report, evacuation_alert
 from app.constants import PLANT_NAME, ZONES
 from app.engine import CompoundRiskEngine
@@ -23,8 +31,9 @@ def main():
         "precedent": "Visakhapatnam Steel Plant coke-oven explosion (2025) - 82% match",
     }
 
-    print("=== AUTO-DRAFTED INCIDENT REPORT ===\n")
-    print(draft_incident_report(event))
+    report, degraded = draft_incident_report(event)
+    print(f"=== AUTO-DRAFTED INCIDENT REPORT  ({'cached/golden' if degraded else 'live Gemini'}) ===\n")
+    print(report)
     print("\n=== MULTILINGUAL EVACUATION ALERT ===")
     for lang, text in evacuation_alert(z.name).items():
         print(f"\n[{lang}] {text}")
