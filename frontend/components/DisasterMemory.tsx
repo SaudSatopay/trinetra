@@ -14,6 +14,7 @@ interface MemMatch {
 interface MemData {
   briefing: string;
   matches: MemMatch[];
+  analysis_mode?: "live" | "cached";
 }
 
 export function DisasterMemory({
@@ -70,6 +71,15 @@ export function DisasterMemory({
         {state === "loading" && (
           <span className="soft-pulse text-ink-dim" style={{ textTransform: "none", letterSpacing: "normal" }}>
             · matching precedent…
+          </span>
+        )}
+        {data?.analysis_mode === "cached" && (
+          <span
+            className="rounded px-1.5 py-0.5 font-mono text-[8px] text-ink-dim"
+            style={{ border: "1px solid var(--line-2)", textTransform: "none", letterSpacing: "normal" }}
+            title="Live model rate-limited — showing verified cached analysis"
+          >
+            cached
           </span>
         )}
       </div>

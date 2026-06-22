@@ -7,6 +7,7 @@ interface ResponseData {
   zone_name: string;
   level: string;
   auto_executed: boolean;
+  analysis_mode?: "live" | "cached";
   actions: string[];
   incident_report: string;
   alert: Record<string, string>;
@@ -97,6 +98,15 @@ function Modal({
                 style={{ background: "color-mix(in srgb, var(--lvl-critical) 14%, transparent)", color: "var(--lvl-critical)" }}
               >
                 auto-initiated
+              </span>
+            )}
+            {data?.analysis_mode === "cached" && (
+              <span
+                className="rounded-full px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider"
+                style={{ background: "color-mix(in srgb, var(--text-dim) 12%, transparent)", color: "var(--text-dim)" }}
+                title="Live model rate-limited — showing verified cached analysis"
+              >
+                cached
               </span>
             )}
           </div>

@@ -25,20 +25,23 @@ class GeminiError(RuntimeError):
 
 
 def _post(url: str, body: dict, timeout: float, retries: int = 3) -> httpx.Response:
-    """POST with retry on transient 429/503 (Gemini load) and network errors."""
+    """POST with retry on transient 429/503 (Gemini load) and network errors.
+
+    We never sleep after the final attempt: when the quota is exhausted the call
+    will keep failing, so the caller should fall through to its fallback fast
+    rather than block the request (this is on the demo critical path)."""
     last: Exception | None = None
     for attempt in range(retries):
         try:
             r = httpx.post(url, json=body, timeout=timeout)
         except httpx.HTTPError as e:
             last = GeminiError(f"request failed: {e}")
-            time.sleep(0.8 * (attempt + 1))
-            continue
-        if r.status_code in (429, 503):
+        else:
+            if r.status_code not in (429, 503):
+                return r
             last = GeminiError(f"HTTP {r.status_code}: {r.text[:160]}")
+        if attempt < retries - 1:
             time.sleep(0.8 * (attempt + 1))
-            continue
-        return r
     raise last or GeminiError("request failed after retries")
 
 

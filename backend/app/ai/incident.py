@@ -7,6 +7,7 @@ an evacuation alert in the languages the workers on the floor actually speak
 """
 from __future__ import annotations
 
+from . import golden
 from .gemini import GeminiError, generate
 
 REPORT_SYSTEM = (
@@ -17,7 +18,9 @@ REPORT_SYSTEM = (
 )
 
 
-def draft_incident_report(event: dict) -> str:
+def draft_incident_report(event: dict) -> tuple[str, bool]:
+    """Return (report text, degraded). Falls back to a deterministic, grounded
+    report (built only from `event`) when Gemini is unavailable."""
     factors = "\n".join(f"- {f}" for f in event.get("factors", []))
     prompt = f"""Draft a PRELIMINARY compound-hazard report. This hazard was caught BEFORE escalation by the Trinetra compound-risk intelligence system, so frame it as a prevented near-miss.
 
@@ -34,24 +37,12 @@ Detected conditions:
 {factors}
 
 Use exactly these numbered headings: 1. Summary  2. Conditions Detected  3. Compound Risk Assessment  4. Immediate Actions  5. Regulatory References (Factory Act 1948 / OISD)  6. Corrective Actions. Keep it under 320 words."""
-    return generate(prompt, system=REPORT_SYSTEM, temperature=0.3, timeout=90)
+    try:
+        return generate(prompt, system=REPORT_SYSTEM, temperature=0.3, timeout=90), False
+    except GeminiError:
+        return golden.build_report(event), True
 
 
 def evacuation_alert(zone_name: str, languages=("Telugu", "Hindi")) -> dict:
-    base = (
-        f"EMERGENCY - Compound gas / explosion hazard detected in {zone_name}. All personnel "
-        "evacuate immediately via the nearest safe exit. Do NOT operate electrical or hot-work "
-        "equipment. Await the all-clear from the control room."
-    )
-    out = {"English": base}
-    for lang in languages:
-        try:
-            out[lang] = generate(
-                f"Translate this plant emergency evacuation alert into {lang}. "
-                f"Output ONLY the translation, nothing else:\n\n{base}",
-                temperature=0.1,
-                timeout=40,
-            )
-        except GeminiError:
-            out[lang] = "(translation unavailable)"
-    return out
+    """Vetted, pre-translated evacuation alert (no LLM — see app/ai/golden.py)."""
+    return golden.evacuation_alert(zone_name, languages)
