@@ -29,7 +29,7 @@
 > "Because it's caught early, the system doesn't just alarm — it responds."
 
 **On screen:** click **"Autonomous response initiated."** The modal opens:
-- the **avoided-loss banner** — *"₹115.5 Cr prevented · 116× the platform cost"* (lives + asset + downtime + penalty, every figure sourced),
+- the **avoided-loss banner** — *"₹115.5 Cr prevented per incident · ~8× expected annual ROI even at a conservative 1-in-15-year event"* (lives + asset + downtime + penalty, every figure sourced; plus a recurring insurance-premium offset),
 - the **evidence timeline** — permit opened → personnel entry → **Trinetra alert (T+8)** → **legacy alarm (T+14)**: the six-minute lead as an auditable sequence,
 - the **action checklist** (suspend hot-work, evacuate, page response team, preserve evidence),
 - the **evacuation alert** — toggle **Telugu** and **Hindi** ("in the languages the workers on that floor actually speak"),
@@ -53,6 +53,6 @@
 - **"Is this real data?"** → A digital twin in the demo, but it ingests standard SCADA/IoT/permit formats — real-plant integration is a connector, not a rewrite. *Prove it live:* upload a SCADA CSV through the connector and the same engine runs on it unchanged.
 - **"How is this not just another alarm?"** → It fires on the *combination below* single-sensor thresholds, and it's measured: 100% recall / 0% false-positive / +7.4 min lead vs the baseline. The ablation shows context cuts false alarms from 64% to 0% at the same lead time.
 - **"Why won't it cry wolf?"** → 11 hard-negative scenarios (gas with no ignition, permits in clean air, transients) — 0% false compound alerts. Plus fault-mode checks (stuck sensor, missing CCTV, noise spike, delayed permit) in `test_robustness.py`.
-- **"What's the ROI / business case?"** → One prevented Vizag-class incident ≈ **₹115.5 Cr** avoided (lives + asset + downtime + penalty) against a ~₹1 Cr/yr platform — **116× return**.
+- **"What's the ROI / business case?"** → One prevented Vizag-class incident ≈ **₹115.5 Cr** avoided (lives + asset + downtime + penalty). On expected value — even at a conservative **1-in-15-year** event probability — that's a **~8× annual return** on the ~₹1 Cr/yr platform (still **~4×** at 1-in-30); plus a recurring **insurance-premium reduction** (5–15% for continuous monitoring) that offsets the platform cost regardless of any incident.
 - **"What if the AI is rate-limited mid-demo?"** → It degrades to vetted cached analysis (UI badges "cached"); the precedent match is still real (embeddings) and the room stays fully functional.
 - **"Who buys it?"** → Steel, refining, petrochemical, mining — anyone running OISD/Factory-Act permit-to-work. It sits over their existing sensors.

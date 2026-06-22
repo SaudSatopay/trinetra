@@ -12,6 +12,12 @@ interface ImpactItem {
   value_cr: number;
   basis: string;
 }
+interface EvModel {
+  anchor_label: string;
+  ev_roi_x: number;
+  net_annual_cr: number;
+  sensitivity: { freq_label: string; ev_roi_x: number }[];
+}
 interface Impact {
   currency: string;
   total_cr: number;
@@ -20,6 +26,8 @@ interface Impact {
   precedent_toll: number;
   system_cost_annual_cr: number;
   payback_years: number;
+  ev?: EvModel;
+  insurance?: { annual_value_cr: number[] };
 }
 interface TimelineEvent {
   t: number;
@@ -217,9 +225,17 @@ function Modal({
                 </div>
               </div>
               <div className="text-right font-mono text-[10px] leading-relaxed text-ink-dim">
-                {data.impact.fatalities_at_risk} personnel in zone · precedent killed {data.impact.precedent_toll}
-                <br />
-                platform ₹{data.impact.system_cost_annual_cr} Cr/yr → {data.impact.payback_years}× return
+                {data.impact.fatalities_at_risk} in zone · precedent killed {data.impact.precedent_toll}
+                {data.impact.ev && (
+                  <>
+                    <br />≈<span className="text-ink-bright">{data.impact.ev.ev_roi_x}×</span> expected annual ROI ({data.impact.ev.anchor_label})
+                    {data.impact.insurance && (
+                      <>
+                        <br />+₹{data.impact.insurance.annual_value_cr[0]}–{data.impact.insurance.annual_value_cr[1]} Cr/yr insurance offset
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
@@ -229,6 +245,19 @@ function Modal({
                 </span>
               ))}
             </div>
+            {data.impact.ev && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2.5 font-mono text-[9.5px] text-ink-dim">
+                <span className="uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
+                  EV sensitivity
+                </span>
+                {data.impact.ev.sensitivity.map((s, i) => (
+                  <span key={i}>
+                    {s.freq_label} <span className="text-ink">{s.ev_roi_x}×</span>
+                  </span>
+                ))}
+                <span className="text-ink-dim">· net ₹{data.impact.ev.net_annual_cr} Cr/yr at {data.impact.ev.anchor_label}</span>
+              </div>
+            )}
           </div>
         )}
 

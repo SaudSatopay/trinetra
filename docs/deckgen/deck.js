@@ -235,6 +235,63 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addText("+6 min lead", { x: 5.4, y: 5.55, w: 3.0, h: 0.3, fontFace: MONO, fontSize: 12, bold: true, color: TEAL, align: "center", margin: 0 });
 }
 
+// ============ BUSINESS IMPACT (expected value) ============
+{
+  const s = S();
+  kicker(s, "BUSINESS IMPACT");
+  title(s, "The math a buyer underwrites");
+  // left — per-incident avoided loss
+  panel(s, 0.7, 2.2, 5.4, 4.2);
+  s.addText("PER PREVENTED INCIDENT", { x: 1.0, y: 2.45, w: 4.8, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
+  s.addText("₹115.5 Cr", { x: 1.0, y: 2.8, w: 4.8, h: 0.95, fontFace: HEAD, fontSize: 46, bold: true, color: BRIGHT, margin: 0 });
+  s.addText("avoided loss — Vizag-class event", { x: 1.0, y: 3.72, w: 4.8, h: 0.3, fontFace: BODY, fontSize: 13, color: DIM, margin: 0 });
+  [["Lives protected", "₹7.5 Cr"], ["Asset damage", "₹40 Cr"], ["Downtime (21 d)", "₹63 Cr"], ["Regulatory penalty", "₹5 Cr"]].forEach(([k, v], i) => {
+    const ly = 4.35 + i * 0.46;
+    s.addText(k, { x: 1.0, y: ly, w: 3.2, h: 0.34, fontFace: BODY, fontSize: 13, color: TEXT, valign: "middle", margin: 0 });
+    s.addText(v, { x: 4.0, y: ly, w: 1.8, h: 0.34, fontFace: MONO, fontSize: 13, color: TEAL, align: "right", valign: "middle", margin: 0 });
+  });
+  // right — expected-value ROI
+  panel(s, 6.4, 2.2, 6.23, 2.75, PANEL2, TEAL);
+  s.addText("EXPECTED ANNUAL RETURN", { x: 6.7, y: 2.42, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: TEAL, charSpacing: 1, margin: 0 });
+  s.addText("≈8×", { x: 6.7, y: 2.78, w: 1.7, h: 0.95, fontFace: HEAD, fontSize: 44, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
+  s.addText("expected annual return on the ₹1 Cr/plant/yr platform — even at a conservative 1-in-15-year event", { x: 8.45, y: 2.78, w: 3.95, h: 0.95, fontFace: BODY, fontSize: 13, color: TEXT, valign: "middle", margin: 0 });
+  [["1-in-30 yr", "3.9×"], ["1-in-15 yr", "7.7×"], ["1-in-8 yr", "14.4×"]].forEach(([f, r], i) => {
+    const sx = 6.7 + i * 2.0;
+    panel(s, sx, 3.9, 1.9, 0.88, PANEL);
+    s.addText(r, { x: sx, y: 4.0, w: 1.9, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: TEAL, align: "center", margin: 0 });
+    s.addText(f, { x: sx, y: 4.46, w: 1.9, h: 0.25, fontFace: MONO, fontSize: 9.5, color: DIM, align: "center", margin: 0 });
+  });
+  // insurance lever
+  panel(s, 6.4, 5.1, 6.23, 1.3, "0c1612", GREEN);
+  s.addText("+ INSURANCE LEVER", { x: 6.7, y: 5.28, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: GREEN, charSpacing: 1, margin: 0 });
+  s.addText("Recurring premium reduction of ₹0.4–1.2 Cr/yr (5–15% for continuous monitoring) — it offsets the platform cost whether or not an incident ever occurs.", { x: 6.7, y: 5.58, w: 5.7, h: 0.78, fontFace: BODY, fontSize: 12.5, color: TEXT, valign: "top", margin: 0 });
+  s.addText("Per-incident loss (lives + asset + downtime + penalty), every figure sourced, × a conservative event frequency — not a 116×-per-incident headline.", { x: 0.7, y: 6.6, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
+}
+
+// ============ GO TO MARKET ============
+{
+  const s = S();
+  kicker(s, "GO TO MARKET");
+  title(s, "A wedge, a buyer, a trigger");
+  [
+    ["Buyer", "Plant process-safety head / safety officer — owns permit-to-work and statutory compliance, carries the fatality risk.", TEAL],
+    ["Wedge", "Permit-to-work intelligence — one discrete, fundable pain — then expand to full gas + permit + CCTV + shift fusion.", BRIGHT],
+    ["Pricing", "~₹1 Cr / plant / yr — justified against a single downtime-day (~₹3 Cr) or one OISD / NGT penalty.", BRIGHT],
+    ["Trigger", "Post-LG-Polymers / Vizag regulatory pressure — DGMS scrutiny and mandatory near-miss reporting.", AMBER],
+  ].forEach(([k, v, c], i) => {
+    const y = 2.3 + i * 1.04;
+    panel(s, 0.7, y, 11.93, 0.92);
+    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y, w: 0.07, h: 0.92, fill: { color: c } });
+    s.addText(k, { x: 1.0, y: y + 0.12, w: 2.0, h: 0.68, fontFace: HEAD, fontSize: 17, bold: true, color: c, valign: "middle", margin: 0 });
+    s.addText(v, { x: 3.0, y: y + 0.12, w: 9.4, h: 0.68, fontFace: BODY, fontSize: 14, color: TEXT, valign: "middle", margin: 0 });
+  });
+  panel(s, 0.7, 6.5, 11.93, 0.7, PANEL2, TEAL);
+  s.addText([
+    { text: "The ask:  ", options: { color: TEAL, bold: true } },
+    { text: "1–2 design partners (steel / refining) for a 90-day pilot on a live permit-to-work + gas feed.", options: { color: BRIGHT } },
+  ], { x: 1.0, y: 6.5, w: 11.3, h: 0.7, fontFace: BODY, fontSize: 14, valign: "middle", margin: 0 });
+}
+
 // ============ S9 — SCALE ============
 {
   const s = S();
@@ -255,6 +312,43 @@ function mark(s, cx, cy, sc) { // triangle + eye
     const yy = 3.1 + i * 0.82;
     s.addText(t, { x: 8.2, y: yy, w: 4.2, h: 0.35, fontFace: HEAD, fontSize: 16, bold: true, color: BRIGHT, margin: 0 });
     s.addText(d, { x: 8.2, y: yy + 0.34, w: 4.2, h: 0.35, fontFace: BODY, fontSize: 12, color: DIM, margin: 0 });
+  });
+}
+
+// ============ REFERENCE ARCHITECTURE ============
+{
+  const s = S();
+  kicker(s, "DEPLOYS OVER YOUR STACK");
+  title(s, "A connector, not a rewrite");
+  const stages = [
+    ["Plant historian", "OPC-UA / MQTT / PI\npermits · CCTV"],
+    ["Edge pre-filter", "debounce + normalise\nat the plant edge"],
+    ["Compound engine", "deterministic, O(zones)\nthe safety decision"],
+    ["Control-room HMI", "split-reality view +\nautonomous response"],
+  ];
+  const w = 2.74, g = 0.35;
+  stages.forEach(([t, d], i) => {
+    const x = 0.7 + i * (w + g);
+    const hot = i === 2;
+    panel(s, x, 2.6, w, 1.95, hot ? PANEL2 : PANEL, hot ? TEAL : LINE);
+    s.addText(t, { x: x + 0.2, y: 2.82, w: w - 0.4, h: 0.5, fontFace: HEAD, fontSize: 15, bold: true, color: hot ? TEAL : BRIGHT, margin: 0 });
+    s.addText(d, { x: x + 0.2, y: 3.38, w: w - 0.4, h: 1.0, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", lineSpacingMultiple: 1.05, margin: 0 });
+    if (i < 3) s.addText("→", { x: x + w, y: 2.6, w: g, h: 1.95, fontFace: HEAD, fontSize: 20, color: TEAL, align: "center", valign: "middle", margin: 0 });
+  });
+  // throughput
+  panel(s, 0.7, 4.95, 5.9, 1.65, PANEL2, TEAL);
+  s.addText("THROUGHPUT", { x: 1.0, y: 5.13, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: TEAL, charSpacing: 2, margin: 0 });
+  s.addText("~10,000 tags @ 1 Hz", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
+  s.addText("on a single node — the engine is O(zones) per frame, one instance per plant (fleet view above). No GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", margin: 0 });
+  // properties
+  panel(s, 6.9, 4.95, 5.73, 1.65);
+  [["Standard formats", "ingests SCADA / IoT / permit data as-is"],
+   ["Edge or on-prem", "data never has to leave the plant"],
+   ["Deterministic core", "an auditable decision a safety officer can defend"]].forEach(([t, d], i) => {
+    const yy = 5.12 + i * 0.5;
+    dot(s, 7.18, yy + 0.11, TEAL, 0.07);
+    s.addText(t, { x: 7.45, y: yy, w: 5.0, h: 0.28, fontFace: HEAD, fontSize: 13, bold: true, color: BRIGHT, margin: 0 });
+    s.addText(d, { x: 7.45, y: yy + 0.24, w: 5.0, h: 0.26, fontFace: BODY, fontSize: 10.5, color: DIM, margin: 0 });
   });
 }
 

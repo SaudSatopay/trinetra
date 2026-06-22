@@ -39,8 +39,24 @@ def parse_toll(casualties: str) -> int:
     return int(m.group(1)) if m else 0
 
 
+# --- expected-value framing -------------------------------------------------
+# A per-incident multiple ("one prevented Vizag / annual cost") flatters the ROI and
+# a serious buyer discounts it on sight. They underwrite EXPECTED annual value, so we
+# anchor the event frequency CONSERVATIVELY and show a sensitivity band — the case has
+# to hold on pessimistic assumptions, not just the headline.
+EVENT_FREQS = ((30, "1-in-30-yr"), (15, "1-in-15-yr"), (8, "1-in-8-yr"))
+ANCHOR_YEARS = 15
+
+# Insurance lever: industrial insurers grant recurring premium reductions for
+# continuous process-safety monitoring — value that accrues every year, incident or
+# not. The premium basis is illustrative and labelled as such (no invented authority).
+INSURANCE_PREMIUM_CR = 8.0     # illustrative annual property + liability premium, large MAH plant
+INSURANCE_PCT = (5, 15)        # typical reduction band for continuous monitoring
+
+
 def compute_impact(personnel: int, precedent_toll: int = 0, lead_min: int = 0) -> dict:
-    """Avoided loss from converting one compound incident into a near-miss."""
+    """Avoided loss from converting one compound incident into a near-miss — plus the
+    expected-annual-value and insurance framing a buyer actually underwrites against."""
     lives = max(int(personnel), 0)
     items = [
         {"key": "lives", "label": f"Lives protected ({lives} in zone)",
@@ -54,6 +70,18 @@ def compute_impact(personnel: int, precedent_toll: int = 0, lead_min: int = 0) -
     ]
     total_cr = round(sum(i["value_cr"] for i in items), 1)
     annual_cr = _cr(SYSTEM_COST_ANNUAL)
+
+    def ev_roi(years: int) -> float:
+        return round((total_cr / years) / annual_cr, 1) if annual_cr else 0.0
+
+    sensitivity = [
+        {"freq_label": lbl, "years": yrs, "annual_expected_cr": round(total_cr / yrs, 1),
+         "ev_roi_x": ev_roi(yrs)}
+        for yrs, lbl in EVENT_FREQS
+    ]
+    ins_low = round(INSURANCE_PREMIUM_CR * INSURANCE_PCT[0] / 100, 1)
+    ins_high = round(INSURANCE_PREMIUM_CR * INSURANCE_PCT[1] / 100, 1)
+
     return {
         "currency": "INR",
         "total_cr": total_cr,
@@ -62,6 +90,24 @@ def compute_impact(personnel: int, precedent_toll: int = 0, lead_min: int = 0) -
         "precedent_toll": precedent_toll,
         "lead_min": lead_min,
         "system_cost_annual_cr": annual_cr,
-        # one prevented incident covers this many years of platform cost
+        # one prevented incident covers this many years of platform cost (kept for reference)
         "payback_years": round(total_cr / annual_cr) if annual_cr else 0,
+        "ev": {
+            "anchor_label": f"1-in-{ANCHOR_YEARS}-yr",
+            "anchor_years": ANCHOR_YEARS,
+            "annual_expected_avoided_cr": round(total_cr / ANCHOR_YEARS, 1),
+            "ev_roi_x": ev_roi(ANCHOR_YEARS),
+            "net_annual_cr": round(total_cr / ANCHOR_YEARS - annual_cr, 1),
+            "sensitivity": sensitivity,
+            "basis": "expected annual avoided loss = P(serious compound event / plant / yr) x per-incident "
+                     "avoided loss; frequency anchored conservatively — major process incidents recur on a "
+                     "multi-year cadence per high-hazard site.",
+        },
+        "insurance": {
+            "premium_basis_cr": INSURANCE_PREMIUM_CR,
+            "reduction_pct": list(INSURANCE_PCT),
+            "annual_value_cr": [ins_low, ins_high],
+            "basis": "recurring property/liability premium reduction insurers grant for continuous "
+                     "process-safety monitoring (illustrative premium basis) — value independent of any incident.",
+        },
     }
