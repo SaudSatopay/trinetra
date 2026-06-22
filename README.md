@@ -66,7 +66,11 @@ While the incident develops, the two systems live in **split realities**:
 | 💰 **Business impact** | avoided-loss model with every figure sourced — **₹115.5 Cr** per prevented Vizag-class incident, **116× ROI** | response modal |
 | 🎛️ **Scenario editor** | judges toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
 | 🔌 **SCADA connector** | upload a real SCADA/permit CSV and replay it through the same engine — *a connector, not a rewrite* | `/api/ingest` |
+| 📚 **Pattern intelligence** | mines recurring causal patterns across a near-miss + incident corpus → ranked prevention priorities | `/api/patterns` |
+| ✅ **Compliance & audit** | continuous OISD / DGMS / Factory-Act audit of the live plant — deviations + corrective actions | `/api/compliance` |
 | 🛟 **Demo-safe** | cached/golden fallbacks keep the room fully functional if the LLM is rate-limited; **Judge Mode** jumps to the money shot in one click | `TRINETRA_DEMO_MODE=1` |
+
+> **Full problem-statement coverage** — Trinetra implements all six illustrative builds: Compound Risk Engine · Geospatial Safety Heatmap · Incident Pattern Intelligence · Digital Permit Intelligence · Emergency Response Orchestrator · Quality & Compliance Audit Agent — and every suggested technology (multi-agent · geospatial · RAG · CV · IoT/SCADA · knowledge graph).
 
 ## Architecture
 
@@ -110,7 +114,7 @@ python benchmark.py                         # the headline metrics
 
 ## API surface
 
-`/api/frames` · `/api/plant` · `/api/scenarios` · `/api/agents` · `/api/disaster-memory` · `/api/vision` · `/api/response` · `/api/knowledge-graph` · `/api/ablation` · `/api/simulate` · `/api/ingest` · `/ws`
+`/api/frames` · `/api/plant` · `/api/scenarios` · `/api/agents` · `/api/disaster-memory` · `/api/vision` · `/api/response` · `/api/knowledge-graph` · `/api/ablation` · `/api/simulate` · `/api/ingest` · `/api/patterns` · `/api/compliance` · `/ws`
 
 ## Tech stack
 
