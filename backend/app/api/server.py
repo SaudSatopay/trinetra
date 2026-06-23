@@ -158,6 +158,17 @@ def ingest_sample():
     )
 
 
+def _decode_csv_bytes(body: bytes) -> str:
+    """Accept what real plants actually export — UTF-8/UTF-16 with or without a BOM, Excel CSVs —
+    and strip stray NUL bytes, so a realistic SCADA export doesn't crash the connector."""
+    for enc in ("utf-8-sig", "utf-16", "latin-1"):
+        try:
+            return body.decode(enc).replace("\x00", "")
+        except (UnicodeError, LookupError):
+            continue
+    return body.decode("utf-8", errors="replace").replace("\x00", "")
+
+
 @app.post("/api/ingest")
 async def ingest(request: Request):
     """Replay an uploaded SCADA/permit CSV through the SAME compound engine — proving
@@ -165,11 +176,10 @@ async def ingest(request: Request):
     body = await request.body()
     if len(body) > _MAX_INGEST_BYTES:
         return {"error": f"upload too large (max {_MAX_INGEST_BYTES // 1_000_000} MB)"}
-    text = body.decode("utf-8", errors="replace")
     try:
-        snaps, meta = parse_csv(text)
-    except ValueError as e:
-        return {"error": str(e)}
+        snaps, meta = parse_csv(_decode_csv_bytes(body))
+    except Exception as e:  # untrusted upload: never 500 — degrade to a clean error message
+        return {"error": f"could not parse CSV: {e}".replace("\n", " ")[:200]}
     engine = CompoundRiskEngine(compute_confidence=True)
     frames = [serialize_frame(s, engine.assess(s)) for s in snaps]
     return {"scenario": "ingested", "minutes": len(frames), "frames": frames, **meta}
