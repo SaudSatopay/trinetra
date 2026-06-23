@@ -134,7 +134,7 @@ export function ResponseTrigger({
         <span className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--lvl-critical)" }} />
           <span className="font-display text-[13px] font-semibold" style={{ color: "var(--lvl-critical)" }}>
-            Autonomous response initiated
+            Autonomous response prepared
           </span>
         </span>
         <span className="font-mono text-[10px] text-ink-dim">view →</span>
@@ -201,7 +201,7 @@ function Modal({
                 className="rounded-full px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider"
                 style={{ background: "color-mix(in srgb, var(--lvl-critical) 14%, transparent)", color: "var(--lvl-critical)" }}
               >
-                auto-initiated
+                auto-drafted
               </span>
             )}
             {data?.analysis_mode === "cached" && (
@@ -276,7 +276,7 @@ function Modal({
           <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.15fr] divide-x divide-line overflow-hidden">
             <div className="space-y-6 overflow-y-auto p-6">
               <div>
-                <div className="label mb-3">Actions executed</div>
+                <div className="label mb-3">Response actions prepared</div>
                 <motion.ul
                   className="space-y-2.5"
                   initial="hidden"
@@ -300,6 +300,9 @@ function Modal({
                     </motion.li>
                   ))}
                 </motion.ul>
+                <div className="mt-3 font-mono text-[9px] leading-relaxed text-ink-dim">
+                  Assembled for one-click dispatch · high-consequence actions gate on operator approval
+                </div>
               </div>
 
               {data.evidence_timeline && data.evidence_timeline.length > 0 && (
@@ -353,7 +356,7 @@ function Modal({
 
               {data.channels && data.channels.length > 0 && (
                 <div>
-                  <div className="label mb-2">Dispatched across channels</div>
+                  <div className="label mb-2">Dispatch-ready channels</div>
                   <div className="flex flex-wrap gap-1.5">
                     {data.channels.map((c, i) => (
                       <span
