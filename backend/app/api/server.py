@@ -86,6 +86,7 @@ def get_plant():
 def get_frames(scenario_name: str, minutes: int = 45):
     if scenario_name not in SCENARIOS:
         return {"error": f"unknown scenario '{scenario_name}'", "available": list(SCENARIOS)}
+    minutes = _clamp_minutes(minutes)  # echo the clamped value, not the raw request
     return {"scenario": scenario_name, "minutes": minutes, "frames": _run(scenario_name, minutes)}
 
 
