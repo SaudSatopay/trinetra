@@ -1,15 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { API_BASE, getIncident, IncidentReplay, ingestCsv } from "@/lib/api";
+import { API_BASE, ExternalReplay, getExternal, getIncident, IncidentReplay, ingestCsv } from "@/lib/api";
 import { Frame } from "@/lib/types";
 
 export function Connector({
   onIngest,
   onIncident,
+  onExternal,
 }: {
   onIngest: (frames: Frame[], summary: string) => void;
   onIncident: (d: IncidentReplay) => void;
+  onExternal: (d: ExternalReplay) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -20,6 +22,18 @@ export function Connector({
     setBusy(true);
     try {
       onIncident(await getIncident(name));
+    } catch (x) {
+      setErr(String(x instanceof Error ? x.message : x).slice(0, 60));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const replayExternal = async (key: string) => {
+    setErr(null);
+    setBusy(true);
+    try {
+      onExternal(await getExternal(key));
     } catch (x) {
       setErr(String(x instanceof Error ? x.message : x).slice(0, 60));
     } finally {
@@ -92,6 +106,20 @@ export function Connector({
         title="Replay the real Indian Oil Jaipur (2009) depot fire, reconstructed from the MB Lal Committee report"
       >
         Jaipur · MB Lal ’09
+      </button>
+      <span className="h-4 w-px bg-line-2" />
+      <button
+        onClick={() => replayExternal("air-quality")}
+        disabled={busy}
+        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        style={{
+          color: "var(--brand)",
+          border: "1px solid color-mix(in srgb, var(--brand) 42%, transparent)",
+          background: "color-mix(in srgb, var(--brand) 10%, transparent)",
+        }}
+        title="Replay REAL measured CO data (UCI #360, De Vito 2008) the engine never authored — same connector, zero tuning"
+      >
+        Air Quality · De Vito ’08
       </button>
       {err && (
         <span className="font-mono text-[9px]" style={{ color: "var(--lvl-high)" }}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getFrames, getPlant, getScenarios, getSimulate, getIncident, IncidentReplay, SimConfig, API_BASE } from "@/lib/api";
+import { getFrames, getPlant, getScenarios, getSimulate, getIncident, IncidentReplay, getExternal, ExternalReplay, SimConfig, API_BASE } from "@/lib/api";
 import { Frame, MainView, Plant, ScenarioInfo, Zone } from "@/lib/types";
 import { TopBar } from "@/components/TopBar";
 import { PlantSchematic } from "@/components/PlantSchematic";
@@ -33,6 +33,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [ingestSummary, setIngestSummary] = useState<string | null>(null);
   const [incident, setIncident] = useState<IncidentReplay | null>(null);
+  const [external, setExternal] = useState<ExternalReplay | null>(null);
   const prevScenario = useRef("");
   const wantMoneyShot = useRef(false);
   const [boothOn, setBoothOn] = useState(false);
@@ -45,6 +46,7 @@ export default function Page() {
     prevScenario.current = "ingested";
     setIngestSummary(summary);
     setIncident(null);
+    setExternal(null);
     setFrames(f);
     setIndex(0);
     setPlaying(true);
@@ -55,6 +57,19 @@ export default function Page() {
   const handleIncident = (d: IncidentReplay) => {
     prevScenario.current = "ingested";
     setIncident(d);
+    setExternal(null);
+    setIngestSummary(null);
+    setFrames(d.frames);
+    setIndex(0);
+    setPlaying(true);
+    setSelected(d.zone);
+    setScenario("ingested");
+  };
+
+  const handleExternal = (d: ExternalReplay) => {
+    prevScenario.current = "ingested";
+    setExternal(d);
+    setIncident(null);
     setIngestSummary(null);
     setFrames(d.frames);
     setIndex(0);
@@ -78,6 +93,7 @@ export default function Page() {
   useEffect(() => {
     if (scenario === "ingested") return; // frames are supplied by the connector upload
     setIncident(null); // leaving an ingested feed: drop the stale real-incident context (and its figures)
+    setExternal(null);
     setIngestSummary(null);
     let cancelled = false;
     (async () => {
@@ -349,7 +365,38 @@ export default function Page() {
             </a>
           </div>
         )}
-        {scenario === "ingested" && !incident && (
+        {scenario === "ingested" && external && (
+          <div
+            className="hud-panel flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-2.5"
+            style={{ borderColor: "color-mix(in srgb, var(--brand) 45%, var(--line))" }}
+          >
+            <span
+              className="rounded px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
+              style={{ color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 15%, transparent)" }}
+            >
+              Real measured data
+            </span>
+            <span className="font-display text-[12.5px] font-semibold text-ink-bright">{external.dataset}</span>
+            <span className="font-mono text-[10px] text-ink-dim">{external.source}</span>
+            {external.lead_min != null && (
+              <span className="font-mono text-[10px]" style={{ color: "var(--brand)" }}>
+                Trinetra alert T+{external.trinetra_alert_min} · single-sensor T+{external.single_sensor_min} →{" "}
+                <span className="font-bold">{external.lead_min} min earlier</span>
+              </span>
+            )}
+            <span className="font-mono text-[9px] text-ink-dim" title={`overlaid: ${external.overlaid}`}>
+              real: {external.channel} — engine untuned; only the y-scale + permit context are overlaid
+            </span>
+            <a
+              href={`${API_BASE}/api/external/${external.key}.csv`}
+              className="font-mono text-[10px] text-ink-dim underline-offset-2 hover:underline"
+              title="Download the exact feed the engine ingested — the real measured CO values, scaled to the plant band"
+            >
+              source CSV
+            </a>
+          </div>
+        )}
+        {scenario === "ingested" && !incident && !external && (
           <div className="hud-panel flex items-center gap-3 px-5 py-2.5">
             <span className="label">Ingested SCADA feed</span>
             <span className="font-mono text-[10px] text-ink-dim">
@@ -358,7 +405,7 @@ export default function Page() {
           </div>
         )}
         <Player
-          extra={<Connector onIngest={handleIngest} onIncident={handleIncident} />}
+          extra={<Connector onIngest={handleIngest} onIncident={handleIncident} onExternal={handleExternal} />}
           scenarios={playerScenarios}
           scenario={scenario}
           onScenario={setScenario}

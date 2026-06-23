@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import csv
 import io
+from pathlib import Path
 
 from .constants import GAS_THRESHOLDS, ZONES
 from .domain import GasReading, Permit, PermitType, PlantSnapshot, ZoneState
@@ -202,3 +203,70 @@ def texas_city_csv() -> str:
 def jaipur_csv() -> str:
     """The reconstructed MB Lal Jaipur sequence as a SCADA CSV."""
     return _incident_csv(JAIPUR)
+
+
+# ---------------------------------------------------------------------------
+# External dataset replay — REAL measured data the engine never authored
+# ---------------------------------------------------------------------------
+# The direct answer to the sharpest critique of any self-built benchmark: "you authored the
+# data, so 100/0 only proves self-consistency." Here a channel's DYNAMICS come from a real,
+# peer-reviewed, third-party measurement (NOT our ramp()) and flow through the SAME parse_csv
+# connector and the SAME untuned engine. The committed slice (app/data/) carries the raw values
+# so anyone can diff them against the public dataset. What is real vs overlaid is stated, and the
+# lead time is scale-invariant: compound fires at flam_level 0.5x the alarm, single-sensor at 1.0x,
+# so the gap follows from the real data's SHAPE and the alarm ratio, not from any magnitude we chose.
+AIR_QUALITY = {
+    "key": "air-quality",
+    "label": "Air Quality - De Vito 2008",
+    "dataset": "UCI Machine Learning Repository #360 'Air Quality'",
+    "citation": "De Vito et al., Sensors and Actuators B 129(2):750-757 (2008)",
+    "source": "UCI #360 - De Vito 2008 - DOI 10.24432/C5K603 - CC BY 4.0",
+    "channel": "CO(GT): true hourly-averaged CO from a co-located reference analyser",
+    "file": "airquality_co_devito2008.csv",
+    "zone": "COB-1",
+    "scale_ppm_per_mg": 6.0,   # real CO mg/m^3 -> plant ppm band: peak 11.9 -> ~71 ppm (~1.4x the 50 ppm CO alarm)
+    "hot_work": True,
+    "personnel": 3,
+    "window": "23 Nov 2004 05:00 -> 24 Nov 2004 01:00 (21 hourly samples)",
+    "real": "the CO concentration trajectory - the rise, the real dips, the timing, the noise (measured, not authored)",
+    "overlaid": "y-scale x6 onto the plant ppm band; 1 hour -> 1 minute; a hot-work permit + 3 personnel "
+                "context the air-quality dataset has no notion of; mapped to zone COB-1",
+}
+
+EXTERNAL_DATASETS = {"air-quality": AIR_QUALITY}
+
+
+def _load_external_series(filename: str) -> list[tuple[str, float]]:
+    """Load a committed real-measurement slice (datetime, value); skip the '#' provenance header."""
+    path = Path(__file__).parent / "data" / filename
+    out: list[tuple[str, float]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or line.lower().startswith("datetime"):
+            continue
+        parts = line.split(",")
+        try:
+            out.append((parts[0], float(parts[1])))
+        except (IndexError, ValueError):
+            continue
+    return out
+
+
+def external_series(key: str) -> list[tuple[str, float]]:
+    """The raw real values (datetime, mg/m^3) — for provenance display / inspection."""
+    return _load_external_series(EXTERNAL_DATASETS[key]["file"])
+
+
+def external_csv(key: str) -> str:
+    """Build a SCADA CSV from a REAL external measurement: the dataset's CO dynamics on the CO
+    channel (linearly scaled to the plant ppm band) plus the stated hot-work + personnel context.
+    One real hour -> one row. Fed through the same parse_csv the connector uses."""
+    ds = EXTERNAL_DATASETS[key]
+    series = _load_external_series(ds["file"])
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(["t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"])
+    for t, (_dt, val) in enumerate(series):
+        ppm = round(val * ds["scale_ppm_per_mg"], 1)
+        w.writerow([t, ds["zone"], "", ppm, "", "", 1 if ds["hot_work"] else 0, ds["personnel"]])
+    return out.getvalue()

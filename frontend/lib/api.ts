@@ -96,3 +96,29 @@ export interface IncidentReplay {
 export async function getIncident(name: string): Promise<IncidentReplay> {
   return j<IncidentReplay>(`/api/incident/${name}`);
 }
+
+// A REAL, third-party measured dataset replayed through the same connector + engine. Distinct
+// from IncidentReplay (which reconstructs an inquiry's sequence): here the gas DYNAMICS are
+// measured data, not authored — the direct answer to "your eval is self-authored".
+export interface ExternalReplay {
+  frames: Frame[];
+  key: string;
+  zone: string;
+  provenance: string;
+  dataset: string;
+  citation: string;
+  source: string;
+  channel: string;
+  window: string;
+  real: string;
+  overlaid: string;
+  trinetra_alert_min: number | null;
+  single_sensor_min: number | null;
+  lead_min: number | null;
+  peak_co_ppm: number | null;
+  samples: number;
+}
+
+export async function getExternal(key: string): Promise<ExternalReplay> {
+  return j<ExternalReplay>(`/api/external/${key}`);
+}
