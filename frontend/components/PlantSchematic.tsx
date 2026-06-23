@@ -10,11 +10,13 @@ export function PlantSchematic({
   frame,
   selected,
   onSelect,
+  onToggle,
 }: {
   plant: Plant;
   frame: Frame;
   selected: string | null;
   onSelect: (id: string) => void;
+  onToggle?: () => void;
 }) {
   const zoneById: Record<string, Zone> = Object.fromEntries(frame.zones.map((z) => [z.id, z]));
   const specById = Object.fromEntries(plant.zones.map((z) => [z.id, z]));
@@ -40,7 +42,18 @@ export function PlantSchematic({
     <div className="hud-panel relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex items-center justify-between px-6 pt-5">
         <span className="label">Plant Overview</span>
-        <span className="font-sans text-[11px] text-ink-dim">{plant.name}</span>
+        <div className="flex items-center gap-3">
+          <span className="font-sans text-[11px] text-ink-dim">{plant.name}</span>
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-ink-dim transition-colors hover:text-ink"
+              style={{ border: "1px solid var(--line-2)" }}
+            >
+              Knowledge graph →
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="relative min-h-0 flex-1">

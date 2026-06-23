@@ -13,6 +13,7 @@ import { Connector } from "@/components/Connector";
 import { Logo } from "@/components/Logo";
 import { CCTVTile } from "@/components/CCTVTile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -26,6 +27,7 @@ export default function Page() {
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(4);
   const [selected, setSelected] = useState<string | null>(null);
+  const [mainView, setMainView] = useState<"plant" | "graph">("plant");
   const [error, setError] = useState<string | null>(null);
   const [ingestSummary, setIngestSummary] = useState<string | null>(null);
   const [incident, setIncident] = useState<IncidentReplay | null>(null);
@@ -173,7 +175,11 @@ export default function Page() {
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <ErrorBoundary label="Plant schematic unavailable">
-            <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} />
+            {mainView === "graph" ? (
+              <KnowledgeGraph onToggle={() => setMainView("plant")} />
+            ) : (
+              <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} onToggle={() => setMainView("graph")} />
+            )}
           </ErrorBoundary>
           <div className="flex h-[124px] shrink-0 gap-4">
             <CCTVTile />
