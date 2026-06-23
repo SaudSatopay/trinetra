@@ -1,6 +1,6 @@
 """Held-out generalization — does the engine work beyond the scenarios it was tuned on?
 
-The WP2 benchmark is 28 hand-authored scenarios, so a fair critique is "you tuned the
+The WP2 benchmark is 29 hand-authored scenarios, so a fair critique is "you tuned the
 thresholds on your own test set." This harness answers it directly: it generates a large
 set of RANDOMIZED scenarios — random zone, lead gas, ramp speed, peak, permit timing,
 in-zone vs adjacent ignition, crew size — each run at a simulator seed the engine was

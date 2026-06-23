@@ -194,29 +194,29 @@ flowchart LR
 
 > The full methodology and every table live in **[docs/BACKTEST.md](docs/BACKTEST.md)**. All numbers are reproducible (fixed seed 42).
 
-### Benchmark — 28 labelled scenarios
+### Benchmark — 29 labelled scenarios
 
 | Metric | Trinetra |
 |---|---|
 | Compound-hazard detection **recall** | **100%** (14 / 14) |
-| **False-positive** rate (14 hard negatives, incl. inerted) | **0%** |
+| **False-positive** rate (15 hard negatives, incl. inerted + O2 dropout) | **0%** |
 | Mean **early-warning** over single-sensor | **7.4 min** (median 6, max 12) |
 
 ### Ablation — is the full fusion necessary?
 
 | Detector tier | Recall | False-alarm | Lead |
 |---|---|---|---|
-| Single-sensor threshold (incumbent) | 100% | 71% | 0 min |
-| Gas-trend rule (**no context**) | 100% | 71% | 7.4 min |
+| Single-sensor threshold (incumbent) | 100% | 73% | 0 min |
+| Gas-trend rule (**no context**) | 100% | 67% | 7.4 min |
 | **Trinetra (full compound fusion)** | 100% | **0%** | **7.4 min** |
 
-Context is what turns *early* detection into *actionable* early detection (71% → 0% false alarms at the same lead).
+Context is what turns *early* detection into *actionable* early detection (67% → 0% false alarms at the same lead).
 
 ### Generalization — held-out, unseen seeds
 
-**240 randomized scenarios** at seeds the thresholds were never tuned on → **100% recall, 3.3% false-positive**. Not overfit to the curated 28.
+**240 randomized scenarios** at seeds the thresholds were never tuned on → **100% recall, 3.3% false-positive**. Not overfit to the curated 29.
 
-### Real-incident replay — independent validation
+### Real-incident replay — reconstructed from two real inquiries
 
 Reconstructed from **two** real inquiries and replayed through the *same* engine, no tuning. **U.S. CSB BP Texas City (2005):** the compound alert fires at **T+10 — ten minutes before the vapour-cloud ignition the CSB documented at T+20** (7 before any single sensor). **MB Lal Jaipur (2009):** **T+12 — 36 minutes before** the documented ignition of a long, undetected vapour build-up. *Honest mapping* — neither site had a working gas detector (a finding in both inquiries), so the documented vapour escalation is mapped onto the flammable channel; the ignition timing and the personnel are the inquiry's. *(In-app: connector → **Texas City · CSB '05** / **Jaipur · MB Lal '09**.)*
 
@@ -226,7 +226,7 @@ Reconstructed from **two** real inquiries and replayed through the *same* engine
 
 | | | |
 |---|---|---|
-| 📊 **Ablation proof** | context fusion vs naive tiers — 71% → 0% false alarms | `python ablation.py` |
+| 📊 **Ablation proof** | context fusion vs naive tiers — 67% → 0% false alarms | `python ablation.py` |
 | 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 3.3% FP | `python test_generalization.py` |
 | 🧯 **Real-incident replay** | CSB Texas City (2005) → fires 10 min before the documented ignition | `/api/incident/texas-city` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
@@ -265,7 +265,7 @@ flowchart LR
   H["Plant historian<br/>OPC-UA / MQTT / PI"] --> E["Edge pre-filter"] --> C["SCADA CSV"] --> I["/api/ingest"] --> EN["Same compound engine<br/>O(zones)"] --> UI["Control room"]
 ```
 
-The engine is `O(zones)` per frame: **measured ~696k sensor tags/sec on a single core** (`python throughput.py`), so a 10,000-tag plant assesses in **~14 ms per 1 Hz frame — ≈70× real-time, no GPU**. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
+The engine is `O(zones)` per frame: **measured ~0.6–0.7M sensor tags/sec on a single core** (`python throughput.py` — a noisy micro-benchmark; runs land in that band), so a 10,000-tag plant assesses in **~15 ms per 1 Hz frame — ≈65× real-time, no GPU**. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
 
 ---
 
@@ -367,8 +367,8 @@ GitHub Actions runs the full suite on every push (badge above):
 ```bash
 cd backend
 python benchmark.py            # 100% recall / 0% FP / 7.4 min
-python ablation.py             # 71% → 0% false alarms
-python test_robustness.py      # 5 sensor/permit fault modes
+python ablation.py             # 67% → 0% false alarms
+python test_robustness.py      # 9 sensor/permit fault modes
 python test_generalization.py  # 240 held-out scenarios
 python smoke_api.py            # REST + WebSocket smoke
 ```
@@ -376,7 +376,7 @@ python smoke_api.py            # REST + WebSocket smoke
 ## Honest caveats
 
 - The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` connector (proven by the Texas City replay).
-- The 28 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios) and **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur) address the "train = test" critique.
+- The 29 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe, and a single-sample O2-sensor dropout that must not fabricate an asphyxiation alert — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios) and **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur) address the "train = test" critique.
 - The headline metrics are measured on the **compound flag** (the lethal pattern), distinct from ordinary gas alarms — the value is the *combination* and the *lead time*.
 - The reasoning "agents" are **deterministic feature-extraction stages**, not autonomous LLM agents — a strength for a reproducible life-safety path.
 - Three of the six builds (geospatial, pattern-mining, compliance) are **focused MVPs**; the compound engine, permit intelligence and response orchestrator are the production core.

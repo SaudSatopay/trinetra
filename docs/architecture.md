@@ -42,7 +42,7 @@ Benign controls must stay quiet: gas-without-ignition-or-people, permitted-work-
 
 ## 4. Evaluation (WP2 / WP6)
 
-Against a ~28-scenario benchmark we report:
+Against a ~29-scenario benchmark we report:
 - **Lead time** vs the first single-sensor alarm (headline metric),
 - **Compound detection rate** and **false-negative reduction** vs the single-sensor baseline,
 - **False-positive rate** on the benign controls.

@@ -261,7 +261,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   const s = S();
   kicker(s, "THE PROOF");
   title(s, "Measured, not claimed");
-  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 14 incl. inerted decoys", BRAND], ["7.4 min", "mean early-warning", "vs single-sensor baseline", AMBER]];
+  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 15 incl. inerted + O2 decoys", BRAND], ["7.4 min", "mean early-warning", "vs single-sensor baseline", AMBER]];
   let x = 0.7;
   stats.forEach(([n, l, sub, c]) => {
     panel(s, x, 2.3, 3.84, 2.2);
@@ -505,8 +505,8 @@ function mark(s, cx, cy, sc) { // triangle + eye
   // throughput
   panel(s, 0.7, 4.95, 5.9, 1.65, PANEL2, BRAND);
   s.addText("THROUGHPUT", { x: 1.0, y: 5.13, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
-  s.addText("~700k tags / sec", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
-  s.addText("measured — a 10,000-tag plant assesses in ~14 ms per 1 Hz frame, ~70x real-time on one core. O(zones), one instance per plant, no GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11, color: DIM, valign: "top", margin: 0 });
+  s.addText("~0.65M tags / sec", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
+  s.addText("measured (single-core micro-bench, ~0.6-0.7M) — a 10,000-tag plant assesses in ~15 ms per 1 Hz frame, ~65x real-time. O(zones), one instance per plant, no GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11, color: DIM, valign: "top", margin: 0 });
   // properties
   panel(s, 6.9, 4.95, 5.73, 1.65);
   [["Standard formats", "ingests SCADA / IoT / permit data as-is"],
