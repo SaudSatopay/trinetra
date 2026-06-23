@@ -182,7 +182,7 @@ export default function Page() {
         </div>
         <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
           <ErrorBoundary label="Threat panel unavailable">
-            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} />
+            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident ? "texas-city" : undefined} />
           </ErrorBoundary>
         </div>
       </div>

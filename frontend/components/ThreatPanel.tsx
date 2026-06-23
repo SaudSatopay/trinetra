@@ -10,11 +10,13 @@ export function ThreatPanel({
   thresholds,
   scenario,
   tMin,
+  responseScenario,
 }: {
   zone: Zone | null;
   thresholds: Record<string, Threshold>;
   scenario: string;
   tMin: number;
+  responseScenario?: string; // when set (e.g. a real-incident replay), drive the response off this key
 }) {
   if (!zone) {
     return (
@@ -131,11 +133,11 @@ export function ThreatPanel({
         )}
 
         <ResponseTrigger
-          scenario={scenario}
+          scenario={responseScenario ?? scenario}
           zoneId={zone.id}
           tMin={tMin}
-          active={r.compound && scenario !== "custom" && scenario !== "ingested"}
-          auto={r.compound && r.level === "critical" && scenario !== "custom" && scenario !== "ingested"}
+          active={r.compound && (responseScenario ? true : scenario !== "custom" && scenario !== "ingested")}
+          auto={r.compound && r.level === "critical" && (responseScenario ? true : scenario !== "custom" && scenario !== "ingested")}
         />
 
         {/* atmosphere */}

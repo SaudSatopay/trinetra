@@ -12,7 +12,7 @@ export function RiskGauge({ score, level, size = 168 }: { score: number; level: 
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 120 120" width={size} height={size}>
+      <svg viewBox="0 0 120 120" width={size} height={size} style={{ overflow: "visible" }}>
         <g transform="rotate(135 60 60)">
           <circle
             cx="60"

@@ -312,6 +312,15 @@ def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list
     """Reconstruct the chain of events a safety officer would review: which permits
     opened when, when Trinetra escalated, and when the legacy single-sensor finally
     alarmed — so the lead time is visible as a sequence, not just a number."""
+    if scenario_name == "texas-city":
+        # the CSB's documented sequence — Trinetra's alert stands 10 min before the explosion
+        return [
+            {"t": 0, "label": "Ignition source active (idling diesel engine)", "kind": "ignition"},
+            {"t": 0, "label": "20 contractors present in adjacent trailers", "kind": "personnel"},
+            {"t": 10, "label": "Trinetra raises compound alert", "kind": "trinetra"},
+            {"t": 17, "label": "First single-sensor gas alarm", "kind": "legacy"},
+            {"t": 20, "label": "Vapour-cloud ignition — explosion (CSB-documented)", "kind": "legacy"},
+        ]
     scn = SCENARIOS[scenario_name]
     near = set(ZONES[zone].neighbours) | {zone}
     events: list[dict] = []
@@ -346,20 +355,31 @@ def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list
 @app.get("/api/response")
 def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     """Orchestrate the autonomous response: actions + incident report + multilingual alert."""
-    if scenario not in SCENARIOS:
+    incident = scenario == "texas-city"
+    if not incident and scenario not in SCENARIOS:
         return {"error": f"unknown scenario '{scenario}'"}
-    key = (scenario, zone)
+    key = (scenario, zone, minutes) if incident else (scenario, zone)
     if key in _response_cache:
         return _response_cache[key]
 
-    sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
     engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     snap = None
-    for snap in sim.run(max(1, minutes)):
-        risks = engine.assess(snap)
-        if zone in risks:
-            risk = risks[zone]
+    if incident:
+        # replay the reconstructed real-incident feed through the same engine
+        for s in parse_csv(texas_city_csv())[0]:
+            if s.t_min > minutes:
+                break
+            snap = s
+            risks = engine.assess(s)
+            if zone in risks:
+                risk = risks[zone]
+    else:
+        sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
+        for snap in sim.run(max(1, minutes)):
+            risks = engine.assess(snap)
+            if zone in risks:
+                risk = risks[zone]
     if risk is None or snap is None or zone not in ZONES:
         return {"error": f"unknown zone '{zone}'"}
 
