@@ -55,6 +55,40 @@ interface AgentsTrace {
   reasoning: { compound: boolean; score: number; level: string; factors: string[]; top_intervention: string };
   precedent: { title: string; similarity: number; casualties: string };
 }
+type Verdict = "block" | "allow_with_conditions" | "allow";
+interface GateLevel {
+  level: string;
+  score: number;
+  compound: boolean;
+}
+interface AffectedZone {
+  zone: string;
+  name: string;
+  before_level: string;
+  after_level: string;
+  compound: boolean;
+  cross_zone: boolean;
+}
+interface PermitGate {
+  scenario: string;
+  at_min: number;
+  zone: string;
+  permit_type: string;
+  workers: number;
+  verdict: Verdict;
+  headline: string;
+  reason: string;
+  before: GateLevel;
+  after: GateLevel;
+  driver_zone: string;
+  driver_before: GateLevel;
+  driver_after: GateLevel;
+  affected_zones: AffectedZone[];
+  factors: string[];
+  conditions: string[];
+  regulation: string;
+  error?: string;
+}
 
 export function SafetyIntelligence({
   scenario,
@@ -71,7 +105,7 @@ export function SafetyIntelligence({
   const [patterns, setPatterns] = useState<Patterns | null>(null);
   const [premortem, setPremortem] = useState<Premortem | null>(null);
   const [reasoning, setReasoning] = useState<AgentsTrace | null>(null);
-  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem" | "reasoning">(null);
+  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem" | "reasoning" | "permit">(null);
   const known = scenario !== "custom" && scenario !== "ingested";
 
   // re-audit on scenario change and when the plant escalates into compound
@@ -123,12 +157,14 @@ export function SafetyIntelligence({
         <Chip label="Compliance" onClick={() => setOpen("compliance")} badge={known ? deviations : null} alert={deviations > 0} />
         <Chip label="Patterns" onClick={() => setOpen("patterns")} badge={patterns ? patterns.patterns.length : null} />
         <Chip label="Pre-mortem" onClick={() => setOpen("premortem")} badge={premortem ? premortem.findings.length : null} />
+        <Chip label="Permit gate" onClick={() => setOpen("permit")} badge={null} />
         {known && <Chip label="Reasoning" onClick={() => setOpen("reasoning")} badge={reasoning ? reasoning.trace.length : null} />}
       </div>
       <AnimatePresence>
         {open === "compliance" && <ComplianceModal data={comp} onClose={() => setOpen(null)} />}
         {open === "patterns" && <PatternsModal data={patterns} onClose={() => setOpen(null)} />}
         {open === "premortem" && <PremortemModal data={premortem} onClose={() => setOpen(null)} />}
+        {open === "permit" && <PermitGateModal scenario={scenario} tMin={tMin} zone={zone} onClose={() => setOpen(null)} />}
         {open === "reasoning" && <ReasoningModal data={reasoning} onClose={() => setOpen(null)} />}
       </AnimatePresence>
     </>
@@ -396,6 +432,169 @@ function ReasoningModal({ data, onClose }: { data: AgentsTrace | null; onClose: 
               </span>
             </div>
           </div>
+        </>
+      )}
+    </Shell>
+  );
+}
+
+const PERMIT_TYPES: { id: string; label: string }[] = [
+  { id: "hot_work", label: "Hot work" },
+  { id: "confined_space_entry", label: "Confined entry" },
+  { id: "electrical_isolation", label: "Electrical" },
+  { id: "maintenance", label: "Maintenance" },
+];
+const GATE_ZONES = ["COB-1", "GCP", "BF-3", "CST-2", "PMP", "MNT"];
+const VERDICT_META: Record<Verdict, { label: string; color: string; glyph: string }> = {
+  block: { label: "Permit blocked", color: "var(--lvl-critical)", glyph: "⛔" },
+  allow_with_conditions: { label: "Issue with conditions", color: "var(--lvl-elevated)", glyph: "▲" },
+  allow: { label: "Cleared to issue", color: "var(--lvl-normal)", glyph: "✓" },
+};
+const LEVEL_COLOR: Record<string, string> = {
+  normal: "var(--lvl-normal)", watch: "var(--lvl-watch)", elevated: "var(--lvl-elevated)",
+  high: "var(--lvl-high)", critical: "var(--lvl-critical)",
+};
+
+function GatePill({ l }: { l: GateLevel }) {
+  const c = LEVEL_COLOR[l.level] ?? "var(--text-dim)";
+  return (
+    <span className="flex items-center gap-1.5 rounded-md px-2 py-1" style={{ border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 10%, transparent)` }}>
+      <span className="font-mono text-[10px] font-semibold uppercase" style={{ color: c }}>{l.level}</span>
+      <span className="tnum text-[11px]" style={{ color: c }}>{Math.round(l.score)}</span>
+      {l.compound && <span className="font-mono text-[8px] font-bold uppercase" style={{ color: "var(--lvl-critical)" }}>· cmp</span>}
+    </span>
+  );
+}
+
+function Segmented({ options, value, onChange }: { options: { id: string; label: string }[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = value === o.id;
+        return (
+          <button
+            key={o.id}
+            onClick={() => onChange(o.id)}
+            className="rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors"
+            style={
+              on
+                ? { color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--brand) 34%, transparent)" }
+                : { color: "var(--text-dim)", border: "1px solid var(--line-2)" }
+            }
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PermitGateModal({ scenario, tMin, zone, onClose }: { scenario: string; tMin: number; zone?: string; onClose: () => void }) {
+  const known = scenario !== "custom" && scenario !== "ingested";
+  const ctxScenario = known ? scenario : "vizag";
+  const ctxMin = Math.max(1, Math.round(tMin));
+  const [pzone, setPzone] = useState(zone && GATE_ZONES.includes(zone) ? zone : "COB-1");
+  const [ptype, setPtype] = useState("hot_work");
+  const [data, setData] = useState<PermitGate | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    setLoading(true);
+    fetch(`${API_BASE}/api/permit-gate?scenario=${ctxScenario}&minutes=${ctxMin}&zone=${pzone}&permit_type=${ptype}`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancel) { setData(d.error ? null : d); setLoading(false); } })
+      .catch(() => { if (!cancel) setLoading(false); });
+    return () => { cancel = true; };
+  }, [ctxScenario, ctxMin, pzone, ptype]);
+
+  const v = data ? VERDICT_META[data.verdict] : null;
+  const crossZones = data?.affected_zones.filter((a) => a.cross_zone) ?? [];
+
+  return (
+    <Shell
+      title="Permit-issuance gate"
+      sub={`Shift-left · evaluated against ${ctxScenario} at T+${ctxMin} · OISD / Factory Act / DGMS`}
+      onClose={onClose}
+    >
+      <div className="mb-4 space-y-3">
+        <div>
+          <div className="label mb-2">Proposed permit</div>
+          <Segmented options={PERMIT_TYPES} value={ptype} onChange={setPtype} />
+        </div>
+        <div>
+          <div className="label mb-2">Zone to issue in</div>
+          <Segmented options={GATE_ZONES.map((z) => ({ id: z, label: z }))} value={pzone} onChange={setPzone} />
+        </div>
+      </div>
+
+      {loading && !data && <div className="font-mono text-[11px] text-ink-dim">evaluating at the permit desk…</div>}
+
+      {data && v && (
+        <>
+          <div
+            className="rounded-lg p-4"
+            style={{ background: `color-mix(in srgb, ${v.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${v.color} 38%, transparent)` }}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="text-[17px]" style={{ color: v.color }}>{v.glyph}</span>
+              <span className="font-display text-[16px] font-bold tracking-wide" style={{ color: v.color }}>{v.label.toUpperCase()}</span>
+            </div>
+            <p className="mt-2 text-[12.5px] leading-relaxed text-ink-bright">{data.headline}</p>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-lg px-4 py-3" style={{ border: "1px solid var(--line-2)" }}>
+            <span className="font-mono text-[11px] text-ink-dim">
+              {data.driver_zone}{data.driver_zone !== data.zone ? " · next door" : ""}
+            </span>
+            <div className="flex items-center gap-2.5">
+              <GatePill l={data.driver_before} />
+              <span style={{ color: "var(--text-dim)" }}>→</span>
+              <GatePill l={data.driver_after} />
+            </div>
+          </div>
+
+          <p className="mt-3 text-[11.5px] leading-relaxed text-ink">{data.reason}</p>
+
+          {crossZones.length > 0 && (
+            <div
+              className="mt-3 rounded-lg p-3"
+              style={{ background: "color-mix(in srgb, var(--lvl-high) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--lvl-high) 28%, transparent)" }}
+            >
+              <span className="label" style={{ color: "var(--lvl-high)" }}>Blast-radius spillover</span>
+              <div className="mt-1.5 text-[11.5px] text-ink">
+                {crossZones.map((a) => `${a.name} (${a.zone}) → ${a.after_level.toUpperCase()}`).join(" · ")}
+              </div>
+            </div>
+          )}
+
+          {data.factors.length > 0 && (
+            <div className="mt-3">
+              <div className="label mb-2">Why</div>
+              <div className="flex flex-wrap gap-1.5">
+                {data.factors.map((f, i) => (
+                  <span key={i} className="rounded px-2 py-1 text-[10.5px] text-ink" style={{ background: "color-mix(in srgb, var(--lvl-watch) 13%, transparent)" }}>{f}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.conditions.length > 0 && (
+            <div className="mt-4">
+              <div className="label mb-2">Conditions to issue safely</div>
+              <ul className="space-y-1.5">
+                {data.conditions.map((c, i) => (
+                  <li key={i} className="flex gap-2 text-[11.5px] leading-relaxed text-ink">
+                    <span style={{ color: "var(--brand)" }}>→</span>
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-4 font-mono text-[9px] leading-relaxed text-ink-dim">{data.regulation}</div>
         </>
       )}
     </Shell>

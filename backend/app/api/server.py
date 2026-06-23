@@ -32,6 +32,7 @@ from ..engine import CompoundRiskEngine
 from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
+from ..permit_gate import evaluate_permit
 from ..replay import TEXAS_CITY, parse_csv, sample_csv, texas_city_csv
 from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
@@ -514,6 +515,21 @@ def premortem():
         from ..premortem import discover
         _premortem_cache = discover()
     return _premortem_cache
+
+
+_permit_cache: dict[tuple, dict] = {}
+
+
+@app.get("/api/permit-gate")
+def permit_gate(scenario: str = "vizag", minutes: int = 10, zone: str = "COB-1",
+                permit_type: str = "hot_work", workers: int | None = None):
+    """Shift-left permit-issuance gate: simulate the plant with the PROPOSED permit added and
+    refuse it if issuing it would create a compound hazard — catching the danger at the permit
+    desk, minutes before any single sensor would alarm. The Vizag lesson, made preventive."""
+    key = (scenario, int(minutes), zone, permit_type, workers)
+    if key not in _permit_cache:
+        _permit_cache[key] = evaluate_permit(scenario, minutes, zone, permit_type, workers)
+    return _permit_cache[key]
 
 
 _fleet_cache: dict | None = None
