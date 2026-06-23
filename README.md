@@ -233,7 +233,7 @@ Reconstructed from the **U.S. CSB BP Texas City (2005)** final report and replay
 | 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
 | 🚫 **Shift-left permit gate** | refuses a permit that would *create* a compound hazard — prevention at the permit desk, not detection after | `/api/permit-gate` |
 | 🔁 **Active-learning flywheel** | per-plant nuisance tuning from operator feedback, with a hard recall guardrail (compound always pages) | `/api/feedback` |
-| 💰 **Business impact** | EV-adjusted ROI — **₹115.5 Cr** per prevented incident, **~8× expected annual return** (1-in-15-yr) + insurance offset | response modal |
+| 💰 **Business impact** | EV-adjusted ROI — **₹115.5 Cr** per prevented incident, **~7.7× expected annual return** (1-in-15-yr) + insurance offset | response modal |
 | 🎛️ **Scenario editor** | toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
 | 🔌 **SCADA connector** | replay a real SCADA/permit CSV through the same engine — *a connector, not a rewrite* | `/api/ingest` |
 | 📚 **Pattern intelligence** | mines recurring causal patterns across a near-miss + incident corpus | `/api/patterns` |
@@ -253,6 +253,7 @@ A bespoke, instrument-grade HMI (Next.js 14 + a "foundry" design system — warm
 - **Split-reality readout** — *Legacy: all clear* vs *Trinetra: compound alert · +N min*.
 - **Disaster-memory card**, **CCTV/YOLOv8 tile**, **scenario editor**, **SCADA connector**, **Safety-Intelligence chips** (compliance · patterns · pre-mortem · **permit gate** · **learning** · reasoning), and an auto-popping **autonomous-response modal**.
 - **Judge Mode** — one click resets to the Vizag hero, 4×, and jumps to the money shot.
+- **Booth / attract mode** — an unattended ~60-second kiosk loop (Vizag → Texas City → fleet → cross-zone → a silent hard negative) that sounds a siren and a spoken evacuation on every compound hazard; one click to start, with a mute toggle.
 
 ## Deployment — a connector, not a rewrite
 
