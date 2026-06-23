@@ -146,7 +146,10 @@ function ZoneNode({
   const col = levelColor[lvl];
   const rank = levelRank(lvl);
   const active = rank >= 2; // elevated+
-  const crit = lvl === "critical";
+  // the halo/pulse is the LETHAL-COMPOUND signal — gate it on the verdict, not just the score, so a
+  // high-gas-but-not-compound zone (e.g. inerted, or a release with no ignition/people) shows its
+  // severity colour without the false "emergency" halo. Keeps the visual honest with the engine.
+  const crit = lvl === "critical" && z.risk.compound;
 
   return (
     <button
