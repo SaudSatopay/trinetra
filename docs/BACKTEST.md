@@ -55,6 +55,20 @@ Recall holds at 100% and false positives stay at **2.5%** on scenarios the engin
 
 > Reproduce: `cd backend && python test_generalization.py`
 
+## Real-incident replay — independent validation
+
+Synthetic scenarios invite the fair question *"would it catch a real one?"* So we reconstruct a documented incident and replay it through the **same** connector and engine. From the **U.S. CSB final report on the BP Texas City refinery explosion** (23 Mar 2005, Report No. 2005-04-I-TX) we hand-digitize the inquiry's own sequence and timing — the overfilled raffinate splitter venting a ground-level vapour cloud, the idling-engine ignition source, and the contractors stationed in nearby trailers — into a SCADA CSV. (The CSB found there was *no* gas detector that would have caught the release — its absence was a finding — so the documented rising vapour is mapped onto the flammable/LEL channel; the ignition and personnel overlays come straight from the report.)
+
+| Event | Time |
+|---|---|
+| **Trinetra compound alert** | **T + 10 min** |
+| First single-sensor alarm | T + 17 min |
+| Documented vapour-cloud ignition (CSB) | T + 20 min |
+
+**Trinetra raises the compound alert 10 minutes before the explosion the CSB recorded** — on conditions it was never tuned on. These are the inquiry's own numbers.
+
+> Reproduce: `GET /api/incident/texas-city`  ·  inspect the raw feed: `GET /api/incident/texas-city.csv`
+
 ## The Vizag backtest (hero scenario)
 
 Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-battery explosion** (8 fatalities): slow coke-oven-gas accumulation in Battery #1 while a hot-work permit (ignition) and a confined-space entry (3 personnel) are active.
