@@ -77,6 +77,8 @@ export default function Page() {
 
   useEffect(() => {
     if (scenario === "ingested") return; // frames are supplied by the connector upload
+    setIncident(null); // leaving an ingested feed: drop the stale real-incident context (and its figures)
+    setIngestSummary(null);
     let cancelled = false;
     (async () => {
       try {
@@ -158,8 +160,8 @@ export default function Page() {
     setSelected(null);
     setSpeed(4);
     setMainView(step.view);
-    if (step.scenario === "texas-city") {
-      getIncident("texas-city")
+    if (step.scenario === "texas-city" || step.scenario === "jaipur") {
+      getIncident(step.scenario)
         .then((d) => {
           if (!cancelled) handleIncident(d);
         })
@@ -339,7 +341,7 @@ export default function Page() {
               </span>
             )}
             <a
-              href={`${API_BASE}/api/incident/texas-city.csv`}
+              href={`${API_BASE}/api/incident/${incident.key}.csv`}
               className="font-mono text-[10px] text-ink-dim underline-offset-2 hover:underline"
               title="Download the reconstructed CSV — inspect the inquiry's own sequence"
             >

@@ -47,12 +47,20 @@ export const BOOTH_STEPS: BoothStep[] = [
       "One engine, every plant — sites triaged compound-first across the fleet. Scaling out is a connector, not a rewrite.",
   },
   {
-    scenario: "cross_zone",
+    scenario: "jaipur",
+    view: "plant",
+    dwellMs: 13000,
+    audio: true,
+    label:
+      "Indian Oil Jaipur, 2009 (MB Lal Committee) — a petrol-vapour cloud nobody connected for over an hour. Trinetra flags the compound risk 36 minutes before the documented ignition.",
+  },
+  {
+    scenario: "asphyxiation",
     view: "plant",
     dwellMs: 12000,
     audio: true,
     label:
-      "Cross-zone blast radius — the people at risk are working next door, not in the leaking bay. A zone-by-zone walkdown misses them; the adjacency graph does not.",
+      "Oxygen-deficient entry — two workers in a sump, no supplied air, no flammable gas, no ignition. A gas detector stays silent; Trinetra raises the asphyxiation compound it would miss.",
   },
   {
     scenario: "gas_no_ignition",
