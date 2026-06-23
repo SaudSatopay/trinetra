@@ -69,6 +69,28 @@ interface AffectedZone {
   compound: boolean;
   cross_zone: boolean;
 }
+interface NuisanceItem {
+  label: string;
+  score: number;
+  compound: boolean;
+}
+interface Learning {
+  plant: string;
+  confirm: number;
+  false_alarm: number;
+  total: number;
+  operator_precision: number | null;
+  base_threshold: number;
+  threshold: number;
+  cap: number;
+  high_band: number;
+  sensitivity: string;
+  guardrail: string;
+  nuisance_sample: NuisanceItem[];
+  suppressed_now: number;
+  log: { verdict: string; score: number | null; zone: string }[];
+  note: string;
+}
 interface PermitGate {
   scenario: string;
   at_min: number;
@@ -105,7 +127,7 @@ export function SafetyIntelligence({
   const [patterns, setPatterns] = useState<Patterns | null>(null);
   const [premortem, setPremortem] = useState<Premortem | null>(null);
   const [reasoning, setReasoning] = useState<AgentsTrace | null>(null);
-  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem" | "reasoning" | "permit">(null);
+  const [open, setOpen] = useState<null | "compliance" | "patterns" | "premortem" | "reasoning" | "permit" | "learning">(null);
   const known = scenario !== "custom" && scenario !== "ingested";
 
   // re-audit on scenario change and when the plant escalates into compound
@@ -158,6 +180,7 @@ export function SafetyIntelligence({
         <Chip label="Patterns" onClick={() => setOpen("patterns")} badge={patterns ? patterns.patterns.length : null} />
         <Chip label="Pre-mortem" onClick={() => setOpen("premortem")} badge={premortem ? premortem.findings.length : null} />
         <Chip label="Permit gate" onClick={() => setOpen("permit")} badge={null} />
+        <Chip label="Learning" onClick={() => setOpen("learning")} badge={null} />
         {known && <Chip label="Reasoning" onClick={() => setOpen("reasoning")} badge={reasoning ? reasoning.trace.length : null} />}
       </div>
       <AnimatePresence>
@@ -165,6 +188,7 @@ export function SafetyIntelligence({
         {open === "patterns" && <PatternsModal data={patterns} onClose={() => setOpen(null)} />}
         {open === "premortem" && <PremortemModal data={premortem} onClose={() => setOpen(null)} />}
         {open === "permit" && <PermitGateModal scenario={scenario} tMin={tMin} zone={zone} onClose={() => setOpen(null)} />}
+        {open === "learning" && <LearningModal onClose={() => setOpen(null)} />}
         {open === "reasoning" && <ReasoningModal data={reasoning} onClose={() => setOpen(null)} />}
       </AnimatePresence>
     </>
@@ -595,6 +619,106 @@ function PermitGateModal({ scenario, tMin, zone, onClose }: { scenario: string; 
           )}
 
           <div className="mt-4 font-mono text-[9px] leading-relaxed text-ink-dim">{data.regulation}</div>
+        </>
+      )}
+    </Shell>
+  );
+}
+
+const LEARN_PLANT = "vizag-steel";
+
+function LearnTile({ label, value, color }: { label: string; value: string | number; color: string }) {
+  return (
+    <div className="rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
+      <div className="tnum text-[22px] font-bold" style={{ color }}>{value}</div>
+      <div className="label !text-[8px] mt-1">{label}</div>
+    </div>
+  );
+}
+
+function LearningModal({ onClose }: { onClose: () => void }) {
+  const [d, setD] = useState<Learning | null>(null);
+  const apply = (p: Promise<Response>) => p.then((r) => r.json()).then((x) => { if (!x.error) setD(x); }).catch(() => {});
+  useEffect(() => { apply(fetch(`${API_BASE}/api/feedback?plant=${LEARN_PLANT}`)); }, []);
+  const act = (verdict: string, score: number) =>
+    apply(fetch(`${API_BASE}/api/feedback?plant=${LEARN_PLANT}&verdict=${verdict}&score=${score}`, { method: "POST" }));
+  const reset = () => apply(fetch(`${API_BASE}/api/feedback/reset?plant=${LEARN_PLANT}`, { method: "POST" }));
+
+  const pct = d ? Math.max(0, Math.min(100, ((d.threshold - d.base_threshold) / (d.high_band - d.base_threshold)) * 100)) : 0;
+
+  return (
+    <Shell title="Active-learning loop" sub="Per-plant nuisance tuning · recall protected by design" onClose={onClose}>
+      {d && (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[9px] uppercase tracking-wider text-ink-dim">
+            {["Operator verdict", "Per-plant threshold", "Fewer nuisance pages", "Trust ↑ · faster action"].map((s, i) => (
+              <span key={i} className="flex items-center gap-2">
+                {i > 0 && <span style={{ color: "var(--brand)" }}>→</span>}
+                <span>{s}</span>
+              </span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <LearnTile label="Confirmed" value={d.confirm} color="var(--lvl-normal)" />
+            <LearnTile label="False alarms" value={d.false_alarm} color="var(--lvl-elevated)" />
+            <LearnTile label="Operator precision" value={d.operator_precision == null ? "—" : `${Math.round(d.operator_precision * 100)}%`} color="var(--brand)" />
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between">
+              <span className="label">Non-compound alert threshold</span>
+              <span className="font-mono text-[10px]" style={{ color: "var(--brand)" }}>{d.sensitivity}</span>
+            </div>
+            <div className="mt-2 flex items-stretch gap-2">
+              <div className="relative h-9 flex-1 overflow-hidden rounded-md" style={{ border: "1px solid var(--line-2)", background: "var(--panel-2)" }}>
+                <div className="absolute inset-y-0 left-0" style={{ width: `${pct}%`, background: "color-mix(in srgb, var(--text-dim) 22%, transparent)", transition: "width .3s ease" }} />
+                <div className="absolute inset-y-0" style={{ left: `calc(${pct}% - 1px)`, width: 2, background: "var(--brand)", transition: "left .3s ease" }} />
+                <div className="absolute inset-0 flex items-center justify-between px-2.5 font-mono text-[9px] text-ink-dim">
+                  <span>{d.base_threshold} · auto-ack</span>
+                  <span className="tnum text-[13px]" style={{ color: "var(--brand)" }}>{d.threshold}</span>
+                  <span>pages →</span>
+                </div>
+              </div>
+              <div
+                className="flex items-center rounded-md px-2.5 font-mono text-[9px] uppercase tracking-wider"
+                style={{ border: "1px solid color-mix(in srgb, var(--lvl-critical) 30%, var(--line-2))", color: "var(--lvl-critical)", background: "color-mix(in srgb, var(--lvl-critical) 7%, transparent)" }}
+              >
+                🔒 ≥{d.high_band} always pages
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="label">Operator verdict</span>
+            <div className="flex-1" />
+            <button onClick={() => act("confirm", 100)} className="rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors hover:brightness-125" style={{ color: "var(--lvl-normal)", border: "1px solid color-mix(in srgb, var(--lvl-normal) 42%, var(--line-2))" }}>✓ Confirm alert</button>
+            <button onClick={() => act("false_alarm", 52)} className="rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-colors hover:brightness-125" style={{ color: "var(--lvl-elevated)", border: "1px solid color-mix(in srgb, var(--lvl-elevated) 42%, var(--line-2))" }}>✕ False alarm</button>
+            <button onClick={reset} className="rounded-md px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-ink-dim transition-colors hover:text-ink" style={{ border: "1px solid var(--line-2)" }}>reset</button>
+          </div>
+
+          <div className="mt-4">
+            <div className="label mb-2">Recurring excursions · {d.suppressed_now} now auto-acknowledged</div>
+            <div className="space-y-1.5">
+              {d.nuisance_sample.map((n, i) => {
+                const suppressed = !n.compound && n.score < d.threshold;
+                return (
+                  <div key={i} className="flex items-center justify-between rounded-md px-3 py-2 text-[11px]" style={{ border: "1px solid var(--line-2)", opacity: suppressed ? 0.5 : 1 }}>
+                    <span className="text-ink">{n.label}</span>
+                    <span className="flex items-center gap-2.5">
+                      <span className="tnum" style={{ color: "var(--lvl-elevated)" }}>{n.score}</span>
+                      <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: suppressed ? "var(--text-dim)" : "var(--brand)" }}>{suppressed ? "auto-ack" : "pages"}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <p className="mt-4 rounded-lg p-3 text-[11px] leading-relaxed" style={{ background: "color-mix(in srgb, var(--lvl-normal) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--lvl-normal) 24%, transparent)", color: "var(--text)" }}>
+            🔒 {d.guardrail}
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-dim">{d.note}</p>
         </>
       )}
     </Shell>

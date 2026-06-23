@@ -29,6 +29,7 @@ from ..constants import GAS_THRESHOLDS, PLANT_NAME, ZONES
 from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
 from ..compliance import audit as compliance_audit
 from ..engine import CompoundRiskEngine
+from ..feedback import overview as feedback_overview, record as feedback_record, reset as feedback_reset
 from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
@@ -515,6 +516,26 @@ def premortem():
         from ..premortem import discover
         _premortem_cache = discover()
     return _premortem_cache
+
+
+@app.get("/api/feedback")
+def feedback_get(plant: str = "vizag-steel"):
+    """The plant's active-learning state: operator confirms / false alarms and the learned
+    non-compound alert threshold (compound + HIGH/CRITICAL always page — recall is protected)."""
+    return feedback_overview(plant)
+
+
+@app.post("/api/feedback")
+def feedback_post(plant: str = "vizag-steel", verdict: str = "confirm",
+                  score: float | None = None, zone: str = ""):
+    """Record an operator verdict (confirm | false_alarm) and return the updated learned state."""
+    return feedback_record(plant, verdict, score, zone)
+
+
+@app.post("/api/feedback/reset")
+def feedback_reset_post(plant: str = "vizag-steel"):
+    """Reset the learned state for a plant (demo control)."""
+    return feedback_reset(plant)
 
 
 _permit_cache: dict[tuple, dict] = {}
