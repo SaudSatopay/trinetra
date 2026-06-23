@@ -43,6 +43,9 @@ COMPOUND_HIGH_FRAC = 0.70        # a high flammable level alone qualifies as evi
 COMPOUND_SLOPE = 0.012           # normalized rise/min that counts as "trending up" (noise-robust)
 INTERVENTION_MIN_SCORE = 40      # only surface interventions once it's actionable
 O2_AMBIENT = 20.9
+LOC_O2 = 11.0                    # limiting oxygen concentration (%vol): below this an inerted /
+                                 # purged zone cannot sustain a flammable explosion — the oxidizer
+                                 # leg of the fire triangle. Fuel + ignition + crew is NOT enough.
 CONF_SAMPLES = 128               # Monte-Carlo draws for calibrated confidence
 
 
@@ -66,6 +69,7 @@ class _Features:
     confined: bool
     fastest_gas: Optional[str]
     fastest_slope_raw: float  # in the gas's own unit per minute
+    o2_value: float           # raw O2 reading (%vol) — for the fire-triangle oxidizer check
 
 
 @dataclass
@@ -134,7 +138,7 @@ class CompoundRiskEngine:
                     or any(p.type == PermitType.CONFINED_SPACE for p in z.active_permits))
         return _Features(flam_level, flam_slope, toxic_level, o2_deficit,
                          ignition_same, ignition_adj, z.worker_count, personnel_adj, confined,
-                         fastest, fastest_raw)
+                         fastest, fastest_raw, z.gases["O2"].value)
 
     # -- scoring (uncapped; with counterfactual switches) --------------------
     def _score(self, f: _Features, *, drop_ignition=False, drop_personnel=False,
@@ -169,6 +173,7 @@ class CompoundRiskEngine:
              or f.flam_level >= COMPOUND_HIGH_FRAC)
             and (f.ignition_same or f.ignition_adj)
             and (f.personnel > 0 or f.personnel_adj > 0)
+            and f.o2_value >= LOC_O2
         )
         rng = random.Random(seed)
         agree = 0
@@ -186,7 +191,8 @@ class CompoundRiskEngine:
             ev = ((fp.flam_level >= COMPOUND_PRESENT_FRAC and fp.flam_slope > COMPOUND_SLOPE)
                   or fp.flam_level >= COMPOUND_HIGH_FRAC)
             comp = bool(ev and (fp.ignition_same or fp.ignition_adj)
-                        and (fp.personnel > 0 or fp.personnel_adj > 0))
+                        and (fp.personnel > 0 or fp.personnel_adj > 0)
+                        and o2v >= LOC_O2)
             if comp == nominal:
                 agree += 1
             if f.fastest_gas and f.fastest_slope_raw > 0.01:
@@ -216,7 +222,10 @@ class CompoundRiskEngine:
         ignition = f.ignition_same or f.ignition_adj
         # people are in danger inside the zone OR within the blast radius next door
         personnel_exposed = f.personnel > 0 or f.personnel_adj > 0
-        compound = bool(flammable_evidence and ignition and personnel_exposed)
+        # fire triangle: a flammable explosion also needs an oxidizer. An inerted / purged zone
+        # (O2 below the limiting oxygen concentration) cannot ignite, even with gas + ignition + crew.
+        oxidizer = f.o2_value >= LOC_O2
+        compound = bool(flammable_evidence and ignition and personnel_exposed and oxidizer)
 
         factors: list[str] = []
         if f.flam_slope > COMPOUND_SLOPE and f.fastest_gas and f.flam_level >= COMPOUND_PRESENT_FRAC:
@@ -237,6 +246,9 @@ class CompoundRiskEngine:
             factors.append(f"confined space, O2 down to {z.gases['O2'].value:.1f}%")
         if f.toxic_level >= 1.0:
             factors.append("toxic gas above exposure limit")
+        if flammable_evidence and ignition and personnel_exposed and not oxidizer:
+            factors.append(f"zone inerted — O2 {f.o2_value:.1f}% below the {LOC_O2:.0f}% limiting "
+                           f"oxygen concentration; no oxidizer, so no flammable explosion is possible")
 
         ttt = None
         if f.fastest_gas and f.fastest_slope_raw > 0.01:

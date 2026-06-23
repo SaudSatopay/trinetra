@@ -215,7 +215,50 @@ CROSS_ZONE_EXPOSURE = Scenario(
 )
 
 
+# --- Hard negative: all three factors present, but the zone is INERTED --------
+# The case a naive "gas + ignition + people" rule gets wrong. During a controlled nitrogen
+# purge of the sump tank, residual flammable gas reads high and a hot-work permit is logged
+# for the post-purge repair, with the entry crew on supplied air — but the atmosphere is
+# inerted below the limiting oxygen concentration, so a flammable explosion is physically
+# impossible. Trinetra checks the full fire triangle (fuel + oxidizer + ignition), not three
+# checkboxes, and correctly holds fire.
+_INERTED_WORKERS = [
+    Worker("W-410", "D. Kumar", "Vessel entrant"),
+    Worker("W-411", "A. Sheikh", "Hot-work fitter"),
+]
+_INERTED_PERMITS = [
+    Permit("PTW-7790", PermitType.HOT_WORK, "CST-2", ["W-411"], start_min=0, duration_min=60,
+           description="Hot work: post-purge weld repair, Sump Tank 2"),
+    Permit("PTW-7791", PermitType.CONFINED_SPACE, "CST-2", ["W-410"], start_min=0, duration_min=60,
+           description="Inerted-entry (supplied air): sump inspection under N2 purge"),
+]
+
+
+def _inerted_inject(t: float) -> Offsets:
+    return {
+        ("CST-2", "CH4"): ramp(t, 3, 40, 40),
+        ("CST-2", "CO"):  ramp(t, 3, 90, 42),
+        ("CST-2", "O2"): -12.0,   # nitrogen purge holds O2 ~8.6 %vol — below the LOC, no oxidizer
+    }
+
+
+INERTED_SAFE = Scenario(
+    name="inerted",
+    title="Inerted purge — all three factors, no oxidizer",
+    description="Rising flammable gas, an active hot-work permit, and crew present — the exact "
+                "three factors that define a compound hazard — but the vessel is under a nitrogen "
+                "purge, inerted below the limiting oxygen concentration. No oxidizer, no explosion. "
+                "The hard case a 'three checkboxes' rule gets wrong; Trinetra reasons about the "
+                "fire triangle and correctly stays calm.",
+    expected_compound=False,
+    hazard_zone="CST-2",
+    permits=_INERTED_PERMITS,
+    workers=_INERTED_WORKERS,
+    inject=_inerted_inject,
+)
+
+
 SCENARIOS: dict[str, Scenario] = {
     s.name: s for s in (NORMAL, VIZAG_COMPOUND, GAS_NO_IGNITION, HOTWORK_NO_GAS, NOISE_SPIKE,
-                        CROSS_ZONE_EXPOSURE)
+                        CROSS_ZONE_EXPOSURE, INERTED_SAFE)
 }

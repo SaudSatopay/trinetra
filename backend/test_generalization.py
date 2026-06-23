@@ -103,6 +103,29 @@ def rand_transient(rng, i):
     return Scenario(f"GT{i}", "", "", expected_compound=False, hazard_zone=zone, inject=inj), 400 + i
 
 
+def rand_inerted_safe(rng, i):
+    """All three compound factors present (rising gas + ignition + crew), but the zone is inerted
+    below the limiting oxygen concentration — combustion is impossible. The held-out version of
+    the benchmark's hard negative: it must NOT count as a false positive."""
+    zone = rng.choice(list(ZONES))
+    gas = rng.choice(GASES)
+    ramp_min = rng.uniform(25, 55)
+    peak = rng.uniform(*PEAK_BANDS[gas])
+    crew = rng.randint(1, 4)
+    cs = [f"GI{i}-CS{j}" for j in range(crew)]
+    workers = [Worker(f"GI{i}-HW", "Welder", "Welder")] + [Worker(w, "Operator", "Operator") for w in cs]
+    permits = [Permit(f"GI{i}-HWP", PermitType.HOT_WORK, zone, [f"GI{i}-HW"], 0, 60, "hot work"),
+               Permit(f"GI{i}-CSP", PermitType.CONFINED_SPACE, zone, cs, 0, 55, "inerted entry")]
+    sec_gas, sec_peak = SECONDARY[gas]
+
+    def inj(t):
+        return {(zone, gas): ramp(t, 3, peak, ramp_min),
+                (zone, sec_gas): ramp(t, 3, sec_peak, ramp_min + 3),
+                (zone, "O2"): -12.0}   # inerted below the LOC throughout
+    return Scenario(f"GI{i}", "", "", expected_compound=False, hazard_zone=zone,
+                    permits=permits, workers=workers, inject=inj), 500 + i
+
+
 def evaluate(scenario, seed, minutes=42):
     sim = PlantSimulator(scenario=scenario, dt_min=1.0, seed=seed)
     engine = CompoundRiskEngine()
@@ -127,8 +150,8 @@ def evaluate(scenario, seed, minutes=42):
 def main() -> bool:
     rng = random.Random(CONFIG_SEED)
     positives = [rand_positive(rng, i) for i in range(N_POSITIVE)]
-    neg_makers = (rand_gas_no_ignition, rand_context_no_gas, rand_transient)
-    negatives = [neg_makers[i % 3](rng, i) for i in range(N_NEGATIVE)]
+    neg_makers = (rand_gas_no_ignition, rand_context_no_gas, rand_transient, rand_inerted_safe)
+    negatives = [neg_makers[i % 4](rng, i) for i in range(N_NEGATIVE)]
 
     tp = fn = fp = tn = 0
     leads = []
@@ -155,7 +178,8 @@ def main() -> bool:
 
     print(f"  Held-out set : {N_POSITIVE} randomized compound hazards + {N_NEGATIVE} randomized decoys")
     print(f"                 (random zone / gas / ramp / peak / permit timing / ignition locality / crew;")
-    print(f"                  simulator seeds 100+ — never seed 42, which the thresholds were set on)")
+    print(f"                  a quarter of the decoys are 'inerted' hard negatives — all three factors")
+    print(f"                  present but no oxidizer; simulator seeds 100+, never the seed-42 tuning set)")
     print("-" * 80)
     print(f"  Compound recall        : {recall:6.1%}   ({tp}/{tp + fn})")
     print(f"  False-positive rate    : {fpr:6.1%}   ({fp}/{fp + tn})")

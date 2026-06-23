@@ -74,6 +74,26 @@ def make_transient(name, zone, gas):
                     hazard_zone=zone, inject=inj)
 
 
+def make_inerted_safe(name, zone, gas, ramp_min):
+    """The hardest negative: ALL THREE compound legs present — rising flammable gas, an active
+    hot-work permit, and crew in the zone — but it is inerted (O2 purged below the limiting
+    oxygen concentration), so a flammable explosion is physically impossible. A naive 'gas +
+    ignition + people' checkbox rule fires here; the engine must reason about the fire triangle
+    (no oxidizer -> no compound) and stay quiet. This is the negative that proves the benchmark
+    is discriminating, not self-referential."""
+    workers = [Worker(f"{name}-W1", "Worker A", "Fitter"), Worker(f"{name}-W2", "Worker B", "Welder")]
+    permits = [
+        Permit(f"{name}-HW", PermitType.HOT_WORK, zone, [f"{name}-W2"], 0, 60, "hot work (post-purge)"),
+        Permit(f"{name}-CS", PermitType.CONFINED_SPACE, zone, [f"{name}-W1"], 0, 60, "inerted entry, supplied air"),
+    ]
+
+    def inj(t):
+        return {(zone, gas): ramp(t, 3, PEAKS[gas], ramp_min),
+                (zone, "O2"): -12.0}   # held inerted: O2 ~8.9 %vol throughout, below the LOC
+    return Scenario(name, f"hard-neg-inerted:{zone}:{gas}", "", expected_compound=False,
+                    hazard_zone=zone, permits=permits, workers=workers, inject=inj)
+
+
 def build_eval_set():
     positives = [
         make_positive("P01", "COB-1", "CH4", 40),
@@ -103,6 +123,10 @@ def build_eval_set():
         make_transient("N09", "GCP", "CH4"),
         make_transient("N10", "BF-3", "CO"),
         Scenario("N11", "normal", "", expected_compound=False),
+        # the hardest negatives — all three compound factors present, but inerted (no oxidizer)
+        make_inerted_safe("N12", "COB-1", "CH4", 40),
+        make_inerted_safe("N13", "GCP", "CO", 38),
+        make_inerted_safe("N14", "CST-2", "CH4", 45),
     ]
     return positives + negatives
 
@@ -172,6 +196,9 @@ def main():
     print(f"    Compound detection recall : {recall:6.1%}   ({tp}/{tp + fn} hazards caught)")
     print(f"    False-positive rate       : {fpr:6.1%}   ({fp}/{fp + tn} benign scenarios)")
     print(f"    Precision                 : {precision:6.1%}")
+    print(f"    Hardest negatives         : 3 inerted decoys carry ALL three compound factors")
+    print(f"                                (gas + ignition + crew) yet are safe — no oxidizer, no")
+    print(f"                                explosion; held as true negatives on physics, not rules")
     print(f"    False-negative reduction  : {recall:6.1%} of compound hazards the single-sensor")
     print(f"                                baseline is blind to until the gas crosses its setpoint")
     if leads:
