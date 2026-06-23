@@ -100,6 +100,33 @@ def main() -> bool:
     results.append(case("Cross-zone exposure (empty zone, crew next door) -> compound on blast radius",
                         ok, f"first compound at t={fired_t}, in-zone workers={in_zone_at_fire} (expected fired & 0 in-zone)"))
 
+    # 6. Oxygen-deficient entry WITHOUT supplied air: no flammable, no ignition, so an explosion
+    #    detector stays silent — but it is lethal. Must raise an asphyxiation compound.
+    from app.scenarios import ASPHYXIATION, INERTED_SAFE
+    hits = compound_minutes(ASPHYXIATION, "CST-2")
+    results.append(case("Oxygen-deficient unprotected entry -> asphyxiation compound fires",
+                        len(hits) > 0, f"first compound at t={hits[0] if hits else 'NEVER'} (no flammable / no ignition)"))
+
+    # 7. The SAME inerted atmosphere but the crew is on supplied air (a real inerted entry):
+    #    no oxidizer for an explosion AND no asphyxiation exposure. Must stay quiet.
+    hits = compound_minutes(INERTED_SAFE, "CST-2")
+    results.append(case("Inerted entry WITH supplied air -> no compound (genuinely safe)",
+                        hits == [], f"compound minutes = {hits or 'none'} (expected none)"))
+
+    # 8. A real explosion hazard (gas + ignition + crew breathing the atmosphere) where one O2
+    #    sensor goes faulty-low at t=10. A lone low O2 with no inerting context must NOT suppress
+    #    the alert — a silent miss is the worst failure for a safety system. Must keep firing.
+    faulty = [Permit("RB-HW8", PermitType.HOT_WORK, "COB-1", ["RB-W2"], 0, 60, "hot work"),
+              Permit("RB-CS8", PermitType.CONFINED_SPACE, "COB-1", ["RB-W1"], 0, 60, "entry")]
+    fault = Scenario("o2_fault", "", "", expected_compound=True, hazard_zone="COB-1",
+                     permits=faulty, workers=_WORKERS,
+                     inject=lambda t: {("COB-1", "CH4"): ramp(t, 3, 58, 40),
+                                       ("COB-1", "O2"): (-10.5 if t >= 10 else 0.0)})
+    hits = compound_minutes(fault, "COB-1")
+    ok = bool(hits) and any(h >= 10 for h in hits)
+    results.append(case("Faulty-low O2 mid-incident -> explosion alert NOT silently suppressed",
+                        ok, f"compound at t={hits[0] if hits else 'NEVER'}..{hits[-1] if hits else ''} (fires through the O2 fault)"))
+
     print("\n  " + ("ALL ROBUSTNESS CHECKS PASSED" if all(results) else "SOME CHECKS FAILED"))
     return all(results)
 

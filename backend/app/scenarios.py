@@ -230,7 +230,7 @@ _INERTED_PERMITS = [
     Permit("PTW-7790", PermitType.HOT_WORK, "CST-2", ["W-411"], start_min=0, duration_min=60,
            description="Hot work: post-purge weld repair, Sump Tank 2"),
     Permit("PTW-7791", PermitType.CONFINED_SPACE, "CST-2", ["W-410"], start_min=0, duration_min=60,
-           description="Inerted-entry (supplied air): sump inspection under N2 purge"),
+           description="Inerted-entry (supplied air): sump inspection under N2 purge", supplied_air=True),
 ]
 
 
@@ -258,7 +258,42 @@ INERTED_SAFE = Scenario(
 )
 
 
+# --- Asphyxiation: unprotected entry into an oxygen-deficient vessel ----------
+# The hazard a flammable-only / explosion detector misses entirely. Two workers enter a sump
+# that has gone oxygen-deficient (residual inert gas, rusting, biological consumption) WITHOUT
+# supplied air — no flammable gas, no ignition, so a fire-triangle detector stays silent. But
+# oxygen deficiency is the leading cause of confined-space death. Trinetra raises it as its own
+# life-safety compound: an oxygen-deficient atmosphere with unprotected people inside.
+_ASPHYXIA_WORKERS = [
+    Worker("W-420", "P. Menon", "Vessel entrant"),
+    Worker("W-421", "R. Iyer", "Hole watch"),
+]
+_ASPHYXIA_PERMITS = [
+    Permit("PTW-7795", PermitType.CONFINED_SPACE, "CST-2", ["W-420", "W-421"], start_min=0,
+           duration_min=60, description="Confined-space entry, Sump Tank 2 (breathing the atmosphere)"),
+]
+
+
+def _asphyxia_inject(t: float) -> Offsets:
+    return {("CST-2", "O2"): -ramp(t, 2, 11.0, 16)}   # O2 sinks from ~20.6 toward ~9.6% — lethal, unprotected
+
+
+ASPHYXIATION = Scenario(
+    name="asphyxiation",
+    title="Oxygen-deficient entry — the hazard a gas detector misses",
+    description="Two workers enter a sump with no supplied air as the oxygen falls below 16% toward "
+                "asphyxiation — no flammable gas, no ignition, so an explosion detector stays silent. "
+                "Oxygen deficiency is the leading killer in confined spaces. Trinetra raises it as its "
+                "own life-safety compound (oxygen-deficient atmosphere + unprotected personnel).",
+    expected_compound=True,
+    hazard_zone="CST-2",
+    permits=_ASPHYXIA_PERMITS,
+    workers=_ASPHYXIA_WORKERS,
+    inject=_asphyxia_inject,
+)
+
+
 SCENARIOS: dict[str, Scenario] = {
     s.name: s for s in (NORMAL, VIZAG_COMPOUND, GAS_NO_IGNITION, HOTWORK_NO_GAS, NOISE_SPIKE,
-                        CROSS_ZONE_EXPOSURE, INERTED_SAFE)
+                        CROSS_ZONE_EXPOSURE, INERTED_SAFE, ASPHYXIATION)
 }

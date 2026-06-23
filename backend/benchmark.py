@@ -84,7 +84,7 @@ def make_inerted_safe(name, zone, gas, ramp_min):
     workers = [Worker(f"{name}-W1", "Worker A", "Fitter"), Worker(f"{name}-W2", "Worker B", "Welder")]
     permits = [
         Permit(f"{name}-HW", PermitType.HOT_WORK, zone, [f"{name}-W2"], 0, 60, "hot work (post-purge)"),
-        Permit(f"{name}-CS", PermitType.CONFINED_SPACE, zone, [f"{name}-W1"], 0, 60, "inerted entry, supplied air"),
+        Permit(f"{name}-CS", PermitType.CONFINED_SPACE, zone, [f"{name}-W1"], 0, 60, "inerted entry, supplied air", True),
     ]
 
     def inj(t):

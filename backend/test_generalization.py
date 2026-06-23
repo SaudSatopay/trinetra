@@ -115,7 +115,7 @@ def rand_inerted_safe(rng, i):
     cs = [f"GI{i}-CS{j}" for j in range(crew)]
     workers = [Worker(f"GI{i}-HW", "Welder", "Welder")] + [Worker(w, "Operator", "Operator") for w in cs]
     permits = [Permit(f"GI{i}-HWP", PermitType.HOT_WORK, zone, [f"GI{i}-HW"], 0, 60, "hot work"),
-               Permit(f"GI{i}-CSP", PermitType.CONFINED_SPACE, zone, cs, 0, 55, "inerted entry")]
+               Permit(f"GI{i}-CSP", PermitType.CONFINED_SPACE, zone, cs, 0, 55, "inerted entry", True)]
     sec_gas, sec_peak = SECONDARY[gas]
 
     def inj(t):

@@ -60,6 +60,7 @@ class Permit:
     start_min: float
     duration_min: float
     description: str = ""
+    supplied_air: bool = False  # crew on supplied air / SCBA — a protected (inerted) confined entry
 
     def active_at(self, t_min: float) -> bool:
         return self.start_min <= t_min <= self.start_min + self.duration_min
