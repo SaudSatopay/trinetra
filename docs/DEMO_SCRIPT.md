@@ -26,9 +26,9 @@
 **On screen:** the **Disaster Memory** card — **"81% match — Visakhapatnam Steel Plant coke-oven explosion, 8 killed"** — and read one line of the AI briefing. Note the precedents below (Texas City 73%, hot-work ignition 71%).
 
 ### 2:05 – 2:35 · The autonomous response
-> "Because it's caught early, the system doesn't just alarm — it responds."
+> "Because it's caught early, the system doesn't just alarm — it prepares the full response."
 
-**On screen:** click **"Autonomous response initiated."** The modal opens:
+**On screen:** click **"Autonomous response prepared."** The modal opens:
 - the **avoided-loss banner** — *"₹115.5 Cr prevented per incident · ~7.7× expected annual ROI even at a conservative 1-in-15-year event"* (lives + asset + downtime + penalty, every figure carries its basis; plus a recurring insurance-premium offset),
 - the **evidence timeline** — permit opened → personnel entry → **Trinetra alert (T+8)** → **legacy alarm (T+14)**: the six-minute lead as an auditable sequence,
 - the **action checklist** (suspend hot-work, evacuate, page response team, preserve evidence),

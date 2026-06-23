@@ -286,7 +286,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
 // ============ REAL-INCIDENT VALIDATION ============
 {
   const s = S();
-  kicker(s, "VALIDATED ON REAL DISASTERS");
+  kicker(s, "REPLAYED FROM TWO REAL INQUIRIES");
   title(s, "Would it catch a real one? Twice.");
   const cases = [
     ["BP Texas City refinery", "U.S. CSB · 2005", "+10 min", "before the documented vapour-cloud ignition (T+20). 15 killed.", "Report 2005-04-I-TX"],
@@ -305,7 +305,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   });
   panel(s, 0.7, 6.0, 11.93, 0.95, PANEL2, BRAND);
   s.addText([
-    { text: "Same engine, no tuning.  ", options: { color: BRAND, bold: true } },
+    { text: "Same engine, reconstructed inputs.  ", options: { color: BRAND, bold: true } },
     { text: "Each inquiry's documented escalation is reconstructed into a SCADA feed and replayed through the live engine. Where the site had no gas detector (a finding in both), the documented vapour build-up is mapped to the flammable channel; the ignition and personnel are the inquiry's. In-app: connector → Texas City / Jaipur.", options: { color: TEXT } },
   ], { x: 1.0, y: 6.0, w: 11.3, h: 0.95, fontFace: BODY, fontSize: 11.5, valign: "middle", margin: 0 });
 }
@@ -375,7 +375,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   [
     ["Incumbents sell the silos", "Honeywell, Dräger, MSA, Hexagon sell gas detection, permit-to-work and CCTV as SEPARATE products. The danger lives in the seam BETWEEN them — exactly what no one owns end to end.", RED],
     ["A deterministic pattern library", "The compound rules — flammable × ignition × personnel × oxidizer × blast-radius, encoded to real OISD / Factory-Act thresholds — are domain IP, not a model cloned from a public dataset.", BRAND],
-    ["A data network effect", "Each plant's operator feedback tunes its own nuisance profile (the flywheel). More sites → sharper per-plant precision; an incumbent's fixed hardware doesn't learn.", BRAND],
+    ["A per-plant data moat", "Each plant's operator feedback tunes its own nuisance profile (the flywheel) — proprietary data that compounds per site and raises switching cost. An incumbent's fixed hardware doesn't learn.", BRAND],
     ["Audit-grade by construction", "A transparent, deterministic core a safety officer can defend in a statutory audit. A pure-LLM bolt-on can't make a life-safety call a regulator will accept.", AMBER],
   ].forEach(([k, v, c], i) => {
     const y = 2.3 + i * 1.05;

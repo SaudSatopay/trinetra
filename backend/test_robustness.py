@@ -1,12 +1,16 @@
 """Robustness checks: how the compound engine behaves under sensor/permit faults.
 
-Judges reliably ask "what about bad or missing data?". This exercises four realistic
+Judges reliably ask "what about bad or missing data?". This exercises eight realistic
 fault modes against the deterministic engine and asserts sensible behaviour:
 
   1. Stuck (frozen-high) sensor, no context      -> must NOT raise a compound alert
   2. Hazard in a different gas (CH4 quiet, CO rises) -> still caught (multi-gas redundancy)
   3. Transient noise spike, no context           -> must NOT raise a sustained alert
   4. Delayed permit sync (ignition appears late)  -> compound only once ignition is live
+  5. Cross-zone exposure (crew next door)         -> compound fires on the blast radius
+  6. Oxygen-deficient unprotected entry           -> asphyxiation compound fires
+  7. Inerted entry WITH supplied air              -> no compound (genuinely safe)
+  8. Faulty-low O2 mid-incident                   -> explosion alert NOT silently suppressed
 
 (Missing CCTV is handled at the API layer: /api/vision degrades to an error object
 and the engine never depends on CV — personnel come from the permit-to-work system.)

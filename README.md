@@ -194,7 +194,7 @@ flowchart LR
 
 > The full methodology and every table live in **[docs/BACKTEST.md](docs/BACKTEST.md)**. All numbers are reproducible (fixed seed 42).
 
-### Benchmark — 25 labelled scenarios
+### Benchmark — 28 labelled scenarios
 
 | Metric | Trinetra |
 |---|---|
@@ -376,7 +376,7 @@ python smoke_api.py            # REST + WebSocket smoke
 ## Honest caveats
 
 - The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` connector (proven by the Texas City replay).
-- The 25 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject; the held-out generalization run (240 unseen-seed scenarios) and the CSB Texas City replay address the "train = test" critique.
+- The 28 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios) and **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur) address the "train = test" critique.
 - The headline metrics are measured on the **compound flag** (the lethal pattern), distinct from ordinary gas alarms — the value is the *combination* and the *lead time*.
 - The reasoning "agents" are **deterministic feature-extraction stages**, not autonomous LLM agents — a strength for a reproducible life-safety path.
 - Three of the six builds (geospatial, pattern-mining, compliance) are **focused MVPs**; the compound engine, permit intelligence and response orchestrator are the production core.

@@ -24,7 +24,7 @@ Most industrial fatalities are caused not by one sensor crossing a threshold, bu
 
 > Reproduce: `cd backend && python benchmark.py`
 
-Crucially, the 14 hard negatives are built to be genuinely hard. Some **do** trip the legacy baseline (a real gas release with nobody around) — Trinetra raises the ordinary gas alarm but does **not** escalate to a compound life-safety alert. And three are **inerted zones where rising flammable gas, a hot-work permit and crew are ALL present, yet no explosion is possible** — the atmosphere is purged below the limiting oxygen concentration. A "three boxes ticked" rule fires on those; Trinetra reasons about the full fire triangle (fuel + ignition + **oxidizer**) and correctly holds fire, with the suppression stated in its own factor list. This is the negative that proves the benchmark is *discriminating*, not self-referential: it does not simply re-detect its own definition.
+Crucially, the 14 hard negatives are built to be genuinely hard. Some **do** trip the legacy baseline (a real gas release with nobody around) — Trinetra raises the ordinary gas alarm but does **not** escalate to a compound life-safety alert. And three are **inerted zones where rising flammable gas, a hot-work permit and crew are ALL present, yet no explosion is possible** — the atmosphere is purged below the limiting oxygen concentration. A "three boxes ticked" rule fires on those; Trinetra reasons about the full fire triangle (fuel + ignition + **oxidizer**) and correctly holds fire, with the suppression stated in its own factor list. This is the negative that proves the benchmark is *discriminating*, not self-referential: it does not simply re-detect its own definition. And the inverse is handled too — an oxygen-deficient atmosphere with **unprotected** people is its own life-safety compound (asphyxiation, the leading confined-space killer), while a lone low-O2 reading with no inerting context is treated as a **suspect sensor** rather than allowed to silently suppress an explosion alert (see Robustness).
 
 ## Ablation — is the full fusion necessary?
 
@@ -102,7 +102,7 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 
 ## Robustness (fault modes)
 
-Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under five fault modes:
+Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under eight fault modes:
 
 | Fault mode | Expected & verified behaviour |
 |---|---|
@@ -111,6 +111,9 @@ Real plants have flaky sensors and out-of-sync permits. A dedicated check (`back
 | Transient noise spike, no context | No sustained alert — momentary spikes don't escalate |
 | Delayed permit sync (ignition syncs late) | No compound before the ignition permit is live; fires once it syncs |
 | Cross-zone exposure (gas + ignition here, crew next door) | Compound fires on blast-radius exposure — escalates even when the gas zone itself is unmanned |
+| Oxygen-deficient entry, no supplied air | **Asphyxiation compound fires** — oxygen deficiency with unprotected people is its own life-safety hazard, independent of any explosion (the leading confined-space killer) |
+| Inerted entry WITH supplied air | No compound — no oxidizer for an explosion AND the crew is protected; the engine reads the supplied-air permit, it doesn't just count three factors |
+| Faulty-low O2 mid-incident | Explosion alert **not** suppressed — a lone low O2 with no inerting context is treated as a suspect sensor, so one bad reading can't silently hide a real hazard |
 | Missing CCTV feed | Engine unaffected — personnel come from the permit-to-work system; `/api/vision` degrades to an error object |
 
 > Reproduce: `cd backend && python test_robustness.py`

@@ -131,7 +131,8 @@ def sample_csv(minutes: int = 22) -> str:
 # there was NO gas detector that would have caught the release (its absence was a finding),
 # so the documented rising-vapour escalation is mapped here onto Trinetra's flammable (LEL)
 # channel; the ignition source and the personnel-present overlay come straight from the
-# report. We feed the inquiry's own conditions through the same engine — nothing tuned.
+# report. We replay the inquiry's documented sequence through the same (untuned) engine; the gas
+# channel itself is a reconstruction, since the CSB found no detector existed.
 TEXAS_CITY = {
     "incident": "BP Texas City refinery explosion",
     "date": "23 Mar 2005",
