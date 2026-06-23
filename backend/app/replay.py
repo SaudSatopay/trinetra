@@ -26,6 +26,10 @@ from .simulator import PlantSimulator
 
 _TRUE = {"1", "true", "yes", "y", "active", "on"}
 
+# defensive caps — a pathological upload must not exhaust memory/CPU (local DoS guard)
+_MAX_ROWS = 50_000
+_MAX_SNAPSHOTS = 240
+
 
 def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
     """Parse a SCADA/permit CSV into ordered PlantSnapshots. Raises ValueError on bad input."""
@@ -39,7 +43,11 @@ def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
     rows_by_t: dict[int, list[dict]] = {}
     bad_zones: set[str] = set()
     n_rows = 0
+    seen = 0
     for raw in reader:
+        seen += 1
+        if seen > _MAX_ROWS:
+            break
         row = {(k or "").strip(): (v or "").strip() for k, v in raw.items()}
         try:
             t = int(float(row["t_min"]))
@@ -57,7 +65,7 @@ def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
         raise ValueError("no valid data rows (check 't_min' and known zone ids)")
 
     snapshots: list[PlantSnapshot] = []
-    for t in sorted(rows_by_t):
+    for t in sorted(rows_by_t)[:_MAX_SNAPSHOTS]:
         zone_row = {r["zone"]: r for r in rows_by_t[t]}
         zones: dict[str, ZoneState] = {}
         for zid, spec in ZONES.items():

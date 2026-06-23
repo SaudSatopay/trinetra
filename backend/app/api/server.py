@@ -45,10 +45,22 @@ app.add_middleware(
 )
 
 
+_MAX_MINUTES = 240
+_MAX_INGEST_BYTES = 2_000_000  # ~2 MB cap on an uploaded CSV (local DoS guard)
+
+
+def _clamp_minutes(m) -> int:
+    """Keep run lengths sane so a stray ?minutes=999999999 can't spin the engine forever."""
+    try:
+        return max(1, min(int(m), _MAX_MINUTES))
+    except (TypeError, ValueError):
+        return 45
+
+
 def _run(scenario_name: str, minutes: int) -> list[dict]:
     sim = PlantSimulator(scenario=SCENARIOS[scenario_name], dt_min=1.0, seed=42)
     engine = CompoundRiskEngine(compute_confidence=True)
-    return [serialize_frame(snap, engine.assess(snap)) for snap in sim.run(minutes)]
+    return [serialize_frame(snap, engine.assess(snap)) for snap in sim.run(_clamp_minutes(minutes))]
 
 
 @app.get("/api/health")
@@ -125,6 +137,7 @@ def simulate(zone: str = "COB-1", gas: str = "CH4", leak: bool = True,
     if gas not in LEAK_PEAKS:
         gas = "CH4"
     workers = max(0, min(int(workers), 6))
+    minutes = _clamp_minutes(minutes)
     scenario = _build_custom(zone, gas, leak, ignition, adjacent, workers)
     sim = PlantSimulator(scenario=scenario, dt_min=1.0, seed=42)
     engine = CompoundRiskEngine(compute_confidence=True)
@@ -149,7 +162,10 @@ def ingest_sample():
 async def ingest(request: Request):
     """Replay an uploaded SCADA/permit CSV through the SAME compound engine — proving
     that ingesting real plant data is a connector, not a rewrite."""
-    text = (await request.body()).decode("utf-8", errors="replace")
+    body = await request.body()
+    if len(body) > _MAX_INGEST_BYTES:
+        return {"error": f"upload too large (max {_MAX_INGEST_BYTES // 1_000_000} MB)"}
+    text = body.decode("utf-8", errors="replace")
     try:
         snaps, meta = parse_csv(text)
     except ValueError as e:
@@ -215,7 +231,7 @@ def disaster_memory(scenario: str = "vizag", zone: str = "COB-1", minutes: int =
     engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     zone_name = zone
-    for snap in sim.run(max(1, minutes)):
+    for snap in sim.run(_clamp_minutes(minutes)):
         risks = engine.assess(snap)
         if zone in risks:
             risk = risks[zone]
@@ -266,7 +282,7 @@ def agents(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     engine = CompoundRiskEngine(compute_confidence=True)
     risk = None
     snap = None
-    for snap in sim.run(max(1, minutes)):
+    for snap in sim.run(_clamp_minutes(minutes)):
         risks = engine.assess(snap)
         if zone in risks:
             risk = risks[zone]
@@ -379,7 +395,7 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
                 risk = risks[zone]
     else:
         sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
-        for snap in sim.run(max(1, minutes)):
+        for snap in sim.run(_clamp_minutes(minutes)):
             risks = engine.assess(snap)
             if zone in risks:
                 risk = risks[zone]
@@ -475,7 +491,7 @@ def compliance(scenario: str = "vizag", minutes: int = 13):
     engine = CompoundRiskEngine(compute_confidence=True)
     snap = None
     risks: dict = {}
-    for snap in sim.run(max(1, minutes)):
+    for snap in sim.run(_clamp_minutes(minutes)):
         risks = engine.assess(snap)
     if snap is None:
         return {"error": "no frames"}
@@ -547,6 +563,7 @@ def permit_gate(scenario: str = "vizag", minutes: int = 10, zone: str = "COB-1",
     """Shift-left permit-issuance gate: simulate the plant with the PROPOSED permit added and
     refuse it if issuing it would create a compound hazard — catching the danger at the permit
     desk, minutes before any single sensor would alarm. The Vizag lesson, made preventive."""
+    minutes = _clamp_minutes(minutes)
     key = (scenario, int(minutes), zone, permit_type, workers)
     if key not in _permit_cache:
         _permit_cache[key] = evaluate_permit(scenario, minutes, zone, permit_type, workers)
