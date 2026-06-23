@@ -1,13 +1,31 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { API_BASE, ingestCsv } from "@/lib/api";
+import { API_BASE, getIncident, IncidentReplay, ingestCsv } from "@/lib/api";
 import { Frame } from "@/lib/types";
 
-export function Connector({ onIngest }: { onIngest: (frames: Frame[], summary: string) => void }) {
+export function Connector({
+  onIngest,
+  onIncident,
+}: {
+  onIngest: (frames: Frame[], summary: string) => void;
+  onIncident: (d: IncidentReplay) => void;
+}) {
   const ref = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const replayTexasCity = async () => {
+    setErr(null);
+    setBusy(true);
+    try {
+      onIncident(await getIncident("texas-city"));
+    } catch (x) {
+      setErr(String(x instanceof Error ? x.message : x).slice(0, 60));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -48,6 +66,20 @@ export function Connector({ onIngest }: { onIngest: (frames: Frame[], summary: s
       >
         sample
       </a>
+      <span className="h-4 w-px bg-line-2" />
+      <button
+        onClick={replayTexasCity}
+        disabled={busy}
+        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        style={{
+          color: "var(--lvl-high)",
+          border: "1px solid color-mix(in srgb, var(--lvl-high) 38%, transparent)",
+          background: "color-mix(in srgb, var(--lvl-high) 9%, transparent)",
+        }}
+        title="Replay the real BP Texas City (2005) incident, reconstructed from the U.S. CSB report"
+      >
+        Texas City · CSB ’05
+      </button>
       {err && (
         <span className="font-mono text-[9px]" style={{ color: "var(--lvl-high)" }}>
           · {err}

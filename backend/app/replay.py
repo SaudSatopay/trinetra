@@ -110,3 +110,51 @@ def sample_csv(minutes: int = 22) -> str:
                     z.gases["CH4"].value, z.gases["CO"].value, z.gases["H2S"].value, z.gases["O2"].value,
                     hot, len(z.worker_ids)])
     return out.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Reconstructed real incident — BP Texas City refinery, 23 Mar 2005 (U.S. CSB)
+# ---------------------------------------------------------------------------
+# Source: U.S. Chemical Safety Board final report No. 2005-04-I-TX. The SEQUENCE and
+# TIMING below are the inquiry's: during an ISOM raffinate-splitter startup the tower was
+# badly overfilled; hydrocarbon overflowed the F-20 blowdown stack and formed a
+# ground-level vapour cloud, which an idling diesel pickup (the ignition source) set off
+# at ~1:20 pm, killing 15 contractors stationed in trailers sited too close. The CSB found
+# there was NO gas detector that would have caught the release (its absence was a finding),
+# so the documented rising-vapour escalation is mapped here onto Trinetra's flammable (LEL)
+# channel; the ignition source and the personnel-present overlay come straight from the
+# report. We feed the inquiry's own conditions through the same engine — nothing tuned.
+TEXAS_CITY = {
+    "incident": "BP Texas City refinery explosion",
+    "date": "23 Mar 2005",
+    "source": "U.S. CSB report 2005-04-I-TX",
+    "zone": "BF-3",                 # mapped to a process-unit slot on the twin
+    "documented_event_min": 20,     # vapour-cloud ignition / explosion, ~1:20 pm
+    "event_label": "vapour-cloud ignition (CSB-documented)",
+    "personnel": 20,                # contractors in the adjacent trailers (15 killed)
+    # documented escalation, mapped to %LEL on the flammable channel:
+    "ramp": [(0, 1.6), (4, 2.6), (8, 4.1), (10, 5.0), (12, 6.2), (14, 7.8),
+             (16, 9.6), (18, 11.5), (20, 14.0)],
+}
+
+
+def _interp(points: list, t: float) -> float:
+    """Piecewise-linear interpolation of (t, value) control points."""
+    if t <= points[0][0]:
+        return points[0][1]
+    for (t0, v0), (t1, v1) in zip(points, points[1:]):
+        if t0 <= t <= t1:
+            return v0 + (v1 - v0) * ((t - t0) / ((t1 - t0) or 1))
+    return points[-1][1]
+
+
+def texas_city_csv() -> str:
+    """The reconstructed CSB Texas City sequence as a SCADA CSV (one row per minute)."""
+    inc = TEXAS_CITY
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(["t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"])
+    last = inc["ramp"][-1][0]
+    for t in range(0, last + 1):
+        w.writerow([t, inc["zone"], round(_interp(inc["ramp"], t), 1), "", "", "", 1, inc["personnel"]])
+    return out.getvalue()

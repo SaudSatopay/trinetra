@@ -43,3 +43,20 @@ export async function ingestCsv(text: string): Promise<{ frames: Frame[]; summar
   if (!r.ok || d.error) throw new Error(d.error || `ingest -> ${r.status}`);
   return { frames: d.frames as Frame[], summary: `${d.rows} rows · ${d.minutes} min` };
 }
+
+export interface IncidentReplay {
+  frames: Frame[];
+  incident: string;
+  date: string;
+  source: string;
+  zone: string;
+  documented_event_min: number;
+  event_label: string;
+  trinetra_alert_min: number | null;
+  single_sensor_min: number | null;
+  lead_min: number | null;
+}
+
+export async function getIncident(name: string): Promise<IncidentReplay> {
+  return j<IncidentReplay>(`/api/incident/${name}`);
+}

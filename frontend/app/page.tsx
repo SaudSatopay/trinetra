@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getFrames, getPlant, getScenarios, getSimulate, SimConfig, API_BASE } from "@/lib/api";
+import { getFrames, getPlant, getScenarios, getSimulate, getIncident, IncidentReplay, SimConfig, API_BASE } from "@/lib/api";
 import { Frame, Plant, ScenarioInfo, Zone } from "@/lib/types";
 import { TopBar } from "@/components/TopBar";
 import { PlantSchematic } from "@/components/PlantSchematic";
@@ -28,16 +28,29 @@ export default function Page() {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ingestSummary, setIngestSummary] = useState<string | null>(null);
+  const [incident, setIncident] = useState<IncidentReplay | null>(null);
   const prevScenario = useRef("");
   const wantMoneyShot = useRef(false);
 
   const handleIngest = (f: Frame[], summary: string) => {
     prevScenario.current = "ingested";
     setIngestSummary(summary);
+    setIncident(null);
     setFrames(f);
     setIndex(0);
     setPlaying(true);
     setSelected(null);
+    setScenario("ingested");
+  };
+
+  const handleIncident = (d: IncidentReplay) => {
+    prevScenario.current = "ingested";
+    setIncident(d);
+    setIngestSummary(null);
+    setFrames(d.frames);
+    setIndex(0);
+    setPlaying(true);
+    setSelected(d.zone);
     setScenario("ingested");
   };
 
@@ -182,7 +195,35 @@ export default function Page() {
             compoundNow={!!frame?.summary.compound_alert}
           />
         )}
-        {scenario === "ingested" && (
+        {scenario === "ingested" && incident && (
+          <div
+            className="hud-panel flex flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-2.5"
+            style={{ borderColor: "color-mix(in srgb, var(--lvl-high) 40%, var(--line))" }}
+          >
+            <span
+              className="rounded px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
+              style={{ color: "var(--lvl-high)", background: "color-mix(in srgb, var(--lvl-high) 14%, transparent)" }}
+            >
+              Real incident
+            </span>
+            <span className="font-display text-[12.5px] font-semibold text-ink-bright">{incident.incident}</span>
+            <span className="font-mono text-[10px] text-ink-dim">{incident.date} · {incident.source}</span>
+            {incident.lead_min != null && (
+              <span className="font-mono text-[10px]" style={{ color: "var(--brand)" }}>
+                Trinetra alert T+{incident.trinetra_alert_min} · documented ignition T+{incident.documented_event_min} →{" "}
+                <span className="font-bold">{incident.lead_min} min earlier</span>
+              </span>
+            )}
+            <a
+              href={`${API_BASE}/api/incident/texas-city.csv`}
+              className="font-mono text-[10px] text-ink-dim underline-offset-2 hover:underline"
+              title="Download the reconstructed CSV — inspect the inquiry's own sequence"
+            >
+              source CSV
+            </a>
+          </div>
+        )}
+        {scenario === "ingested" && !incident && (
           <div className="hud-panel flex items-center gap-3 px-5 py-2.5">
             <span className="label">Ingested SCADA feed</span>
             <span className="font-mono text-[10px] text-ink-dim">
@@ -191,7 +232,7 @@ export default function Page() {
           </div>
         )}
         <Player
-          extra={<Connector onIngest={handleIngest} />}
+          extra={<Connector onIngest={handleIngest} onIncident={handleIncident} />}
           scenarios={playerScenarios}
           scenario={scenario}
           onScenario={setScenario}
