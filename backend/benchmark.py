@@ -94,6 +94,21 @@ def make_inerted_safe(name, zone, gas, ramp_min):
                     hazard_zone=zone, permits=permits, workers=workers, inject=inj)
 
 
+def make_o2_transient(name, zone):
+    """A benign single-sample O2 dropout in an OCCUPIED confined zone (no flammable, no ignition).
+    O2 cells fail low; without a persistence gate a lone dip would manufacture a phantom asphyxiation
+    CRITICAL. The asphyxiation leg requires a SUSTAINED deficiency (symmetric with the flammable
+    level + trend leg), so the engine must read this as unsustained and stay quiet — the O2 analogue
+    of the transient gas spike. This is the stuck/faulty-low-O2 negative the headline 0% must cover."""
+    workers = [Worker(f"{name}-W1", "Worker A", "Entrant")]
+    permits = [Permit(f"{name}-CS", PermitType.CONFINED_SPACE, zone, [f"{name}-W1"], 0, 60, "confined-space entry")]
+
+    def inj(t):
+        return {(zone, "O2"): (-8.0 if t == 9 else 0.0)}   # single-minute dip to ~12.6%, then recovers
+    return Scenario(name, f"decoy-o2-transient:{zone}", "", expected_compound=False,
+                    hazard_zone=zone, permits=permits, workers=workers, inject=inj)
+
+
 def build_eval_set():
     positives = [
         make_positive("P01", "COB-1", "CH4", 40),
@@ -127,6 +142,8 @@ def build_eval_set():
         make_inerted_safe("N12", "COB-1", "CH4", 40),
         make_inerted_safe("N13", "GCP", "CO", 38),
         make_inerted_safe("N14", "CST-2", "CH4", 45),
+        # a benign single-sample O2 sensor dropout in an occupied confined zone (asphyxiation FP guard)
+        make_o2_transient("N15", "CST-2"),
     ]
     return positives + negatives
 

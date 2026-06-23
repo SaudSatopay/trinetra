@@ -1,6 +1,6 @@
 """Robustness checks: how the compound engine behaves under sensor/permit faults.
 
-Judges reliably ask "what about bad or missing data?". This exercises eight realistic
+Judges reliably ask "what about bad or missing data?". This exercises nine realistic
 fault modes against the deterministic engine and asserts sensible behaviour:
 
   1. Stuck (frozen-high) sensor, no context      -> must NOT raise a compound alert
@@ -11,6 +11,7 @@ fault modes against the deterministic engine and asserts sensible behaviour:
   6. Oxygen-deficient unprotected entry           -> asphyxiation compound fires
   7. Inerted entry WITH supplied air              -> no compound (genuinely safe)
   8. Faulty-low O2 mid-incident                   -> explosion alert NOT silently suppressed
+  9. Transient single-sample low O2 (occupied)    -> no phantom asphyxiation (persistence gate)
 
 (Missing CCTV is handled at the API layer: /api/vision degrades to an error object
 and the engine never depends on CV — personnel come from the permit-to-work system.)
@@ -130,6 +131,17 @@ def main() -> bool:
     ok = bool(hits) and any(h >= 10 for h in hits)
     results.append(case("Faulty-low O2 mid-incident -> explosion alert NOT silently suppressed",
                         ok, f"compound at t={hits[0] if hits else 'NEVER'}..{hits[-1] if hits else ''} (fires through the O2 fault)"))
+
+    # 9. A benign single-sample O2 dropout in an OCCUPIED confined zone (no flammable, no ignition).
+    #    O2 cells fail low; a lone dip must NOT manufacture a phantom asphyxiation CRITICAL — the
+    #    asphyxiation leg requires a SUSTAINED deficiency (symmetric with the flammable level+trend leg).
+    o2_blip = Scenario("o2_transient", "", "", expected_compound=False, hazard_zone="CST-2",
+                       workers=[Worker("RB-W9", "C", "Entrant")],
+                       permits=[Permit("RB-CS9", PermitType.CONFINED_SPACE, "CST-2", ["RB-W9"], 0, 60, "entry")],
+                       inject=lambda t: {("CST-2", "O2"): (-8.0 if t == 9 else 0.0)})
+    hits = compound_minutes(o2_blip, "CST-2")
+    results.append(case("Transient single-sample low O2 (occupied) -> no phantom asphyxiation",
+                        hits == [], f"compound minutes = {hits or 'none'} (expected none)"))
 
     print("\n  " + ("ALL ROBUSTNESS CHECKS PASSED" if all(results) else "SOME CHECKS FAILED"))
     return all(results)

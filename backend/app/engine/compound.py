@@ -50,6 +50,9 @@ O2_ASPHYXIA = 16.0               # %vol: at/below this an UNPROTECTED person is 
                                  # deficiency danger. Asphyxiation is its own life-safety compound
                                  # (the leading confined-space killer), independent of any explosion.
 CONF_SAMPLES = 128               # Monte-Carlo draws for calibrated confidence
+INERTED_DISPLAY_CAP = 45.0       # a genuinely inerted, supplied-air zone is a CONTROLLED high-hazard
+                                 # operation (both compound pathways closed) — hold its DISPLAY risk in
+                                 # the ELEVATED band so the map never paints a non-compound zone critical-red
 
 
 @dataclass
@@ -74,6 +77,7 @@ class _Features:
     fastest_slope_raw: float  # in the gas's own unit per minute
     o2_value: float           # raw O2 reading (%vol) — for the fire-triangle oxidizer check
     breathing_protected: bool # crew on supplied air / SCBA (an intended, protected inerted entry)
+    o2_sustained: bool        # O2 deficiency persists (not a single-sample glitch) — gates asphyxiation
 
 
 @dataclass
@@ -142,9 +146,17 @@ class CompoundRiskEngine:
                     or any(p.type == PermitType.CONFINED_SPACE for p in z.active_permits))
         breathing_protected = any(getattr(p, "supplied_air", False)
                                   for p in z.active_permits if p.type == PermitType.CONFINED_SPACE)
+        # asphyxiation needs a SUSTAINED deficiency, not a one-sample dropout: O2 below the
+        # immediate-danger line now AND already below the 19.5% OSHA deficiency line one sample
+        # back (i.e. genuinely depleting). This makes the O2 leg symmetric with the flammable leg
+        # (level + trend), so a lone faulty/transient low O2 reading can't manufacture a phantom alert.
+        o2_now = z.gases["O2"].value
+        h = self._hist[zid]
+        o2_prev = h[-2][1]["O2"] if len(h) >= 2 else None
+        o2_sustained = o2_now < O2_ASPHYXIA and (o2_prev is None or o2_prev < GAS_THRESHOLDS["O2"].low_alarm)
         return _Features(flam_level, flam_slope, toxic_level, o2_deficit,
                          ignition_same, ignition_adj, z.worker_count, personnel_adj, confined,
-                         fastest, fastest_raw, z.gases["O2"].value, breathing_protected)
+                         fastest, fastest_raw, o2_now, breathing_protected, o2_sustained)
 
     # -- scoring (uncapped; with counterfactual switches) --------------------
     def _score(self, f: _Features, *, drop_ignition=False, drop_personnel=False,
@@ -170,7 +182,8 @@ class CompoundRiskEngine:
 
     @staticmethod
     def _verdict(flam_evidence: bool, ignition: bool, personnel_exposed: bool,
-                 personnel: int, o2_value: float, protected: bool) -> tuple[bool, bool]:
+                 personnel: int, o2_value: float, protected: bool,
+                 o2_sustained: bool) -> tuple[bool, bool]:
         """The life-safety compound gate as (explosion, asphyxiation) — the single source of truth.
 
         Fire triangle: a flammable explosion needs fuel + ignition + oxidizer + people in the blast
@@ -178,10 +191,12 @@ class CompoundRiskEngine:
         operationally explained — a supplied-air inerted entry — so a lone low O2 reading can never
         silently suppress a real explosion alert (otherwise it is treated as a suspect sensor).
         Asphyxiation: unprotected people breathing an oxygen-deficient atmosphere are dying now,
-        regardless of any explosion — its own compound (the leading confined-space killer)."""
+        regardless of any explosion — its own compound (the leading confined-space killer). It
+        requires a SUSTAINED deficiency (o2_sustained), symmetric with the flammable leg's level +
+        trend, so a single faulty/transient low O2 sample can't fabricate a phantom asphyxiation."""
         inerted = (o2_value < LOC_O2) and protected
         explosion = flam_evidence and ignition and personnel_exposed and not inerted
-        asphyxiation = (o2_value < O2_ASPHYXIA) and personnel > 0 and not protected
+        asphyxiation = (o2_value < O2_ASPHYXIA) and o2_sustained and personnel > 0 and not protected
         return explosion, asphyxiation
 
     # -- calibrated confidence ----------------------------------------------
@@ -194,7 +209,7 @@ class CompoundRiskEngine:
             (f.flam_level >= COMPOUND_PRESENT_FRAC and f.flam_slope > COMPOUND_SLOPE)
             or f.flam_level >= COMPOUND_HIGH_FRAC,
             f.ignition_same or f.ignition_adj, f.personnel > 0 or f.personnel_adj > 0,
-            f.personnel, f.o2_value, f.breathing_protected)
+            f.personnel, f.o2_value, f.breathing_protected, f.o2_sustained)
         nominal = bool(exp0 or asph0)
         rng = random.Random(seed)
         agree = 0
@@ -213,7 +228,7 @@ class CompoundRiskEngine:
                   or fp.flam_level >= COMPOUND_HIGH_FRAC)
             exp, asph = self._verdict(ev, fp.ignition_same or fp.ignition_adj,
                                       fp.personnel > 0 or fp.personnel_adj > 0, fp.personnel,
-                                      o2v, fp.breathing_protected)
+                                      o2v, fp.breathing_protected, fp.o2_sustained)
             comp = bool(exp or asph)
             if comp == nominal:
                 agree += 1
@@ -237,7 +252,6 @@ class CompoundRiskEngine:
         f = self._features(zid, snap)
         raw = self._score(f)
         score = min(100.0, raw)
-        level = self._level(score)
 
         flammable_evidence = ((f.flam_level >= COMPOUND_PRESENT_FRAC and f.flam_slope > COMPOUND_SLOPE)
                               or f.flam_level >= COMPOUND_HIGH_FRAC)
@@ -245,11 +259,22 @@ class CompoundRiskEngine:
         # people are in danger inside the zone OR within the blast radius next door
         personnel_exposed = f.personnel > 0 or f.personnel_adj > 0
         explosion, asphyxiation = self._verdict(flammable_evidence, ignition, personnel_exposed,
-                                                f.personnel, f.o2_value, f.breathing_protected)
+                                                f.personnel, f.o2_value, f.breathing_protected,
+                                                f.o2_sustained)
         compound = bool(explosion or asphyxiation)
         oxidizer = f.o2_value >= LOC_O2
         inerted = (not oxidizer) and f.breathing_protected          # genuine, protected inerting
         o2_suspect = (not oxidizer) and not f.breathing_protected   # low O2 with no inerting context
+
+        # Display: a genuinely inerted, supplied-air zone is a CONTROLLED high-hazard operation, not
+        # a live emergency — the explosion pathway (no oxidizer) and the asphyxiation pathway (crew
+        # protected) are both closed, so the realized compound risk is low even though the raw flammable
+        # inventory reads high (still shown in telemetry/factors). Hold the displayed risk in the
+        # ELEVATED band so the map never paints a non-compound zone critical-red. Detection is
+        # unchanged: the compound gate already returned False, and the benchmark scores the compound flag.
+        if inerted:
+            score = min(score, INERTED_DISPLAY_CAP)
+        level = self._level(score)
 
         factors: list[str] = []
         if f.flam_slope > COMPOUND_SLOPE and f.fastest_gas and f.flam_level >= COMPOUND_PRESENT_FRAC:
@@ -266,22 +291,39 @@ class CompoundRiskEngine:
             factors.append(f"{f.personnel} personnel present")
         elif f.personnel_adj > 0:
             factors.append(f"{f.personnel_adj} personnel in an adjacent zone (within blast radius)")
-        if f.confined and f.o2_deficit > 0.1 and not asphyxiation and not inerted:
+        if f.confined and f.o2_deficit > 0.1 and not asphyxiation and not inerted and not o2_suspect:
             factors.append(f"confined space, O2 down to {z.gases['O2'].value:.1f}%")
         if f.toxic_level >= 1.0:
             factors.append("toxic gas above exposure limit")
-        if asphyxiation:
+        # O2 / oxidizer reasoning — exactly one branch fires, so the surface never carries a
+        # contradictory pair (e.g. "asphyxiation hazard" AND "suspect sensor" for the same reading).
+        if inerted:
+            factors.append(f"zone inerted (O2 {f.o2_value:.1f}% < {LOC_O2:.0f}% LOC) with crew on supplied "
+                           f"air — no oxidizer for an explosion and the crew is protected; compound risk "
+                           f"controlled (raw flammable gas still elevated — see telemetry)")
+        elif o2_suspect:
+            # a sub-LOC O2 with no inerting permit is UNVERIFIED: act on it (it may be a real
+            # deficiency) AND never let it suppress the explosion alert (it may be a faulty sensor).
+            bits = []
+            if asphyxiation:
+                bits.append(f"held as a potential asphyxiation hazard for {f.personnel} unprotected personnel")
+            if flammable_evidence and ignition and personnel_exposed:
+                bits.append("the explosion alert is NOT suppressed")
+            tail = "; ".join(bits) if bits else "treated as unverified"
+            factors.append(f"O2 reads {f.o2_value:.1f}% with no inerting permit — {tail} (verify the atmosphere)")
+        elif asphyxiation:
             factors.append(f"O2 {f.o2_value:.1f}% — oxygen-deficient atmosphere with "
                            f"{f.personnel} unprotected personnel: asphyxiation hazard")
-        if inerted:
-            factors.append(f"zone inerted (O2 {f.o2_value:.1f}% < {LOC_O2:.0f}% LOC) with crew on "
-                           f"supplied air — no oxidizer for an explosion and no asphyxiation exposure")
-        elif o2_suspect and flammable_evidence and ignition and personnel_exposed:
-            factors.append(f"O2 reads {f.o2_value:.1f}% with no inerting permit — treated as a suspect "
-                           f"sensor; the explosion hazard is NOT suppressed (verify the atmosphere)")
-        if (asphyxiation or o2_suspect) and flammable_evidence and f.personnel > 0:
-            factors.append("do NOT ventilate — it re-introduces the oxidizer to a flammable "
-                           "atmosphere; evacuate and hold the inert state")
+        # ventilation guidance only when sub-LOC, where ventilating would re-introduce the oxidizer;
+        # when an oxidizer is already present (O2 >= LOC) ventilation/purge is a valid control, so the
+        # "Force ventilation" intervention below and this warning never both appear.
+        if (not oxidizer) and flammable_evidence and f.personnel > 0:
+            if inerted:
+                factors.append("do NOT ventilate — hold the inert state; ventilating would re-introduce "
+                               "the oxidizer to a flammable atmosphere")
+            else:
+                factors.append("do NOT ventilate — it would re-introduce the oxidizer to a flammable "
+                               "atmosphere; evacuate and verify before any purge")
 
         ttt = None
         if f.fastest_gas and f.fastest_slope_raw > 0.01:
@@ -305,7 +347,9 @@ class CompoundRiskEngine:
                 pid = next((p.id for p in z.active_permits if p.type in IGNITION_PERMITS), None)
                 label = f"Suspend hot-work permit {pid}" if pid else "Clear ignition source in adjacent zone"
                 cands.append(Intervention(label, self._level(min(100.0, s)), reduction(s)))
-            if f.personnel > 0:
+            if f.personnel > 0 and compound:
+                # evacuation is a compound-hazard response — never recommend it for a non-compound
+                # (e.g. inerted, controlled) zone, even when its raw score is high.
                 s = self._score(f, drop_personnel=True)
                 cands.append(Intervention("Evacuate personnel from zone",
                                           self._level(min(100.0, s)), reduction(s)))
