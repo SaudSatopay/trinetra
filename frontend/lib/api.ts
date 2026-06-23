@@ -6,18 +6,18 @@ export const API_BASE =
 // Fetch JSON with a few quick retries — survives the backend being slow to warm on first load,
 // so a one-shot panel doesn't go permanently blank if its initial request races startup.
 export async function getJSON<T>(path: string, retries = 2): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 0; ; attempt++) {
+    let retryable = true;
     try {
       const r = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-      if (!r.ok) throw new Error(`${path} -> ${r.status}`);
-      return (await r.json()) as T;
+      if (r.ok) return (await r.json()) as T;
+      retryable = r.status >= 500; // a client error (4xx) won't change on retry — fail fast
+      throw new Error(`${path} -> ${r.status}`);
     } catch (e) {
-      lastErr = e;
-      if (attempt < retries) await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+      if (!retryable || attempt >= retries) throw e;
+      await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
     }
   }
-  throw lastErr;
 }
 
 const j = getJSON;
@@ -49,7 +49,7 @@ export const getFleet = () => j<FleetOverview>("/api/fleet");
 
 export async function getFrames(scenario: string, minutes = 50): Promise<Frame[]> {
   const data = await j<{ frames: Frame[] }>(`/api/frames/${scenario}?minutes=${minutes}`);
-  return data.frames;
+  return data.frames ?? [];
 }
 
 export interface SimConfig {

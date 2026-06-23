@@ -37,7 +37,7 @@ interface TimelineEvent {
 interface ResponseData {
   zone_name: string;
   level: string;
-  auto_executed: boolean;
+  auto_prepared: boolean;
   analysis_mode?: "live" | "cached";
   impact?: Impact;
   evidence_timeline?: TimelineEvent[];
@@ -196,7 +196,7 @@ function Modal({
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-3">
             <span className="font-display text-[15px] font-semibold text-ink-bright">Autonomous Response</span>
-            {data?.auto_executed && (
+            {data?.auto_prepared && (
               <span
                 className="rounded-full px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider"
                 style={{ background: "color-mix(in srgb, var(--lvl-critical) 14%, transparent)", color: "var(--lvl-critical)" }}

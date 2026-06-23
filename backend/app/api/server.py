@@ -463,28 +463,28 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
 
     actions = []
     if risk.interventions:
-        actions.append(f"Execute most-effective control: {risk.interventions[0].action}")
+        actions.append(f"Stage most-effective control: {risk.interventions[0].action} (pending approval)")
     actions += [
-        f"Broadcast multilingual evacuation alert to {z.name}",
-        "Auto-dispatch emergency response team",
+        f"Prepare multilingual evacuation broadcast for {z.name}",
+        "Queue emergency-response team dispatch",
         "Freeze sensor + CCTV evidence for the investigation record",
-        "File the preliminary incident report with the safety officer",
+        "Draft the preliminary incident report for the safety officer",
     ]
 
     impact = compute_impact(len(z.worker_ids), precedent_toll=parse_toll(m.incident.get("casualties", "")))
 
     package = {
         "zone": zone, "zone_name": z.name, "level": risk.level.value,
-        "auto_executed": risk.level.value == "critical",
+        "auto_prepared": risk.level.value == "critical",
         "analysis_mode": "cached" if degraded else "live",
         "impact": impact,
         "evidence_timeline": _evidence_timeline(scenario, zone),
         "channels": [
-            {"channel": "Plant PA / siren", "status": "broadcast"},
-            {"channel": "Worker mobile-app push", "status": "sent"},
-            {"channel": "SMS — on-shift roster", "status": "sent"},
-            {"channel": "Email — safety officer + ERT", "status": "sent"},
-            {"channel": "SCADA control-room banner", "status": "active"},
+            {"channel": "Plant PA / siren", "status": "ready"},
+            {"channel": "Worker mobile-app push", "status": "ready"},
+            {"channel": "SMS — on-shift roster", "status": "ready"},
+            {"channel": "Email — safety officer + ERT", "status": "ready"},
+            {"channel": "SCADA control-room banner", "status": "ready"},
         ],
         "actions": actions, "incident_report": report, "alert": alert,
         "evidence": {
