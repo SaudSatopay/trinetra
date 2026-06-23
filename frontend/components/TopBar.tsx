@@ -11,6 +11,10 @@ export function TopBar({
   zone,
   shiftHandover,
   onJudgeMode,
+  booth,
+  muted,
+  onBooth,
+  onMute,
 }: {
   tMin: number;
   topLevel: Level;
@@ -19,6 +23,10 @@ export function TopBar({
   zone?: string;
   shiftHandover?: boolean;
   onJudgeMode?: () => void;
+  booth?: boolean;
+  muted?: boolean;
+  onBooth?: () => void;
+  onMute?: () => void;
 }) {
   const color = levelColor[topLevel];
   const elevated = topLevel === "critical" || topLevel === "high" || topLevel === "elevated";
@@ -55,6 +63,50 @@ export function TopBar({
             </svg>
             Judge mode
           </button>
+        )}
+        {onBooth && (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onBooth}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-colors hover:brightness-125"
+              style={
+                booth
+                  ? { color: "var(--bg)", background: "var(--brand)", border: "1px solid var(--brand)" }
+                  : { color: "var(--lvl-normal)", border: "1px solid var(--line-2)", background: "transparent" }
+              }
+              title="Booth / attract mode — an unattended ~60-second loop with siren and spoken evacuation. Click to start; click again to stop."
+            >
+              {booth ? (
+                <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--bg)" }} />
+              ) : (
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                </svg>
+              )}
+              {booth ? "Attract" : "Booth"}
+            </button>
+            {booth && onMute && (
+              <button
+                onClick={onMute}
+                className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:brightness-125"
+                style={{ color: muted ? "var(--text-dim)" : "var(--brand)", border: "1px solid var(--line-2)" }}
+                title={muted ? "Audio muted — click to unmute the siren + evacuation voice" : "Audio on — click to mute"}
+              >
+                {muted ? (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5 6 9H3v6h3l5 4z" />
+                    <line x1="22" y1="9" x2="16" y2="15" />
+                    <line x1="16" y1="9" x2="22" y2="15" />
+                  </svg>
+                ) : (
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 5 6 9H3v6h3l5 4z" />
+                    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                  </svg>
+                )}
+              </button>
+            )}
+          </div>
         )}
         <div className="text-right">
           <div className="label !text-[8px]">Mission clock</div>

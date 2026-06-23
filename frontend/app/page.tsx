@@ -15,6 +15,7 @@ import { CCTVTile } from "@/components/CCTVTile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { FleetView } from "@/components/FleetView";
+import { boothAudio, BOOTH_STEPS, EVAC_LINE } from "@/lib/booth";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -34,6 +35,11 @@ export default function Page() {
   const [incident, setIncident] = useState<IncidentReplay | null>(null);
   const prevScenario = useRef("");
   const wantMoneyShot = useRef(false);
+  const [boothOn, setBoothOn] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [boothStep, setBoothStep] = useState(0);
+  const beatArmed = useRef(false);
+  const alarmFired = useRef(false);
 
   const handleIngest = (f: Frame[], summary: string) => {
     prevScenario.current = "ingested";
@@ -132,6 +138,80 @@ export default function Page() {
   const activeZoneId = selected ?? frame?.summary.top_zone ?? null;
   const activeZone: Zone | null = frame ? frame.zones.find((z) => z.id === activeZoneId) ?? null : null;
 
+  const currentStep = BOOTH_STEPS[boothStep % BOOTH_STEPS.length];
+  const suppressAuto = boothOn && mainView !== "plant";
+
+  // keep the audio engine's mute flag in sync with the UI
+  useEffect(() => {
+    boothAudio.setMuted(muted);
+  }, [muted]);
+
+  // attract-mode scheduler: stage the current beat, then advance to the next
+  useEffect(() => {
+    if (!boothOn) return;
+    const step = BOOTH_STEPS[boothStep % BOOTH_STEPS.length];
+    let cancelled = false;
+    beatArmed.current = false;
+    alarmFired.current = false;
+    setSelected(null);
+    setSpeed(4);
+    setMainView(step.view);
+    if (step.scenario === "texas-city") {
+      getIncident("texas-city")
+        .then((d) => {
+          if (!cancelled) handleIncident(d);
+        })
+        .catch(() => {});
+    } else {
+      setScenario(step.scenario);
+      setIndex(0);
+      setPlaying(true);
+    }
+    const id = window.setTimeout(() => {
+      if (!cancelled) setBoothStep((s) => (s + 1) % BOOTH_STEPS.length);
+    }, step.dwellMs);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boothOn, boothStep]);
+
+  // fire the siren + spoken evacuation once per beat, the moment it goes compound
+  // (only after a clean frame, so the prior beat's state cannot trigger it early)
+  useEffect(() => {
+    if (!boothOn || !currentStep.audio) return;
+    const compound = !!frame?.summary.compound_alert;
+    if (!compound) {
+      beatArmed.current = true;
+    } else if (beatArmed.current && !alarmFired.current) {
+      alarmFired.current = true;
+      boothAudio.alarm(EVAC_LINE);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boothOn, boothStep, frame]);
+
+  // silence everything when attract mode ends or the page unmounts
+  useEffect(() => {
+    if (!boothOn) boothAudio.stop();
+  }, [boothOn]);
+  useEffect(() => () => boothAudio.stop(), []);
+
+  const toggleBooth = () => {
+    setBoothOn((on) => {
+      const next = !on;
+      if (next) {
+        boothAudio.unlock(); // the click is our chance to satisfy autoplay policy
+        boothAudio.setMuted(muted);
+        setBoothStep(0);
+      } else {
+        boothAudio.stop();
+      }
+      return next;
+    });
+  };
+  const toggleMute = () => setMuted((m) => !m);
+
   const judgeMode = () => {
     setSpeed(4);
     setSelected(null);
@@ -171,7 +251,7 @@ export default function Page() {
 
   return (
     <main className="flex h-screen min-w-[900px] flex-col overflow-hidden">
-      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} />
+      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} booth={boothOn} muted={muted} onBooth={toggleBooth} onMute={toggleMute} />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
@@ -191,12 +271,27 @@ export default function Page() {
         </div>
         <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
           <ErrorBoundary label="Threat panel unavailable">
-            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident ? "texas-city" : undefined} />
+            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident ? "texas-city" : undefined} suppressAuto={suppressAuto} />
           </ErrorBoundary>
         </div>
       </div>
 
       <div className="space-y-3 px-4 py-4">
+        {boothOn && (
+          <div
+            className="hud-panel rise-in flex items-center gap-3 px-5 py-2.5"
+            style={{ borderColor: "color-mix(in srgb, var(--brand) 38%, var(--line))" }}
+          >
+            <span
+              className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
+              style={{ color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 14%, transparent)" }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--brand)" }} />
+              Attract mode
+            </span>
+            <span className="font-display text-[12px] leading-snug text-ink">{currentStep.label}</span>
+          </div>
+        )}
         {scenario === "custom" && (
           <ScenarioEditor
             config={custom}

@@ -11,12 +11,14 @@ export function ThreatPanel({
   scenario,
   tMin,
   responseScenario,
+  suppressAuto,
 }: {
   zone: Zone | null;
   thresholds: Record<string, Threshold>;
   scenario: string;
   tMin: number;
   responseScenario?: string; // when set (e.g. a real-incident replay), drive the response off this key
+  suppressAuto?: boolean; // hold the auto-popup (e.g. while attract mode shows a non-plant view)
 }) {
   if (!zone) {
     return (
@@ -137,7 +139,7 @@ export function ThreatPanel({
           zoneId={zone.id}
           tMin={tMin}
           active={r.compound && (responseScenario ? true : scenario !== "custom" && scenario !== "ingested")}
-          auto={r.compound && r.level === "critical" && (responseScenario ? true : scenario !== "custom" && scenario !== "ingested")}
+          auto={!suppressAuto && r.compound && r.level === "critical" && (responseScenario ? true : scenario !== "custom" && scenario !== "ingested")}
         />
 
         {/* atmosphere */}
