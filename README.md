@@ -230,6 +230,9 @@ Reconstructed from the **U.S. CSB BP Texas City (2005)** final report and replay
 | 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 2.5% FP | `python test_generalization.py` |
 | 🧯 **Real-incident replay** | CSB Texas City (2005) → fires 10 min before the documented ignition | `/api/incident/texas-city` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
+| 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
+| 🚫 **Shift-left permit gate** | refuses a permit that would *create* a compound hazard — prevention at the permit desk, not detection after | `/api/permit-gate` |
+| 🔁 **Active-learning flywheel** | per-plant nuisance tuning from operator feedback, with a hard recall guardrail (compound always pages) | `/api/feedback` |
 | 💰 **Business impact** | EV-adjusted ROI — **₹115.5 Cr** per prevented incident, **~8× expected annual return** (1-in-15-yr) + insurance offset | response modal |
 | 🎛️ **Scenario editor** | toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
 | 🔌 **SCADA connector** | replay a real SCADA/permit CSV through the same engine — *a connector, not a rewrite* | `/api/ingest` |
@@ -244,10 +247,11 @@ Reconstructed from the **U.S. CSB BP Texas City (2005)** final report and replay
 A bespoke, instrument-grade HMI (Next.js 14 + a "foundry" design system — warm ink, a molten-orange signature, and a risk ramp that visibly *heats up*):
 
 - **Geospatial plant schematic** — a continuous risk heat-field, flowing blast-radius links, worker-location markers, a 270° risk gauge.
-- **Knowledge-graph view** — the reasoning graph rendered live (toggle from the plant panel).
+- **Plant / Fleet / Knowledge toggle** — the geospatial plant, the multi-plant fleet board, or the reasoning graph, in the main panel.
+- **Fleet command** — one engine across six plants, ranked compound-first, with the live aggregate (plants · workers · compound now · exposed · max lead).
 - **Threat panel** — score, level, projected breach (± confidence), the "why" factors, the ranked prescriptive intervention.
 - **Split-reality readout** — *Legacy: all clear* vs *Trinetra: compound alert · +N min*.
-- **Disaster-memory card**, **CCTV/YOLOv8 tile**, **scenario editor**, **SCADA connector**, **Safety-Intelligence chips** (compliance · patterns · pre-mortem · reasoning), and an auto-popping **autonomous-response modal**.
+- **Disaster-memory card**, **CCTV/YOLOv8 tile**, **scenario editor**, **SCADA connector**, **Safety-Intelligence chips** (compliance · patterns · pre-mortem · **permit gate** · **learning** · reasoning), and an auto-popping **autonomous-response modal**.
 - **Judge Mode** — one click resets to the Vizag hero, 4×, and jumps to the money shot.
 
 ## Deployment — a connector, not a rewrite
@@ -260,7 +264,7 @@ flowchart LR
   H["Plant historian<br/>OPC-UA / MQTT / PI"] --> E["Edge pre-filter"] --> C["SCADA CSV"] --> I["/api/ingest"] --> EN["Same compound engine<br/>O(zones)"] --> UI["Control room"]
 ```
 
-The engine is `O(zones)` per frame — designed for ~10,000 tags @ 1 Hz on a single node, one instance per plant.
+The engine is `O(zones)` per frame — designed for ~10,000 tags @ 1 Hz on a single node, one instance per plant. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
 
 ---
 
@@ -301,7 +305,7 @@ python benchmark.py                         # the headline metrics
 
 ## API reference
 
-FastAPI service — **18 REST routes + a WebSocket stream**. Base: `http://127.0.0.1:8000`.
+FastAPI service — **23 REST routes + a WebSocket stream**. Base: `http://127.0.0.1:8000`.
 
 | Route | Purpose |
 |---|---|
@@ -322,6 +326,9 @@ FastAPI service — **18 REST routes + a WebSocket stream**. Base: `http://127.0
 | `GET /api/compliance` | live OISD / DGMS / Factory-Act audit |
 | `GET /api/ablation` | the three-tier ablation study |
 | `GET /api/premortem` | pre-mortem hazard discovery |
+| `GET /api/fleet` | multi-plant fleet rollup — the same engine across every site |
+| `GET /api/permit-gate` | shift-left permit gate — block / conditional / clear verdict |
+| `GET/POST /api/feedback` · `POST /api/feedback/reset` | operator-feedback flywheel — per-plant nuisance tuning |
 
 ## Project structure
 
@@ -341,6 +348,9 @@ trinetra/
 │   │   ├── impact.py            # 💰 EV-adjusted ROI model
 │   │   ├── compliance.py        # ✅ OISD/DGMS/Factory-Act audit
 │   │   ├── premortem.py         # 🔮 pre-mortem hazard discovery
+│   │   ├── fleet.py             # 🏭 multi-plant fleet rollup (one engine, N sites)
+│   │   ├── permit_gate.py       # 🚫 shift-left permit-issuance gate
+│   │   ├── feedback.py          # 🔁 operator-feedback / active-learning flywheel
 │   │   ├── replay.py            # 🔌 SCADA / real-incident CSV connector
 │   │   └── api/                 # FastAPI service + serialization
 │   ├── benchmark.py · ablation.py · test_robustness.py · test_generalization.py · smoke_api.py
