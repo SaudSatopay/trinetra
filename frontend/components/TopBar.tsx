@@ -24,13 +24,13 @@ export function TopBar({
   const elevated = topLevel === "critical" || topLevel === "high" || topLevel === "elevated";
 
   return (
-    <header className="flex items-center justify-between px-7 py-4">
+    <header className="flex items-center justify-between px-5 py-3.5">
       <Logo />
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3.5">
         {shiftHandover && (
           <span
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider"
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-medium uppercase tracking-wider"
             style={{ color: "var(--lvl-watch)", background: "color-mix(in srgb, var(--lvl-watch) 12%, transparent)" }}
             title="A shift changeover is in progress — reduced supervision / permit-accountability gap"
           >
@@ -42,7 +42,7 @@ export function TopBar({
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}
-            className="flex items-center gap-2 rounded-full px-3.5 py-2 font-mono text-[10px] uppercase tracking-wider transition-colors hover:brightness-125"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-colors hover:brightness-125"
             style={{
               color: "var(--brand)",
               border: "1px solid color-mix(in srgb, var(--brand) 32%, transparent)",
@@ -64,7 +64,7 @@ export function TopBar({
         </div>
 
         <div
-          className="flex items-center gap-2.5 rounded-full px-4 py-2"
+          className="flex items-center gap-2 rounded-full px-3 py-1.5"
           style={{
             border: `1px solid ${elevated ? color : "var(--line-2)"}`,
             background: elevated ? `color-mix(in srgb, ${color} 10%, transparent)` : "transparent",

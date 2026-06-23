@@ -4,6 +4,12 @@ import { ReactNode } from "react";
 import { Frame, ScenarioInfo } from "@/lib/types";
 
 const SPEEDS = [1, 2, 4, 8];
+const SHORT_LABEL: Record<string, string> = {
+  gas_no_ignition: "gas-only",
+  hotwork_no_gas: "hot-work",
+  noise_spike: "spike",
+  cross_zone: "cross-zone",
+};
 
 export function Player({
   scenarios,
@@ -54,7 +60,7 @@ export function Player({
                 background: on ? "color-mix(in srgb, var(--brand) 11%, transparent)" : "transparent",
               }}
             >
-              {s.name}
+              {SHORT_LABEL[s.name] ?? s.name}
             </button>
           );
         })}

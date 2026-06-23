@@ -119,7 +119,7 @@ export function SafetyIntelligence({
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center overflow-hidden rounded-lg" style={{ border: "1px solid var(--line-2)" }}>
         <Chip label="Compliance" onClick={() => setOpen("compliance")} badge={known ? deviations : null} alert={deviations > 0} />
         <Chip label="Patterns" onClick={() => setOpen("patterns")} badge={patterns ? patterns.patterns.length : null} />
         <Chip label="Pre-mortem" onClick={() => setOpen("premortem")} badge={premortem ? premortem.findings.length : null} />
@@ -139,8 +139,7 @@ function Chip({ label, onClick, badge, alert }: { label: string; onClick: () => 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider transition-colors hover:brightness-125"
-      style={{ color: "var(--text-dim)", border: "1px solid var(--line-2)" }}
+      className="flex items-center gap-1.5 border-l border-line px-2.5 py-1.5 text-[9.5px] font-medium uppercase tracking-wider text-ink-dim transition-colors first:border-l-0 hover:text-ink"
     >
       {label}
       {badge !== null && (
