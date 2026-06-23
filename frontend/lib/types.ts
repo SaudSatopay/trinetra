@@ -1,5 +1,41 @@
 export type Level = "normal" | "watch" | "elevated" | "high" | "critical";
 export type Stage = "" | "low" | "high" | "danger";
+export type MainView = "plant" | "fleet" | "graph";
+
+export interface FleetSite {
+  id: string;
+  name: string;
+  location: string;
+  type: string;
+  scenario: string;
+  now_min: number;
+  level: Level;
+  score: number;
+  worst_zone: string;
+  worst_zone_name: string;
+  compound: boolean;
+  compound_zones: number;
+  workers: number;
+  exposed: number;
+  trinetra_alert_min: number | null;
+  single_sensor_min: number | null;
+  lead_min: number | null;
+}
+
+export interface FleetOverview {
+  sites: FleetSite[];
+  fleet: {
+    sites: number;
+    in_alert: number;
+    critical: number;
+    compound_alerts: number;
+    workers_monitored: number;
+    workers_exposed: number;
+    zones_monitored: number;
+    max_lead_min: number | null;
+  };
+  scale: { engine: string; per_site: string; note: string };
+}
 
 export interface Gas {
   species: string;

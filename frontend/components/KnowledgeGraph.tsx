@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
+import { MainView } from "@/lib/types";
+import { ViewToggle } from "./ViewToggle";
 
 interface KGNode {
   id: string;
@@ -87,7 +89,7 @@ function layout(nodes: KGNode[]): Record<string, { x: number; y: number }> {
   return pos;
 }
 
-export function KnowledgeGraph({ onToggle }: { onToggle: () => void }) {
+export function KnowledgeGraph({ view, onView }: { view: MainView; onView: (v: MainView) => void }) {
   const [kg, setKg] = useState<KG | null>(null);
 
   useEffect(() => {
@@ -108,13 +110,7 @@ export function KnowledgeGraph({ onToggle }: { onToggle: () => void }) {
             {kg ? `${kg.stats.nodes} nodes · ${kg.stats.edges} edges · how Trinetra reasons` : "loading…"}
           </span>
         </div>
-        <button
-          onClick={onToggle}
-          className="rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-ink-dim transition-colors hover:text-ink"
-          style={{ border: "1px solid var(--line-2)" }}
-        >
-          ← Plant
-        </button>
+        <ViewToggle view={view} onView={onView} />
       </div>
 
       <div className="relative min-h-0 flex-1 p-3">

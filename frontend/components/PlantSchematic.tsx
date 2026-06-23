@@ -1,22 +1,25 @@
 "use client";
 
-import { Level, Plant, Zone } from "@/lib/types";
+import { Level, MainView, Plant, Zone } from "@/lib/types";
 import { levelColor, levelRank } from "@/lib/risk";
 import { Frame } from "@/lib/types";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { ViewToggle } from "./ViewToggle";
 
 export function PlantSchematic({
   plant,
   frame,
   selected,
   onSelect,
-  onToggle,
+  view,
+  onView,
 }: {
   plant: Plant;
   frame: Frame;
   selected: string | null;
   onSelect: (id: string) => void;
-  onToggle?: () => void;
+  view: MainView;
+  onView: (v: MainView) => void;
 }) {
   const zoneById: Record<string, Zone> = Object.fromEntries(frame.zones.map((z) => [z.id, z]));
   const specById = Object.fromEntries(plant.zones.map((z) => [z.id, z]));
@@ -43,16 +46,8 @@ export function PlantSchematic({
       <div className="flex items-center justify-between px-6 pt-5">
         <span className="label">Plant Overview</span>
         <div className="flex items-center gap-3">
-          <span className="font-sans text-[11px] text-ink-dim">{plant.name}</span>
-          {onToggle && (
-            <button
-              onClick={onToggle}
-              className="rounded-md px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-ink-dim transition-colors hover:text-ink"
-              style={{ border: "1px solid var(--line-2)" }}
-            >
-              Knowledge graph →
-            </button>
-          )}
+          <span className="hidden font-sans text-[11px] text-ink-dim lg:inline">{plant.name}</span>
+          <ViewToggle view={view} onView={onView} />
         </div>
       </div>
 

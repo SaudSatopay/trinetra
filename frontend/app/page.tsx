@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getFrames, getPlant, getScenarios, getSimulate, getIncident, IncidentReplay, SimConfig, API_BASE } from "@/lib/api";
-import { Frame, Plant, ScenarioInfo, Zone } from "@/lib/types";
+import { Frame, MainView, Plant, ScenarioInfo, Zone } from "@/lib/types";
 import { TopBar } from "@/components/TopBar";
 import { PlantSchematic } from "@/components/PlantSchematic";
 import { ThreatPanel } from "@/components/ThreatPanel";
@@ -14,6 +14,7 @@ import { Logo } from "@/components/Logo";
 import { CCTVTile } from "@/components/CCTVTile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
+import { FleetView } from "@/components/FleetView";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -27,7 +28,7 @@ export default function Page() {
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(4);
   const [selected, setSelected] = useState<string | null>(null);
-  const [mainView, setMainView] = useState<"plant" | "graph">("plant");
+  const [mainView, setMainView] = useState<MainView>("plant");
   const [error, setError] = useState<string | null>(null);
   const [ingestSummary, setIngestSummary] = useState<string | null>(null);
   const [incident, setIncident] = useState<IncidentReplay | null>(null);
@@ -175,10 +176,12 @@ export default function Page() {
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
         <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <ErrorBoundary label="Plant schematic unavailable">
-            {mainView === "graph" ? (
-              <KnowledgeGraph onToggle={() => setMainView("plant")} />
+            {mainView === "fleet" ? (
+              <FleetView view={mainView} onView={setMainView} />
+            ) : mainView === "graph" ? (
+              <KnowledgeGraph view={mainView} onView={setMainView} />
             ) : (
-              <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} onToggle={() => setMainView("graph")} />
+              <PlantSchematic plant={plant} frame={frame} selected={activeZoneId} onSelect={setSelected} view={mainView} onView={setMainView} />
             )}
           </ErrorBoundary>
           <div className="flex h-[124px] shrink-0 gap-4">

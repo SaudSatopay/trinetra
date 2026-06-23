@@ -29,6 +29,7 @@ from ..constants import GAS_THRESHOLDS, PLANT_NAME, ZONES
 from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
 from ..compliance import audit as compliance_audit
 from ..engine import CompoundRiskEngine
+from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..replay import TEXAS_CITY, parse_csv, sample_csv, texas_city_csv
@@ -515,6 +516,19 @@ def premortem():
     return _premortem_cache
 
 
+_fleet_cache: dict | None = None
+
+
+@app.get("/api/fleet")
+def fleet():
+    """Fleet / multi-plant rollup: the SAME compound engine across many facilities on one
+    board — the scalability story made concrete. Every figure is engine-derived, not mocked."""
+    global _fleet_cache
+    if _fleet_cache is None:
+        _fleet_cache = fleet_overview()
+    return _fleet_cache
+
+
 @app.on_event("startup")
 def _prewarm_caches():
     """Warm the hero-scenario caches in the background so the first demo open is
@@ -529,6 +543,7 @@ def _prewarm_caches():
             (agents, ("vizag", "COB-1", 13)),
             (vision, ()),
             (premortem, ()),
+            (fleet, ()),
         ):
             try:
                 fn(*args)
