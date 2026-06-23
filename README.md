@@ -107,7 +107,7 @@ flowchart LR
     RESP["🚨 Response Orchestrator"]
   end
   subgraph PRES["PRESENTATION"]
-    HMI["🖥️ Next.js control room<br/>over WebSocket"]
+    HMI["🖥️ Next.js control room"]
   end
   SIM --> ENG
   CSV --> ENG
@@ -199,26 +199,26 @@ flowchart LR
 | Metric | Trinetra |
 |---|---|
 | Compound-hazard detection **recall** | **100%** (14 / 14) |
-| **False-positive** rate (11 hard negatives) | **0%** |
+| **False-positive** rate (14 hard negatives, incl. inerted) | **0%** |
 | Mean **early-warning** over single-sensor | **7.4 min** (median 6, max 12) |
 
 ### Ablation — is the full fusion necessary?
 
 | Detector tier | Recall | False-alarm | Lead |
 |---|---|---|---|
-| Single-sensor threshold (incumbent) | 100% | 64% | 0 min |
-| Gas-trend rule (**no context**) | 100% | 64% | 7.4 min |
+| Single-sensor threshold (incumbent) | 100% | 71% | 0 min |
+| Gas-trend rule (**no context**) | 100% | 71% | 7.4 min |
 | **Trinetra (full compound fusion)** | 100% | **0%** | **7.4 min** |
 
-Context is what turns *early* detection into *actionable* early detection (64% → 0% false alarms at the same lead).
+Context is what turns *early* detection into *actionable* early detection (71% → 0% false alarms at the same lead).
 
 ### Generalization — held-out, unseen seeds
 
-**240 randomized scenarios** at seeds the thresholds were never tuned on → **100% recall, 2.5% false-positive**. Not overfit to the curated 25.
+**240 randomized scenarios** at seeds the thresholds were never tuned on → **100% recall, 3.3% false-positive**. Not overfit to the curated 28.
 
 ### Real-incident replay — independent validation
 
-Reconstructed from the **U.S. CSB BP Texas City (2005)** final report and replayed through the *same* engine: **Trinetra raises the compound alert at T+10 — ten minutes before the vapour-cloud ignition the CSB documented at T+20** (and 7 before any single sensor). The inquiry's own conditions; nothing tuned. *(In-app: connector → **Texas City · CSB '05**.)*
+Reconstructed from **two** real inquiries and replayed through the *same* engine, no tuning. **U.S. CSB BP Texas City (2005):** the compound alert fires at **T+10 — ten minutes before the vapour-cloud ignition the CSB documented at T+20** (7 before any single sensor). **MB Lal Jaipur (2009):** **T+12 — 36 minutes before** the documented ignition of a long, undetected vapour build-up. *Honest mapping* — neither site had a working gas detector (a finding in both inquiries), so the documented vapour escalation is mapped onto the flammable channel; the ignition timing and the personnel are the inquiry's. *(In-app: connector → **Texas City · CSB '05** / **Jaipur · MB Lal '09**.)*
 
 ---
 
@@ -226,8 +226,8 @@ Reconstructed from the **U.S. CSB BP Texas City (2005)** final report and replay
 
 | | | |
 |---|---|---|
-| 📊 **Ablation proof** | context fusion vs naive tiers — 64% → 0% false alarms | `python ablation.py` |
-| 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 2.5% FP | `python test_generalization.py` |
+| 📊 **Ablation proof** | context fusion vs naive tiers — 71% → 0% false alarms | `python ablation.py` |
+| 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 3.3% FP | `python test_generalization.py` |
 | 🧯 **Real-incident replay** | CSB Texas City (2005) → fires 10 min before the documented ignition | `/api/incident/texas-city` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
 | 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
@@ -265,7 +265,7 @@ flowchart LR
   H["Plant historian<br/>OPC-UA / MQTT / PI"] --> E["Edge pre-filter"] --> C["SCADA CSV"] --> I["/api/ingest"] --> EN["Same compound engine<br/>O(zones)"] --> UI["Control room"]
 ```
 
-The engine is `O(zones)` per frame — designed for ~10,000 tags @ 1 Hz on a single node, one instance per plant. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
+The engine is `O(zones)` per frame: **measured ~696k sensor tags/sec on a single core** (`python throughput.py`), so a 10,000-tag plant assesses in **~14 ms per 1 Hz frame — ≈70× real-time, no GPU**. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
 
 ---
 
@@ -306,7 +306,7 @@ python benchmark.py                         # the headline metrics
 
 ## API reference
 
-FastAPI service — **23 REST routes + a WebSocket stream**. Base: `http://127.0.0.1:8000`.
+FastAPI service — **25 REST routes + a WebSocket stream** (the stream endpoint exists for push deployments; the demo control room replays precomputed frames so the timeline is scrubbable). Base: `http://127.0.0.1:8000`.
 
 | Route | Purpose |
 |---|---|
@@ -367,7 +367,7 @@ GitHub Actions runs the full suite on every push (badge above):
 ```bash
 cd backend
 python benchmark.py            # 100% recall / 0% FP / 7.4 min
-python ablation.py             # 64% → 0% false alarms
+python ablation.py             # 71% → 0% false alarms
 python test_robustness.py      # 5 sensor/permit fault modes
 python test_generalization.py  # 240 held-out scenarios
 python smoke_api.py            # REST + WebSocket smoke

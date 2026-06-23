@@ -11,53 +11,55 @@ Most industrial fatalities are caused not by one sensor crossing a threshold, bu
 - **Digital twin.** A deterministic 6-zone integrated-steel-plant simulator (`backend/app/simulator.py`) generates per-zone gas (CH4 %LEL, CO & H2S ppm, O2 %vol), temperature and pressure with realistic per-species sensor noise. Fixed seed (`42`) → every number below is reproducible.
 - **Single-sensor baseline (the incumbent).** A gas is "in alarm" when it crosses its statutory setpoint (Factory Act / OISD-style: CH4 10 %LEL, CO 50 ppm, H2S 10 ppm, O2 19.5 %vol).
 - **Trinetra.** The engine (`backend/app/engine/compound.py`) fuses flammable-gas **level + trend**, **ignition** permits (in-zone *and* adjacent / blast-radius), **personnel** presence and confined-space **O2** into a per-zone risk score, a compound flag, and a predicted time-to-threshold. *Hybrid:* a deterministic, auditable scoring backbone makes the call; the LLM only explains.
-- **Benchmark.** 25 labelled scenarios (`backend/benchmark.py`): **14 genuine compound hazards** (varying zone, lead gas, ramp speed, in-zone vs adjacent ignition) and **11 hard negatives** — gas releases with no ignition/personnel, permitted hot-work in clean air, and transient sensor spikes. "Detected" = Trinetra raises a compound alert at ELEVATED+; the baseline "detects" when any gas crosses its setpoint.
+- **Benchmark.** 28 labelled scenarios (`backend/benchmark.py`): **14 genuine compound hazards** (varying zone, lead gas, ramp speed, in-zone vs adjacent ignition) and **14 hard negatives** — gas releases with no ignition/personnel, permitted hot-work in clean air, transient sensor spikes, and **inerted zones where all three compound factors are present but combustion is impossible**. "Detected" = Trinetra raises a compound alert at ELEVATED+; the baseline "detects" when any gas crosses its setpoint.
 
 ## Results
 
 | Metric | Trinetra |
 |---|---|
 | Compound-hazard detection **recall** | **100%** (14 / 14) |
-| **False-positive** rate (hard negatives) | **0%** (0 / 11) |
+| **False-positive** rate (hard negatives) | **0%** (0 / 14) |
 | **Precision** | **100%** |
 | Mean **early-warning** over single-sensor | **7.4 min** (median 6, max 12, min 4) |
 
 > Reproduce: `cd backend && python benchmark.py`
 
-Crucially, the 11 hard negatives include scenarios that **do** trip the legacy baseline (a real gas release with nobody around) — Trinetra correctly raises the ordinary gas alarm but does **not** escalate to a compound life-safety alert. It discriminates; it doesn't just fire on everything.
+Crucially, the 14 hard negatives are built to be genuinely hard. Some **do** trip the legacy baseline (a real gas release with nobody around) — Trinetra raises the ordinary gas alarm but does **not** escalate to a compound life-safety alert. And three are **inerted zones where rising flammable gas, a hot-work permit and crew are ALL present, yet no explosion is possible** — the atmosphere is purged below the limiting oxygen concentration. A "three boxes ticked" rule fires on those; Trinetra reasons about the full fire triangle (fuel + ignition + **oxidizer**) and correctly holds fire, with the suppression stated in its own factor list. This is the negative that proves the benchmark is *discriminating*, not self-referential: it does not simply re-detect its own definition.
 
 ## Ablation — is the full fusion necessary?
 
-A fair reviewer question: would a simpler system do? We re-ran the **same** 25 scenarios under three progressively richer detectors.
+A fair reviewer question: would a simpler system do? We re-ran the **same** 28 scenarios under three progressively richer detectors.
 
 | Detector tier | Recall | False-alarm rate | Precision | Mean lead |
 |---|---|---|---|---|
-| Single-sensor threshold (incumbent) | 100% | 64% | 67% | 0 min |
-| Gas-trend rule (level + trend, **no context**) | 100% | 64% | 67% | **7.4 min** |
+| Single-sensor threshold (incumbent) | 100% | 71% | 67% | 0 min |
+| Gas-trend rule (level + trend, **no context**) | 100% | 71% | 67% | **7.4 min** |
 | **Trinetra (full compound fusion)** | 100% | **0%** | **100%** | **7.4 min** |
 
-Early detection alone is easy: the gas-trend rule recovers the full 7.4-minute lead. But with no context (ignition, personnel, blast-radius) it fires on **64% of benign gas events** — releases with nobody present, transient spikes — so two of every three alerts are false. That is the definition of alarm fatigue, and alarm fatigue is why alarms get ignored. Only the contextual fusion keeps the lead **and** drops false alarms to **zero**. Context is what turns early detection into *actionable* early detection.
+**The lead time is not the differentiator — precision is.** Any trend-aware rule recovers the full 7.4-minute lead; the contextual fusion adds none. What it adds is *discrimination*: with no context (ignition, personnel, blast-radius, oxidizer) the gas-trend rule raises a **non-actionable / nuisance alert on 71% of benign events** — real but harmless gas releases with nobody present, transient spikes, and inerted zones — so roughly two of every three alerts demand no life-safety response. (These are not detector faults; the single-sensor *correctly* alarms on a real gas release. They are alarms that don't require a compound response — the source of alarm fatigue, which is why alarms get ignored.) Only the contextual fusion keeps the lead **and** drops the nuisance rate to **zero**.
 
 > Reproduce: `cd backend && python ablation.py`  ·  API: `GET /api/ablation`
 
 ## Generalization — held-out, unseen seeds
 
-A fair critique of any 25-scenario benchmark is "you tuned the thresholds on your own test set." So we also score the engine on a **held-out** distribution it was never calibrated on: **240 randomized scenarios** (120 compound hazards + 120 decoys) with random zone, lead gas, ramp speed, peak, permit timing, in-zone vs adjacent ignition and crew size — each run at a simulator **seed ≠ 42** (the only seed the thresholds were ever set on).
+A fair critique of any 28-scenario benchmark is "you tuned the thresholds on your own test set." So we also score the engine on a **held-out** distribution it was never calibrated on: **240 randomized scenarios** (120 compound hazards + 120 decoys) with random zone, lead gas, ramp speed, peak, permit timing, in-zone vs adjacent ignition and crew size — each run at a simulator **seed ≠ 42** (the only seed the thresholds were ever set on).
 
 | Metric (held-out · 240 scenarios) | Trinetra |
 |---|---|
 | Compound recall | **100%** (120 / 120) |
-| False-positive rate | **2.5%** (3 / 120) |
-| Precision | **97.6%** |
+| False-positive rate | **3.3%** (4 / 120) |
+| Precision | **96.8%** |
 | Mean early-warning | **7.7 min** |
 
-Recall holds at 100% and false positives stay at **2.5%** on scenarios the engine never saw — the thresholds generalize, they are not overfit to the curated 25. (This is still the digital twin, not live plant telemetry; real-plant data enters the *same* engine unchanged through the `/api/ingest` connector.)
+Recall holds at 100% and false positives stay at **3.3%** on scenarios the engine never saw — the thresholds generalize, they are not overfit to the curated 28. (This is still the digital twin, not live plant telemetry; real-plant data enters the *same* engine unchanged through the `/api/ingest` connector.)
 
 > Reproduce: `cd backend && python test_generalization.py`
 
-## Real-incident replay — independent validation
+## Real-incident replay — independent validation (×2)
 
-Synthetic scenarios invite the fair question *"would it catch a real one?"* So we reconstruct a documented incident and replay it through the **same** connector and engine. From the **U.S. CSB final report on the BP Texas City refinery explosion** (23 Mar 2005, Report No. 2005-04-I-TX) we hand-digitize the inquiry's own sequence and timing — the overfilled raffinate splitter venting a ground-level vapour cloud, the idling-engine ignition source, and the contractors stationed in nearby trailers — into a SCADA CSV. (The CSB found there was *no* gas detector that would have caught the release — its absence was a finding — so the documented rising vapour is mapped onto the flammable/LEL channel; the ignition and personnel overlays come straight from the report.)
+Synthetic scenarios invite the fair question *"would it catch a real one?"* So we reconstruct **two** documented disasters and replay each through the **same** connector and engine, no tuning. In both inquiries the site had *no* working gas detector (a finding in each), so the documented vapour escalation is mapped onto the flammable/LEL channel, while the ignition source and the personnel come straight from the report. The compound alert then follows from the documented sequence — not from a number we chose.
+
+**BP Texas City refinery** — U.S. CSB final report, 23 Mar 2005 (Report No. 2005-04-I-TX): the overfilled raffinate splitter venting a ground-level vapour cloud, an idling-engine ignition source, and contractors in nearby trailers.
 
 | Event | Time |
 |---|---|
@@ -65,9 +67,17 @@ Synthetic scenarios invite the fair question *"would it catch a real one?"* So w
 | First single-sensor alarm | T + 17 min |
 | Documented vapour-cloud ignition (CSB) | T + 20 min |
 
-**Trinetra raises the compound alert 10 minutes before the explosion the CSB recorded** — on conditions it was never tuned on. These are the inquiry's own numbers.
+**Indian Oil Jaipur depot** — MB Lal Committee report, 29 Oct 2009: a petrol-vapour cloud that accumulated, undetected, across the terminal for over an hour before it found an ignition source (12 killed, an 11-day fire).
 
-> Reproduce: `GET /api/incident/texas-city`  ·  inspect the raw feed: `GET /api/incident/texas-city.csv`
+| Event | Time |
+|---|---|
+| **Trinetra compound alert** | **T + 12 min** |
+| First single-sensor alarm | T + 40 min |
+| Documented vapour-cloud ignition (MB Lal) | T + 48 min |
+
+So the engine flags the compound risk **10 minutes** ahead of Texas City and **36 minutes** ahead of Jaipur — each on conditions it was never tuned on, each tracking the inquiry's own documented timeline. The honest part: where no detector existed, *we* chose to map the documented vapour build-up onto the gas channel; the lead then follows from the inquiry's sequence, not from a value we invented.
+
+> Reproduce: `GET /api/incident/texas-city` and `GET /api/incident/jaipur`  ·  inspect the raw feeds with the `.csv` variants.
 
 ## The Vizag backtest (hero scenario)
 
@@ -87,7 +97,7 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 ## Honest caveats (where it is, and is not, magic)
 
 - The benchmark runs on a **digital twin**, not a live plant — by necessity in a build sprint. The twin ingests standard SCADA / IoT / permit formats, so the path to real data is a **connector, not a rewrite**.
-- The 25 scenarios were authored by us, but deliberately include **hard negatives** the engine must reject. The discrimination (0% false-positive across them) is the substantive result.
+- The 28 scenarios were authored by us, but deliberately include **hard negatives** the engine must reject — including three *inerted* cases that carry all three compound factors yet are physically safe. The discrimination (0% false-positive across them) is the substantive result, not the recall.
 - The headline figures are measured on the **compound flag** (the lethal pattern), which is distinct from ordinary gas alarms. Trinetra still raises ordinary alarms like any system; the value is the compound layer **and the lead time**.
 
 ## Robustness (fault modes)
@@ -112,4 +122,4 @@ Real plants have flaky sensors and out-of-sync permits. A dedicated check (`back
 | Compound detection accuracy vs single-sensor baselines | 100% recall; +7.4 min mean lead |
 | Prediction lead time before incident threshold | 6 min on the Vizag reconstruction |
 | Reduction in false-negative rate (*"the metric that saves lives"*) | baseline is blind to the entire compound window until the gas alarms; Trinetra catches 14/14 |
-| False-positive discipline | 0% on 11 hard negatives |
+| False-positive discipline | 0% on 14 hard negatives (incl. inerted) |

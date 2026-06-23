@@ -131,7 +131,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   title(s, "One multi-modal brain");
   const pills = [
     ["Compound\nEngine", "fuses gas trend +\npermits + people", BRAND],
-    ["Vision", "YOLOv8 worker &\nzone intrusion", BRIGHT],
+    ["Vision", "person & zone-intrusion\n(monitoring layer)", BRIGHT],
     ["Reasoning Graph", "LangGraph 6-stage\nauditable trace", BRIGHT],
     ["Disaster RAG", "Gemini precedent\nmatching", BRIGHT],
     ["Response", "report + multilingual\nalerts", RED],
@@ -247,7 +247,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
     s.addText(l, { x: 7.3 + i * 1.35, y: 3.75, w: 1.2, h: 0.4, fontFace: MONO, fontSize: 11, color: AMBER, align: "center", valign: "middle", margin: 0 });
   });
   panel(s, 7.0, 4.55, 5.63, 2.15, PANEL2);
-  s.addText("ACTIONS AUTO-INITIATED", { x: 7.3, y: 4.75, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
+  s.addText("RESPONSE ACTIONS — PREPARED", { x: 7.3, y: 4.75, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
   s.addText([
     { text: "Suspend hot-work permit PTW-7741", options: { breakLine: true } },
     { text: "Evacuate & page response team", options: { breakLine: true } },
@@ -261,7 +261,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   const s = S();
   kicker(s, "THE PROOF");
   title(s, "Measured, not claimed");
-  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 11 hard negatives", BRAND], ["7.4 min", "mean early-warning", "vs single-sensor baseline", AMBER]];
+  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 14 incl. inerted decoys", BRAND], ["7.4 min", "mean early-warning", "vs single-sensor baseline", AMBER]];
   let x = 0.7;
   stats.forEach(([n, l, sub, c]) => {
     panel(s, x, 2.3, 3.84, 2.2);
@@ -281,6 +281,33 @@ function mark(s, cx, cy, sc) { // triangle + eye
     s.addText(l, { x: px - 1.0, y: 6.2, w: 2.4, h: 0.3, fontFace: BODY, fontSize: 12, color: TEXT, align: "center", margin: 0 });
   });
   s.addText("+6 min lead", { x: 5.4, y: 5.55, w: 3.0, h: 0.3, fontFace: MONO, fontSize: 12, bold: true, color: BRAND, align: "center", margin: 0 });
+}
+
+// ============ REAL-INCIDENT VALIDATION ============
+{
+  const s = S();
+  kicker(s, "VALIDATED ON REAL DISASTERS");
+  title(s, "Would it catch a real one? Twice.");
+  const cases = [
+    ["BP Texas City refinery", "U.S. CSB · 2005", "+10 min", "before the documented vapour-cloud ignition (T+20). 15 killed.", "Report 2005-04-I-TX"],
+    ["Indian Oil Jaipur depot", "MB Lal Committee · 2009", "+36 min", "before the documented ignition (T+48) of a long, undetected vapour build-up. 12 killed.", "MB Lal Committee report"],
+  ];
+  let cx = 0.7;
+  cases.forEach(([name, src, lead, detail, cite]) => {
+    panel(s, cx, 2.3, 5.96, 3.5, PANEL_CRIT, RED);
+    s.addText(src.toUpperCase(), { x: cx + 0.35, y: 2.55, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
+    s.addText(name, { x: cx + 0.35, y: 2.86, w: 5.3, h: 0.5, fontFace: HEAD, fontSize: 22, bold: true, color: BRIGHT, margin: 0 });
+    s.addText(lead, { x: cx + 0.35, y: 3.5, w: 5.3, h: 0.9, fontFace: HEAD, fontSize: 52, bold: true, color: RED, margin: 0 });
+    s.addText("earlier", { x: cx + 0.35, y: 4.45, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
+    s.addText(detail, { x: cx + 0.35, y: 4.82, w: 5.3, h: 0.7, fontFace: BODY, fontSize: 13, color: TEXT, valign: "top", margin: 0 });
+    s.addText(cite, { x: cx + 0.35, y: 5.48, w: 5.3, h: 0.25, fontFace: MONO, fontSize: 9.5, color: DIM, margin: 0 });
+    cx += 6.16;
+  });
+  panel(s, 0.7, 6.0, 11.93, 0.95, PANEL2, BRAND);
+  s.addText([
+    { text: "Same engine, no tuning.  ", options: { color: BRAND, bold: true } },
+    { text: "Each inquiry's documented escalation is reconstructed into a SCADA feed and replayed through the live engine. Where the site had no gas detector (a finding in both), the documented vapour build-up is mapped to the flammable channel; the ignition and personnel are the inquiry's. In-app: connector → Texas City / Jaipur.", options: { color: TEXT } },
+  ], { x: 1.0, y: 6.0, w: 11.3, h: 0.95, fontFace: BODY, fontSize: 11.5, valign: "middle", margin: 0 });
 }
 
 // ============ BUSINESS IMPACT (expected value) ============
@@ -313,7 +340,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   panel(s, 6.4, 5.1, 6.23, 1.3, PANEL_STEEL, STEEL);
   s.addText("+ INSURANCE LEVER", { x: 6.7, y: 5.28, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: STEEL, charSpacing: 1, margin: 0 });
   s.addText("Recurring premium reduction of ₹0.4–1.2 Cr/yr (5–15% for continuous monitoring) — it offsets the platform cost whether or not an incident ever occurs.", { x: 6.7, y: 5.58, w: 5.7, h: 0.78, fontFace: BODY, fontSize: 12.5, color: TEXT, valign: "top", margin: 0 });
-  s.addText("Per-incident loss (lives + asset + downtime + penalty), every figure sourced, × a conservative event frequency — not a 116×-per-incident headline.", { x: 0.7, y: 6.6, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
+  s.addText("Per-incident loss (lives + asset + downtime + penalty), every figure carries its basis, × a conservative event frequency — not a 116×-per-incident headline.", { x: 0.7, y: 6.6, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
 }
 
 // ============ GO TO MARKET ============
@@ -338,6 +365,30 @@ function mark(s, cx, cy, sc) { // triangle + eye
     { text: "The ask:  ", options: { color: BRAND, bold: true } },
     { text: "1–2 design partners (steel / refining) for a 90-day pilot on a live permit-to-work + gas feed.", options: { color: BRIGHT } },
   ], { x: 1.0, y: 6.5, w: 11.3, h: 0.7, fontFace: BODY, fontSize: 14, valign: "middle", margin: 0 });
+}
+
+// ============ COMPETITIVE MOAT ============
+{
+  const s = S();
+  kicker(s, "WHY AN INCUMBENT CAN'T JUST SHIP IT");
+  title(s, "The moat is the fusion, not the sensors");
+  [
+    ["Incumbents sell the silos", "Honeywell, Dräger, MSA, Hexagon sell gas detection, permit-to-work and CCTV as SEPARATE products. The danger lives in the seam BETWEEN them — exactly what no one owns end to end.", RED],
+    ["A deterministic pattern library", "The compound rules — flammable × ignition × personnel × oxidizer × blast-radius, encoded to real OISD / Factory-Act thresholds — are domain IP, not a model cloned from a public dataset.", BRAND],
+    ["A data network effect", "Each plant's operator feedback tunes its own nuisance profile (the flywheel). More sites → sharper per-plant precision; an incumbent's fixed hardware doesn't learn.", BRAND],
+    ["Audit-grade by construction", "A transparent, deterministic core a safety officer can defend in a statutory audit. A pure-LLM bolt-on can't make a life-safety call a regulator will accept.", AMBER],
+  ].forEach(([k, v, c], i) => {
+    const y = 2.3 + i * 1.05;
+    panel(s, 0.7, y, 11.93, 0.93);
+    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y, w: 0.07, h: 0.93, fill: { color: c } });
+    s.addText(k, { x: 1.0, y: y + 0.1, w: 3.5, h: 0.73, fontFace: HEAD, fontSize: 15.5, bold: true, color: c, valign: "middle", margin: 0 });
+    s.addText(v, { x: 4.6, y: y + 0.1, w: 7.8, h: 0.73, fontFace: BODY, fontSize: 12.5, color: TEXT, valign: "middle", margin: 0 });
+  });
+  panel(s, 0.7, 6.55, 11.93, 0.65, PANEL2, BRAND);
+  s.addText([
+    { text: "The wedge:  ", options: { color: BRAND, bold: true } },
+    { text: "land on permit-to-work intelligence — one fundable pain — then own the fused gas + permit + CCTV + shift layer the incumbents are structurally unable to assemble.", options: { color: BRIGHT } },
+  ], { x: 1.0, y: 6.55, w: 11.3, h: 0.65, fontFace: BODY, fontSize: 12.5, valign: "middle", margin: 0 });
 }
 
 // ============ FLEET COMMAND (scalability) ============
@@ -454,8 +505,8 @@ function mark(s, cx, cy, sc) { // triangle + eye
   // throughput
   panel(s, 0.7, 4.95, 5.9, 1.65, PANEL2, BRAND);
   s.addText("THROUGHPUT", { x: 1.0, y: 5.13, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
-  s.addText("~10,000 tags @ 1 Hz", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
-  s.addText("on a single node — the engine is O(zones) per frame, one instance per plant (fleet view above). No GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", margin: 0 });
+  s.addText("~700k tags / sec", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
+  s.addText("measured — a 10,000-tag plant assesses in ~14 ms per 1 Hz frame, ~70x real-time on one core. O(zones), one instance per plant, no GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11, color: DIM, valign: "top", margin: 0 });
   // properties
   panel(s, 6.9, 4.95, 5.73, 1.65);
   [["Standard formats", "ingests SCADA / IoT / permit data as-is"],

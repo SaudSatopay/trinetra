@@ -25,7 +25,7 @@
 ### Presentation layer (WP3)
 - Next.js + React + Tailwind control room.
 - Real-time **geospatial plant heatmap** (zones coloured by `RiskLevel`, worker markers, permit overlays), risk timeline, compound-risk alert cards with citations, a **Scenario Replay** control, and the auto-generated incident report.
-- FastAPI backend streams snapshots + risk assessments over WebSocket.
+- FastAPI backend exposes snapshots + risk assessments over REST + a WebSocket stream.
 
 ## 3. The compound-risk signal (WP2 preview)
 
@@ -38,11 +38,11 @@ flammable_trend_rising(CH4|CO)      # positive slope, even below low-alarm
   -> CRITICAL  (predicted threshold breach in ~N min)
 ```
 
-Benign controls must stay quiet: gas-without-ignition-or-people, permitted-work-without-gas, and transient spikes are all labelled `expected_compound = False` in the benchmark.
+Benign controls must stay quiet: gas-without-ignition-or-people, permitted-work-without-gas, transient spikes, and **inerted zones that carry all three factors but cannot ignite** (no oxidizer) are all labelled `expected_compound = False` in the benchmark.
 
 ## 4. Evaluation (WP2 / WP6)
 
-Against a ~25-scenario benchmark we report:
+Against a ~28-scenario benchmark we report:
 - **Lead time** vs the first single-sensor alarm (headline metric),
 - **Compound detection rate** and **false-negative reduction** vs the single-sensor baseline,
 - **False-positive rate** on the benign controls.
