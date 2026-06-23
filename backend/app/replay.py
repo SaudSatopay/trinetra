@@ -156,9 +156,34 @@ def _interp(points: list, t: float) -> float:
     return points[-1][1]
 
 
-def texas_city_csv() -> str:
-    """The reconstructed CSB Texas City sequence as a SCADA CSV (one row per minute)."""
-    inc = TEXAS_CITY
+# ---------------------------------------------------------------------------
+# Reconstructed real incident — IOC Jaipur fuel-depot fire, 29 Oct 2009 (MB Lal)
+# ---------------------------------------------------------------------------
+# Source: the MB Lal Committee report into the Indian Oil Jaipur depot disaster. During a
+# routine petrol transfer a valve leaked and a petrol vapour cloud accumulated across the
+# terminal for over an hour before it reached an ignition source and detonated, killing 12 and
+# burning for 11 days. The committee found the slow build-up went effectively undetected — no
+# layer connected the accumulating vapour to the live ignition risk. We map the documented
+# vapour escalation onto the flammable (LEL) channel and take the ignition source and on-site
+# personnel from the report. The long, silent build-up is exactly what Trinetra catches early.
+JAIPUR = {
+    "incident": "Indian Oil Jaipur depot vapour-cloud fire",
+    "date": "29 Oct 2009",
+    "source": "MB Lal Committee report",
+    "zone": "PMP",                  # mapped to the transfer / pump-house slot on the twin
+    "documented_event_min": 48,     # vapour-cloud ignition after a long, undetected build-up
+    "event_label": "vapour-cloud ignition (committee-documented)",
+    "personnel": 12,
+    # documented petrol-vapour accumulation mapped to %LEL — a long, slow, undetected build-up:
+    "ramp": [(0, 1.0), (6, 2.6), (12, 5.2), (18, 6.4), (24, 7.4), (30, 8.4),
+             (36, 9.3), (42, 10.4), (48, 12.0)],
+}
+
+INCIDENT_REPLAYS = {"texas-city": TEXAS_CITY, "jaipur": JAIPUR}
+
+
+def _incident_csv(inc: dict) -> str:
+    """A reconstructed incident sequence as a SCADA CSV (one row per minute)."""
     out = io.StringIO()
     w = csv.writer(out)
     w.writerow(["t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"])
@@ -166,3 +191,13 @@ def texas_city_csv() -> str:
     for t in range(0, last + 1):
         w.writerow([t, inc["zone"], round(_interp(inc["ramp"], t), 1), "", "", "", 1, inc["personnel"]])
     return out.getvalue()
+
+
+def texas_city_csv() -> str:
+    """The reconstructed CSB Texas City sequence as a SCADA CSV."""
+    return _incident_csv(TEXAS_CITY)
+
+
+def jaipur_csv() -> str:
+    """The reconstructed MB Lal Jaipur sequence as a SCADA CSV."""
+    return _incident_csv(JAIPUR)

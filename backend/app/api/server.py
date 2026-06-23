@@ -34,7 +34,7 @@ from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..permit_gate import evaluate_permit
-from ..replay import TEXAS_CITY, parse_csv, sample_csv, texas_city_csv
+from ..replay import INCIDENT_REPLAYS, jaipur_csv, parse_csv, sample_csv, texas_city_csv
 from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
@@ -175,24 +175,16 @@ async def ingest(request: Request):
     return {"scenario": "ingested", "minutes": len(frames), "frames": frames, **meta}
 
 
-@app.get("/api/incident/texas-city.csv")
-def incident_texas_city_csv():
-    """The reconstructed CSB Texas City sequence as a raw SCADA CSV — inspect the source."""
-    return PlainTextResponse(
-        texas_city_csv(), media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=texas_city_2005_csb.csv"},
-    )
-
-
-@app.get("/api/incident/texas-city")
-def incident_texas_city():
-    """Replay the U.S. CSB Texas City (2005) reconstruction through the SAME engine and
-    report the lead over the inquiry's documented ignition. Real, independently documented
-    conditions — the direct answer to 'would it have caught a real one?'."""
-    snaps, meta = parse_csv(texas_city_csv())
+def _incident_replay(key: str) -> dict:
+    """Replay a reconstructed real incident through the SAME engine and report the lead over the
+    inquiry's documented event. Real, independently documented conditions — the direct answer to
+    'would it have caught a real one?'."""
+    inc = INCIDENT_REPLAYS[key]
+    csv_text = texas_city_csv() if key == "texas-city" else jaipur_csv()
+    snaps, meta = parse_csv(csv_text)
     engine = CompoundRiskEngine(compute_confidence=True)
     frames = [serialize_frame(s, engine.assess(s)) for s in snaps]
-    zone = TEXAS_CITY["zone"]
+    zone = inc["zone"]
     alert_min = single_min = None
     for fr in frames:
         zr = next((z for z in fr["zones"] if z["id"] == zone), None)
@@ -202,16 +194,43 @@ def incident_texas_city():
             alert_min = int(fr["t_min"])
         if single_min is None and any(g["stage"] for g in zr["gases"].values()):
             single_min = int(fr["t_min"])
-    ev = TEXAS_CITY["documented_event_min"]
+    ev = inc["documented_event_min"]
     return {
-        "scenario": "ingested", "minutes": len(frames), "frames": frames,
-        "incident": TEXAS_CITY["incident"], "date": TEXAS_CITY["date"],
-        "source": TEXAS_CITY["source"], "zone": zone,
-        "documented_event_min": ev, "event_label": TEXAS_CITY["event_label"],
+        "scenario": "ingested", "key": key, "minutes": len(frames), "frames": frames,
+        "incident": inc["incident"], "date": inc["date"], "source": inc["source"], "zone": zone,
+        "documented_event_min": ev, "event_label": inc["event_label"],
         "trinetra_alert_min": alert_min, "single_sensor_min": single_min,
         "lead_min": (ev - alert_min) if alert_min is not None else None,
         "rows": meta["rows"],
     }
+
+
+@app.get("/api/incident/texas-city.csv")
+def incident_texas_city_csv():
+    """The reconstructed CSB Texas City sequence as a raw SCADA CSV — inspect the source."""
+    return PlainTextResponse(
+        texas_city_csv(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=texas_city_2005_csb.csv"},
+    )
+
+
+@app.get("/api/incident/jaipur.csv")
+def incident_jaipur_csv():
+    """The reconstructed MB Lal Jaipur sequence as a raw SCADA CSV — inspect the source."""
+    return PlainTextResponse(
+        jaipur_csv(), media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=jaipur_2009_mblal.csv"},
+    )
+
+
+@app.get("/api/incident/texas-city")
+def incident_texas_city():
+    return _incident_replay("texas-city")
+
+
+@app.get("/api/incident/jaipur")
+def incident_jaipur():
+    return _incident_replay("jaipur")
 
 
 _memory = DisasterMemory()
@@ -340,6 +359,15 @@ def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list
             {"t": 17, "label": "First single-sensor gas alarm", "kind": "legacy"},
             {"t": 20, "label": "Vapour-cloud ignition — explosion (CSB-documented)", "kind": "legacy"},
         ]
+    if scenario_name == "jaipur":
+        # the MB Lal Committee's documented sequence — a long, undetected vapour build-up
+        return [
+            {"t": 0, "label": "Petrol transfer underway; vapour leak begins", "kind": "ignition"},
+            {"t": 0, "label": "12 personnel on the terminal", "kind": "personnel"},
+            {"t": 12, "label": "Trinetra raises compound alert", "kind": "trinetra"},
+            {"t": 40, "label": "First single-sensor gas alarm", "kind": "legacy"},
+            {"t": 48, "label": "Vapour-cloud ignition — explosion (committee-documented)", "kind": "legacy"},
+        ]
     scn = SCENARIOS[scenario_name]
     near = set(ZONES[zone].neighbours) | {zone}
     events: list[dict] = []
@@ -374,7 +402,7 @@ def _evidence_timeline(scenario_name: str, zone: str, horizon: int = 45) -> list
 @app.get("/api/response")
 def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     """Orchestrate the autonomous response: actions + incident report + multilingual alert."""
-    incident = scenario == "texas-city"
+    incident = scenario in ("texas-city", "jaipur")
     if not incident and scenario not in SCENARIOS:
         return {"error": f"unknown scenario '{scenario}'"}
     key = (scenario, zone, minutes) if incident else (scenario, zone)
@@ -386,7 +414,8 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
     snap = None
     if incident:
         # replay the reconstructed real-incident feed through the same engine
-        for s in parse_csv(texas_city_csv())[0]:
+        csv_text = texas_city_csv() if scenario == "texas-city" else jaipur_csv()
+        for s in parse_csv(csv_text)[0]:
             if s.t_min > minutes:
                 break
             snap = s
