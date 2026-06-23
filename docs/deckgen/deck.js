@@ -8,7 +8,7 @@ p.title = "Trinetra";
 
 // ---- palette ("Foundry": warm ink + molten-metal signature; matches the live UI) ----
 const BG = "0b0908", PANEL = "15110d", PANEL2 = "100c09", LINE = "3b2e22",
-  BRAND = "ff6a1a", RED = "ff2b4e", AMBER = "f5902b", STEEL = "6b7886",
+  BRAND = "ff6a1a", RED = "ff2b4e", AMBER = "f5902b", WATCH = "efc23c", STEEL = "6b7886",
   TEXT = "c6b9a6", DIM = "7c6f5e", BRIGHT = "f7efe1", LEGACY = "5d5347";
 // warm-tinted panel fills for accented cards
 const PANEL_CRIT = "1f0f0b", PANEL_AMBER = "1d1206", PANEL_STEEL = "14130f";
@@ -301,7 +301,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   // right — expected-value ROI
   panel(s, 6.4, 2.2, 6.23, 2.75, PANEL2, BRAND);
   s.addText("EXPECTED ANNUAL RETURN", { x: 6.7, y: 2.42, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1, margin: 0 });
-  s.addText("≈8×", { x: 6.7, y: 2.78, w: 1.7, h: 0.95, fontFace: HEAD, fontSize: 44, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
+  s.addText("≈7.7×", { x: 6.7, y: 2.78, w: 1.7, h: 0.95, fontFace: HEAD, fontSize: 38, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
   s.addText("expected annual return on the ₹1 Cr/plant/yr platform — even at a conservative 1-in-15-year event", { x: 8.45, y: 2.78, w: 3.95, h: 0.95, fontFace: BODY, fontSize: 13, color: TEXT, valign: "middle", margin: 0 });
   [["1-in-30 yr", "3.9×"], ["1-in-15 yr", "7.7×"], ["1-in-8 yr", "14.4×"]].forEach(([f, r], i) => {
     const sx = 6.7 + i * 2.0;
@@ -357,17 +357,18 @@ function mark(s, cx, cy, sc) { // triangle + eye
     ["Visakhapatnam Steel — Coke Ovens", "CRITICAL · COMPOUND", "+6m", RED, true],
     ["Paradip Refinery — Coker Unit", "HIGH · COMPOUND", "+4m", RED, true],
     ["Dahej Petrochemicals — Gas Cleaning", "HIGH · gas, no compound", "", AMBER, false],
+    ["Ennore Terminal — Utilities", "WATCH · gas, no compound", "", WATCH, false],
     ["Bhilai Steel — Blast Furnace", "NORMAL · permits clear", "", STEEL, false],
     ["Haldia — Pump House", "NORMAL · transient cleared", "", STEEL, false],
   ];
-  let sy = 3.75;
+  let sy = 3.58;
   sites.forEach(([name, status, lead, c, comp]) => {
-    panel(s, 0.7, sy, 11.93, 0.5, comp ? PANEL_CRIT : PANEL2, comp ? RED : LINE);
-    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: sy, w: 0.06, h: 0.5, fill: { color: c } });
-    s.addText(name, { x: 0.95, y: sy, w: 6.3, h: 0.5, fontFace: HEAD, fontSize: 13, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
-    s.addText(status, { x: 7.3, y: sy, w: 3.9, h: 0.5, fontFace: MONO, fontSize: 11, color: c, valign: "middle", margin: 0 });
-    if (lead) s.addText(lead + " lead", { x: 11.1, y: sy, w: 1.4, h: 0.5, fontFace: MONO, fontSize: 11, bold: true, color: BRAND, align: "right", valign: "middle", margin: 0 });
-    sy += 0.56;
+    panel(s, 0.7, sy, 11.93, 0.44, comp ? PANEL_CRIT : PANEL2, comp ? RED : LINE);
+    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: sy, w: 0.06, h: 0.44, fill: { color: c } });
+    s.addText(name, { x: 0.95, y: sy, w: 6.3, h: 0.44, fontFace: HEAD, fontSize: 12.5, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
+    s.addText(status, { x: 7.3, y: sy, w: 3.9, h: 0.44, fontFace: MONO, fontSize: 10.5, color: c, valign: "middle", margin: 0 });
+    if (lead) s.addText(lead + " lead", { x: 11.1, y: sy, w: 1.4, h: 0.44, fontFace: MONO, fontSize: 10.5, bold: true, color: BRAND, align: "right", valign: "middle", margin: 0 });
+    sy += 0.49;
   });
   s.addText("One shared compound engine across every site — O(zones) per plant, horizontally shardable. Digital-twin sites stand in for live OPC-UA / MQTT feeds; ingesting real plant data is a connector, not a rewrite.", { x: 0.7, y: 6.75, w: 12, h: 0.5, fontFace: BODY, fontSize: 12.5, italic: true, color: DIM, valign: "top", margin: 0 });
 }

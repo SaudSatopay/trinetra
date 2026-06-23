@@ -13,7 +13,7 @@
 ### 0:20 – 0:45 · Normal operations
 > "This is Trinetra, watching that same plant. Right now every system agrees: normal. A hot-work permit is active in the coke-oven battery. Three workers are inside a confined space below it. All routine."
 
-**On screen:** point to the **CCTV · YOLOv8** tile detecting the workers; point to the calm split-status strip — *Legacy: All clear · Trinetra: Monitoring.*
+**On screen:** point to the **CCTV · YOLOv8** tile — person + restricted-zone detection on a sample feed (a live plant camera is a drop-in connector); point to the calm split-status strip — *Legacy: All clear · Trinetra: Monitoring.*
 
 ### 0:45 – 1:30 · The split reality *(let it run to ~t8–10, or seek)*
 > "Watch what happens. Methane is rising in the battery — but it's still **below** the alarm. Every single sensor reads clear. Then Trinetra does something no sensor can: it connects the rising gas to the active ignition source and the people in the room."
@@ -29,7 +29,7 @@
 > "Because it's caught early, the system doesn't just alarm — it responds."
 
 **On screen:** click **"Autonomous response initiated."** The modal opens:
-- the **avoided-loss banner** — *"₹115.5 Cr prevented per incident · ~8× expected annual ROI even at a conservative 1-in-15-year event"* (lives + asset + downtime + penalty, every figure sourced; plus a recurring insurance-premium offset),
+- the **avoided-loss banner** — *"₹115.5 Cr prevented per incident · ~7.7× expected annual ROI even at a conservative 1-in-15-year event"* (lives + asset + downtime + penalty, every figure sourced; plus a recurring insurance-premium offset),
 - the **evidence timeline** — permit opened → personnel entry → **Trinetra alert (T+8)** → **legacy alarm (T+14)**: the six-minute lead as an auditable sequence,
 - the **action checklist** (suspend hot-work, evacuate, page response team, preserve evidence),
 - the **evacuation alert** — toggle **Telugu** and **Hindi** ("in the languages the workers on that floor actually speak"),
@@ -54,6 +54,9 @@
 - **"Would it have caught a *real* one?"** → Hit **Texas City · CSB** in the connector. It replays the U.S. CSB's documented BP Texas City (2005) sequence — the inquiry's own conditions, hand-digitized from Report 2005-04-I-TX — through the same engine, and raises the compound alert **10 minutes before the vapour-cloud ignition the CSB recorded**. Not our numbers; theirs.
 - **"How is this not just another alarm?"** → It fires on the *combination below* single-sensor thresholds, and it's measured: 100% recall / 0% false-positive / +7.4 min lead vs the baseline. The ablation shows context cuts false alarms from 64% to 0% at the same lead time.
 - **"Why won't it cry wolf?"** → 11 hard-negative scenarios (gas with no ignition, permits in clean air, transients) — 0% false compound alerts. Plus fault-mode checks (stuck sensor, missing CCTV, noise spike, delayed permit) in `test_robustness.py`.
-- **"What's the ROI / business case?"** → One prevented Vizag-class incident ≈ **₹115.5 Cr** avoided (lives + asset + downtime + penalty). On expected value — even at a conservative **1-in-15-year** event probability — that's a **~8× annual return** on the ~₹1 Cr/yr platform (still **~4×** at 1-in-30); plus a recurring **insurance-premium reduction** (5–15% for continuous monitoring) that offsets the platform cost regardless of any incident.
+- **"What's the ROI / business case?"** → One prevented Vizag-class incident ≈ **₹115.5 Cr** avoided (lives + asset + downtime + penalty). On expected value — even at a conservative **1-in-15-year** event probability — that's a **~7.7× annual return** on the ~₹1 Cr/yr platform (still **~3.9×** at 1-in-30); plus a recurring **insurance-premium reduction** (5–15% for continuous monitoring) that offsets the platform cost regardless of any incident.
 - **"What if the AI is rate-limited mid-demo?"** → It degrades to vetted cached analysis (UI badges "cached"); the precedent match is still real (embeddings) and the room stays fully functional.
 - **"Who buys it?"** → Steel, refining, petrochemical, mining — anyone running OISD/Factory-Act permit-to-work. It sits over their existing sensors.
+
+## Booth / attract mode (unattended floor demo)
+For the Phase-3 stand, hit **Booth** (top bar) and step away. It runs a ~60-second loop on its own — Vizag compound detection → the Texas City real-incident replay → the fleet board → cross-zone blast radius → a silent hard negative — and on each compound hazard it sounds a **siren and a spoken evacuation**. The **mute** toggle beside it silences the audio for a quiet room; click **Booth** again to take back manual control. It pulls a crowd in without anyone driving.
