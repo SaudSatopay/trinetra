@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_BASE } from "@/lib/api";
+import { retryFetch } from "@/lib/api";
 import { AnimatedNumber } from "./AnimatedNumber";
 
 interface MemMatch {
@@ -42,7 +42,7 @@ export function DisasterMemory({
     setState("loading");
     setData(null);
     const mins = Math.max(12, Math.round(tMin));
-    fetch(`${API_BASE}/api/disaster-memory?scenario=${scenario}&zone=${zoneId}&minutes=${mins}`)
+    retryFetch(`/api/disaster-memory?scenario=${scenario}&zone=${zoneId}&minutes=${mins}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;

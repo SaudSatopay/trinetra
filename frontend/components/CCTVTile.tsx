@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_BASE } from "@/lib/api";
+import { getJSON } from "@/lib/api";
 
 interface Vision {
   persons: number;
@@ -15,8 +15,7 @@ export function CCTVTile() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/vision`)
-      .then((r) => r.json())
+    getJSON<Vision & { error?: string }>("/api/vision")
       .then((d) => {
         if (cancelled) return;
         if (d.error || !d.image_b64) setErr(true);

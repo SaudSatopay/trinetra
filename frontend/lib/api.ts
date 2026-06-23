@@ -3,10 +3,44 @@ import { FleetOverview, Frame, Plant, ScenarioInfo } from "./types";
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-async function j<T>(path: string): Promise<T> {
-  const r = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-  if (!r.ok) throw new Error(`${path} -> ${r.status}`);
-  return r.json() as Promise<T>;
+// Fetch JSON with a few quick retries — survives the backend being slow to warm on first load,
+// so a one-shot panel doesn't go permanently blank if its initial request races startup.
+export async function getJSON<T>(path: string, retries = 2): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+      if (!r.ok) throw new Error(`${path} -> ${r.status}`);
+      return (await r.json()) as T;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < retries) await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+const j = getJSON;
+
+// Like fetch but retries transient failures (slow startup / 5xx); returns the Response so callers
+// keep their existing r.json() handling. Path is relative to API_BASE.
+export async function retryFetch(path: string, init?: RequestInit, retries = 2): Promise<Response> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch(`${API_BASE}${path}`, { cache: "no-store", ...init });
+      if (!r.ok && r.status >= 500 && attempt < retries) {
+        await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+        continue;
+      }
+      return r;
+    } catch (e) {
+      lastErr = e;
+      if (attempt >= retries) throw e;
+      await new Promise((res) => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 export const getPlant = () => j<Plant>("/api/plant");
@@ -47,6 +81,7 @@ export async function ingestCsv(text: string): Promise<{ frames: Frame[]; summar
 
 export interface IncidentReplay {
   frames: Frame[];
+  key: string;
   incident: string;
   date: string;
   source: string;

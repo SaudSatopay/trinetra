@@ -110,16 +110,20 @@ export function PlantSchematic({
           })}
         </svg>
 
-        {plant.zones.map((spec) => (
-          <ZoneNode
-            key={spec.id}
-            z={zoneById[spec.id]}
-            left={nx(spec.x)}
-            top={ny(spec.y)}
-            selected={selected === spec.id}
-            onSelect={() => onSelect(spec.id)}
-          />
-        ))}
+        {plant.zones.map((spec) => {
+          const z = zoneById[spec.id];
+          if (!z) return null; // defensive: never let a missing zone collapse the whole schematic
+          return (
+            <ZoneNode
+              key={spec.id}
+              z={z}
+              left={nx(spec.x)}
+              top={ny(spec.y)}
+              selected={selected === spec.id}
+              onSelect={() => onSelect(spec.id)}
+            />
+          );
+        })}
       </div>
     </div>
   );

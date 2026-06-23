@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { API_BASE } from "@/lib/api";
+import { API_BASE, retryFetch } from "@/lib/api";
 
 interface ComplianceItem {
   requirement: string;
@@ -137,7 +137,7 @@ export function SafetyIntelligence({
       return;
     }
     const mins = Math.max(12, Math.round(tMin));
-    fetch(`${API_BASE}/api/compliance?scenario=${scenario}&minutes=${mins}`)
+    retryFetch(`/api/compliance?scenario=${scenario}&minutes=${mins}`)
       .then((r) => r.json())
       .then((d) => !d.error && setComp(d))
       .catch(() => {});
@@ -145,14 +145,14 @@ export function SafetyIntelligence({
   }, [scenario, compound, known]);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/patterns`)
+    retryFetch(`/api/patterns`)
       .then((r) => r.json())
       .then((d) => !d.error && setPatterns(d))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/premortem`)
+    retryFetch(`/api/premortem`)
       .then((r) => r.json())
       .then((d) => !d.error && setPremortem(d))
       .catch(() => {});
@@ -164,7 +164,7 @@ export function SafetyIntelligence({
       return;
     }
     const mins = Math.max(12, Math.round(tMin));
-    fetch(`${API_BASE}/api/agents?scenario=${scenario}&zone=${zone}&minutes=${mins}`)
+    retryFetch(`/api/agents?scenario=${scenario}&zone=${zone}&minutes=${mins}`)
       .then((r) => r.json())
       .then((d) => !d.error && setReasoning(d))
       .catch(() => {});

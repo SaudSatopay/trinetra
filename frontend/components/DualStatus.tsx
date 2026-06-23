@@ -3,16 +3,22 @@
 import { Frame } from "@/lib/types";
 import { AnimatedNumber } from "./AnimatedNumber";
 
-export function DualStatus({ history }: { history: Frame[] }) {
-  const cur = history[history.length - 1];
+export function DualStatus({ frames, index }: { frames: Frame[]; index: number }) {
+  const cur = frames[index] ?? frames[frames.length - 1] ?? null;
   const tNow = cur ? cur.t_min : 0;
-  const firstCompound = history.find((f) => f.summary.compound_alert)?.t_min ?? null;
-  const firstBaseline = history.find((f) => f.summary.baseline_alarm)?.t_min ?? null;
+  // The definitive lead is a property of the whole run: how far ahead of the legacy single-sensor
+  // alarm the compound alert fires. Compute it from the full frames so a paused money shot shows
+  // the true lead (e.g. +6), not the partial time elapsed so far.
+  const firstCompound = frames.find((f) => f.summary.compound_alert)?.t_min ?? null;
+  const firstBaseline = frames.find((f) => f.summary.baseline_alarm)?.t_min ?? null;
 
   let lead: number | null = null;
-  if (firstCompound !== null && firstBaseline === null) lead = Math.round(tNow - firstCompound);
-  else if (firstCompound !== null && firstBaseline !== null && firstBaseline >= firstCompound)
-    lead = Math.round(firstBaseline - firstCompound);
+  if (firstCompound !== null && tNow >= firstCompound) {
+    lead =
+      firstBaseline !== null && firstBaseline >= firstCompound
+        ? Math.round(firstBaseline - firstCompound) // legacy will alarm this many minutes later
+        : Math.round(tNow - firstCompound); // legacy still blind — show the gap opened so far
+  }
 
   return (
     <div className="hud-panel flex h-full flex-1 items-center justify-between px-7 py-4">

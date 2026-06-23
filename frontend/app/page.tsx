@@ -122,7 +122,6 @@ export default function Page() {
   }, [index, frames]);
 
   const frame = frames[index] ?? null;
-  const history = useMemo(() => frames.slice(0, index + 1), [frames, index]);
   const playerScenarios = useMemo<ScenarioInfo[]>(() => {
     const list: ScenarioInfo[] = [
       ...scenarios,
@@ -140,6 +139,9 @@ export default function Page() {
 
   const currentStep = BOOTH_STEPS[boothStep % BOOTH_STEPS.length];
   const suppressAuto = boothOn && mainView !== "plant";
+  // surface the spoken evacuation on screen too, so the booth message still lands if the browser's
+  // speech synthesis is silent or unavailable (audio is a bonus, not the only channel)
+  const boothAlarming = boothOn && currentStep.audio && !!frame?.summary.compound_alert;
 
   // keep the audio engine's mute flag in sync with the UI
   useEffect(() => {
@@ -266,12 +268,12 @@ export default function Page() {
           </ErrorBoundary>
           <div className="flex h-[124px] shrink-0 gap-4">
             <CCTVTile />
-            <DualStatus history={history} />
+            <DualStatus frames={frames} index={index} />
           </div>
         </div>
         <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
           <ErrorBoundary label="Threat panel unavailable">
-            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident ? "texas-city" : undefined} suppressAuto={suppressAuto} />
+            <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident?.key} suppressAuto={suppressAuto} />
           </ErrorBoundary>
         </div>
       </div>
@@ -280,16 +282,34 @@ export default function Page() {
         {boothOn && (
           <div
             className="hud-panel rise-in flex items-center gap-3 px-5 py-2.5"
-            style={{ borderColor: "color-mix(in srgb, var(--brand) 38%, var(--line))" }}
+            style={{
+              borderColor: boothAlarming
+                ? "color-mix(in srgb, var(--lvl-critical) 55%, var(--line))"
+                : "color-mix(in srgb, var(--brand) 38%, var(--line))",
+            }}
           >
             <span
               className="flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
-              style={{ color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 14%, transparent)" }}
+              style={{
+                color: boothAlarming ? "var(--lvl-critical)" : "var(--brand)",
+                background: boothAlarming
+                  ? "color-mix(in srgb, var(--lvl-critical) 16%, transparent)"
+                  : "color-mix(in srgb, var(--brand) 14%, transparent)",
+              }}
             >
-              <span className="h-1.5 w-1.5 rounded-full soft-pulse" style={{ background: "var(--brand)" }} />
-              Attract mode
+              <span
+                className="h-1.5 w-1.5 rounded-full soft-pulse"
+                style={{ background: boothAlarming ? "var(--lvl-critical)" : "var(--brand)" }}
+              />
+              {boothAlarming ? "Evacuation broadcast" : "Attract mode"}
             </span>
-            <span className="font-display text-[12px] leading-snug text-ink">{currentStep.label}</span>
+            {boothAlarming ? (
+              <span className="font-display text-[12px] font-semibold leading-snug" style={{ color: "var(--lvl-critical)" }}>
+                “{EVAC_LINE}”
+              </span>
+            ) : (
+              <span className="font-display text-[12px] leading-snug text-ink">{currentStep.label}</span>
+            )}
           </div>
         )}
         {scenario === "custom" && (
@@ -364,10 +384,13 @@ function Screen({ children }: { children: React.ReactNode }) {
   return <main className="flex h-screen flex-col items-center justify-center">{children}</main>;
 }
 
-// The demo "money shot": legacy single-sensor still blind, Trinetra already alerting.
+// The demo "money shot": a beat after the compound alert fires — the alert is live, the legacy
+// single-sensor is still blind, and the gas is still visibly below its setpoint (not pinned at the
+// alarm line). The lead readout shows the definitive +N (computed from the full run, see DualStatus).
 function moneyShotIndex(frames: Frame[]): number {
-  const firstBaseline = frames.findIndex((f) => f.summary.baseline_alarm);
-  if (firstBaseline > 0) return firstBaseline - 1;
   const firstCompound = frames.findIndex((f) => f.summary.compound_alert);
-  return firstCompound >= 0 ? Math.min(firstCompound + 3, frames.length - 1) : 0;
+  if (firstCompound < 0) return 0;
+  const firstBaseline = frames.findIndex((f) => f.summary.baseline_alarm);
+  const target = firstCompound + 2;
+  return firstBaseline > firstCompound ? Math.min(target, firstBaseline - 1) : Math.min(target, frames.length - 1);
 }

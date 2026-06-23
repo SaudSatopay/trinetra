@@ -15,11 +15,11 @@ export function Connector({
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const replayTexasCity = async () => {
+  const replayIncident = async (name: string) => {
     setErr(null);
     setBusy(true);
     try {
-      onIncident(await getIncident("texas-city"));
+      onIncident(await getIncident(name));
     } catch (x) {
       setErr(String(x instanceof Error ? x.message : x).slice(0, 60));
     } finally {
@@ -68,7 +68,7 @@ export function Connector({
       </a>
       <span className="h-4 w-px bg-line-2" />
       <button
-        onClick={replayTexasCity}
+        onClick={() => replayIncident("texas-city")}
         disabled={busy}
         className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
         style={{
@@ -79,6 +79,19 @@ export function Connector({
         title="Replay the real BP Texas City (2005) incident, reconstructed from the U.S. CSB report"
       >
         Texas City · CSB ’05
+      </button>
+      <button
+        onClick={() => replayIncident("jaipur")}
+        disabled={busy}
+        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        style={{
+          color: "var(--lvl-high)",
+          border: "1px solid color-mix(in srgb, var(--lvl-high) 38%, transparent)",
+          background: "color-mix(in srgb, var(--lvl-high) 9%, transparent)",
+        }}
+        title="Replay the real Indian Oil Jaipur (2009) depot fire, reconstructed from the MB Lal Committee report"
+      >
+        Jaipur · MB Lal ’09
       </button>
       {err && (
         <span className="font-mono text-[9px]" style={{ color: "var(--lvl-high)" }}>
