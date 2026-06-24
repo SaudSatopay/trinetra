@@ -24,56 +24,77 @@ function SiteRow({ s }: { s: FleetSite }) {
   const alert = inAlert(s.level);
   return (
     <div
-      className="card-hover flex items-stretch gap-3 rounded-md py-2.5 pr-3"
+      className="lift group flex flex-col rounded-md py-2.5 pr-3"
       style={{
         background: alert ? `color-mix(in srgb, ${color} 7%, var(--panel-2))` : "var(--panel-2)",
         border: `1px solid ${alert ? `color-mix(in srgb, ${color} 30%, var(--line))` : "var(--line)"}`,
       }}
     >
-      <span className="w-1 shrink-0 rounded-full" style={{ background: color }} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-display text-[13px] font-semibold text-ink-bright">{s.name}</span>
-          {s.compound && (
-            <span
-              className="shrink-0 rounded px-1.5 py-px font-mono text-[8.5px] font-bold uppercase tracking-wider"
-              style={{ color: "var(--lvl-critical)", background: "color-mix(in srgb, var(--lvl-critical) 16%, transparent)" }}
-            >
-              Compound
-            </span>
-          )}
+      <div className="flex items-stretch gap-3">
+        <span className="w-1 shrink-0 rounded-full" style={{ background: color }} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-display text-[13px] font-semibold text-ink-bright">{s.name}</span>
+            {s.compound && (
+              <span
+                className="shrink-0 rounded px-1.5 py-px font-mono text-[8.5px] font-bold uppercase tracking-wider"
+                style={{ color: "var(--lvl-critical)", background: "color-mix(in srgb, var(--lvl-critical) 16%, transparent)" }}
+              >
+                Compound
+              </span>
+            )}
+          </div>
+          <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-ink-dim">
+            <span>{s.location}</span>
+            <span className="opacity-40">·</span>
+            <span>{s.type}</span>
+            {alert && (
+              <>
+                <span className="opacity-40">·</span>
+                <span style={{ color: "color-mix(in srgb, " + color + " 80%, var(--text))" }}>{s.worst_zone_name}</span>
+              </>
+            )}
+          </div>
         </div>
-        <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-ink-dim">
-          <span>{s.location}</span>
-          <span className="opacity-40">·</span>
-          <span>{s.type}</span>
-          {alert && (
-            <>
-              <span className="opacity-40">·</span>
-              <span style={{ color: "color-mix(in srgb, " + color + " 80%, var(--text))" }}>{s.worst_zone_name}</span>
-            </>
+
+        <div className="flex shrink-0 items-center gap-4 text-right">
+          {s.exposed > 0 && (
+            <div className="flex flex-col items-end">
+              <span className="tnum text-[14px]" style={{ color: "var(--lvl-critical)" }}>{s.exposed}</span>
+              <span className="label !text-[8px]">exposed</span>
+            </div>
           )}
+          {s.lead_min != null && (
+            <div className="flex flex-col items-end">
+              <span className="tnum text-[14px]" style={{ color: "var(--brand)" }}>+{s.lead_min}m</span>
+              <span className="label !text-[8px]">lead</span>
+            </div>
+          )}
+          <div className="flex w-[78px] flex-col items-end">
+            <span className="tnum text-[15px]" style={{ color }}>{s.score.toFixed(0)}</span>
+            <span className="font-mono text-[8.5px] font-semibold uppercase tracking-wider" style={{ color }}>
+              {levelLabel[s.level]}
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 text-right">
-        {s.exposed > 0 && (
-          <div className="flex flex-col items-end">
-            <span className="tnum text-[14px]" style={{ color: "var(--lvl-critical)" }}>{s.exposed}</span>
-            <span className="label !text-[8px]">exposed</span>
-          </div>
-        )}
-        {s.lead_min != null && (
-          <div className="flex flex-col items-end">
-            <span className="tnum text-[14px]" style={{ color: "var(--brand)" }}>+{s.lead_min}m</span>
-            <span className="label !text-[8px]">lead</span>
-          </div>
-        )}
-        <div className="flex w-[78px] flex-col items-end">
-          <span className="tnum text-[15px]" style={{ color }}>{s.score.toFixed(0)}</span>
-          <span className="font-mono text-[8.5px] font-semibold uppercase tracking-wider" style={{ color }}>
-            {levelLabel[s.level]}
-          </span>
+      {/* hover reveal — the per-site detail behind the headline */}
+      <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100">
+        <div
+          className="ml-4 flex flex-wrap items-center gap-x-3 gap-y-0.5 border-t pt-1.5 font-mono text-[8.5px] text-ink-dim"
+          style={{ borderColor: "var(--line)" }}
+        >
+          <span>now T+{s.now_min}</span>
+          {s.trinetra_alert_min != null && <span style={{ color: "var(--good)" }}>Trinetra T+{s.trinetra_alert_min}</span>}
+          {s.single_sensor_min != null && <span style={{ color: "var(--legacy)" }}>single-sensor T+{s.single_sensor_min}</span>}
+          <span>{s.workers} on shift</span>
+          {s.compound_zones > 0 && (
+            <span style={{ color: "var(--lvl-critical)" }}>
+              {s.compound_zones} compound zone{s.compound_zones > 1 ? "s" : ""}
+            </span>
+          )}
+          <span className="capitalize">{s.scenario.replace(/_/g, " ")}</span>
         </div>
       </div>
     </div>

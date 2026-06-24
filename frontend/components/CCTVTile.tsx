@@ -30,7 +30,7 @@ export function CCTVTile() {
   }, []);
 
   return (
-    <div className="hud-panel relative flex h-full w-[300px] shrink-0 flex-col overflow-hidden">
+    <div className="hud-panel lift group relative flex h-full w-[300px] shrink-0 flex-col overflow-hidden">
       <div className="flex items-center justify-between px-3.5 pt-2.5">
         <span className="label">CCTV · YOLOv8</span>
         <span className="label !text-[8px]">sample feed</span>
@@ -42,16 +42,21 @@ export function CCTVTile() {
             <img
               src={`data:image/jpeg;base64,${v.image_b64}`}
               alt="CCTV person detection"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
             />
-            <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/85 to-transparent px-3.5 pb-2.5 pt-6">
-              <span className="tnum text-[15px] font-semibold text-ink-bright">{v.persons}</span>
-              <span className="label !text-[8px]">workers</span>
-              {v.intruders > 0 && (
-                <span className="ml-auto font-mono text-[9px]" style={{ color: "var(--lvl-elevated)" }}>
-                  {v.intruders} in restricted zone
-                </span>
-              )}
+            <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-black/90 to-transparent px-3.5 pb-2.5 pt-7">
+              <span className="max-h-0 overflow-hidden font-mono text-[8px] leading-none text-ink-dim opacity-0 transition-all duration-300 group-hover:max-h-5 group-hover:opacity-100">
+                person + restricted-zone detection · pretrained YOLOv8n
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="tnum text-[15px] font-semibold text-ink-bright">{v.persons}</span>
+                <span className="label !text-[8px]">workers</span>
+                {v.intruders > 0 && (
+                  <span className="ml-auto font-mono text-[9px]" style={{ color: "var(--lvl-elevated)" }}>
+                    {v.intruders} in restricted zone
+                  </span>
+                )}
+              </div>
             </div>
           </>
         ) : (

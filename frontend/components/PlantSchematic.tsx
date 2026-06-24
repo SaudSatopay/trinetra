@@ -1,7 +1,15 @@
 "use client";
 
 import { Level, MainView, Plant, Zone } from "@/lib/types";
-import { levelColor, levelRank } from "@/lib/risk";
+import { GAS_ORDER, levelColor, levelRank } from "@/lib/risk";
+
+// gas reading severity → colour (GOOD = green, then the heat ramp)
+const STAGE_COLOR: Record<string, string> = {
+  "": "var(--good)",
+  low: "var(--lvl-watch)",
+  high: "var(--lvl-elevated)",
+  danger: "var(--lvl-critical)",
+};
 import { Frame } from "@/lib/types";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { ViewToggle } from "./ViewToggle";
@@ -154,7 +162,7 @@ function ZoneNode({
   return (
     <button
       onClick={onSelect}
-      className="group absolute -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-left hover:z-10 hover:scale-[1.04]"
+      className="group absolute -translate-x-1/2 -translate-y-1/2 rounded-xl px-4 py-3 text-left transition-transform hover:z-30 hover:scale-[1.07]"
       style={{
         left: `${left}%`,
         top: `${top}%`,
@@ -202,6 +210,26 @@ function ZoneNode({
           <span className="ml-0.5 text-[8px] text-ink-dim">{z.workers.length} on site</span>
         </div>
       )}
+      {/* hover reveal — live gas readout (GOOD=green, heating to red) + projected breach */}
+      <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-2.5 group-hover:max-h-28 group-hover:opacity-100">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 border-t pt-2" style={{ borderColor: "var(--line)" }}>
+          {GAS_ORDER.map((g) => {
+            const gd = z.gases[g];
+            if (!gd) return null;
+            return (
+              <div key={g} className="flex items-center justify-between font-mono text-[8.5px] leading-none">
+                <span className="text-ink-dim">{g}</span>
+                <span style={{ color: STAGE_COLOR[gd.stage] ?? "var(--good)" }}>{gd.value}</span>
+              </div>
+            );
+          })}
+        </div>
+        {z.risk.time_to_threshold_min != null && (
+          <div className="mt-1.5 font-mono text-[8px]" style={{ color: "var(--brand)" }}>
+            projected breach ~{z.risk.time_to_threshold_min}m
+          </div>
+        )}
+      </div>
     </button>
   );
 }
