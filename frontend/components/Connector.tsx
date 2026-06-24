@@ -63,7 +63,7 @@ export function Connector({
       <input ref={ref} type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
       <button
         onClick={() => ref.current?.click()}
-        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        className="rounded-md px-2.5 py-1.5 text-[11px] tappable"
         style={{
           color: "var(--brand)",
           border: "1px solid color-mix(in srgb, var(--brand) 32%, transparent)",
@@ -84,7 +84,7 @@ export function Connector({
       <button
         onClick={() => replayIncident("texas-city")}
         disabled={busy}
-        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        className="rounded-md px-2.5 py-1.5 text-[11px] tappable"
         style={{
           color: "var(--lvl-high)",
           border: "1px solid color-mix(in srgb, var(--lvl-high) 38%, transparent)",
@@ -97,7 +97,7 @@ export function Connector({
       <button
         onClick={() => replayIncident("jaipur")}
         disabled={busy}
-        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        className="rounded-md px-2.5 py-1.5 text-[11px] tappable"
         style={{
           color: "var(--lvl-high)",
           border: "1px solid color-mix(in srgb, var(--lvl-high) 38%, transparent)",
@@ -111,7 +111,7 @@ export function Connector({
       <button
         onClick={() => replayExternal("air-quality")}
         disabled={busy}
-        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        className="rounded-md px-2.5 py-1.5 text-[11px] tappable"
         style={{
           color: "var(--brand)",
           border: "1px solid color-mix(in srgb, var(--brand) 42%, transparent)",
@@ -124,7 +124,7 @@ export function Connector({
       <button
         onClick={() => replayExternal("aloha-methane")}
         disabled={busy}
-        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        className="rounded-md px-2.5 py-1.5 text-[11px] tappable"
         style={{
           color: "var(--brand)",
           border: "1px solid color-mix(in srgb, var(--brand) 42%, transparent)",

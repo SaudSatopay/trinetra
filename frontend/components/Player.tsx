@@ -54,7 +54,7 @@ export function Player({
               key={s.name}
               onClick={() => onScenario(s.name)}
               title={s.title}
-              className="rounded-md px-3 py-1.5 font-sans text-[11px] font-medium lowercase tracking-wide transition-colors"
+              className="tappable rounded-md px-3 py-1.5 font-sans text-[11px] font-medium lowercase tracking-wide"
               style={{
                 color: on ? "var(--brand)" : "var(--text-dim)",
                 background: on ? "color-mix(in srgb, var(--brand) 11%, transparent)" : "transparent",
@@ -72,13 +72,13 @@ export function Player({
 
       {/* transport */}
       <div className="flex items-center gap-3">
-        <button onClick={onReset} className="text-ink-dim transition-colors hover:text-ink" title="Reset">
+        <button onClick={onReset} className="tappable text-ink-dim hover:text-ink" title="Reset">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4" /></svg>
         </button>
         <button
           onClick={onTogglePlay}
-          className="grid h-9 w-9 place-items-center rounded-full transition-colors"
-          style={{ background: "var(--brand)", color: "#04110e" }}
+          className="tappable grid h-9 w-9 place-items-center rounded-full"
+          style={{ background: "var(--brand)", color: "#04110e", boxShadow: "0 4px 16px -4px var(--brand-glow)" }}
           title={playing ? "Pause" : "Play"}
         >
           {playing ? (
@@ -92,7 +92,7 @@ export function Player({
             <button
               key={s}
               onClick={() => onSpeed(s)}
-              className="font-mono text-[10px] transition-colors"
+              className="tappable rounded px-1 font-mono text-[10px]"
               style={{ color: s === speed ? "var(--brand)" : "var(--text-dim)" }}
             >
               {s}×
@@ -114,11 +114,11 @@ export function Player({
           )}
           <div
             className="absolute top-1/2 h-px -translate-y-1/2 rounded-full bg-brand"
-            style={{ left: 0, width: `${len > 1 ? (index / (len - 1)) * 100 : 0}%` }}
+            style={{ left: 0, width: `${len > 1 ? (index / (len - 1)) * 100 : 0}%`, transition: "width 0.12s linear" }}
           />
           <div
             className="pointer-events-none absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand"
-            style={{ left: `${len > 1 ? (index / (len - 1)) * 100 : 0}%`, boxShadow: "0 0 8px var(--brand-glow)" }}
+            style={{ left: `${len > 1 ? (index / (len - 1)) * 100 : 0}%`, boxShadow: "0 0 10px 1px var(--brand-glow)", transition: "left 0.12s linear" }}
           />
           <input
             type="range"

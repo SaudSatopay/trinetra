@@ -50,7 +50,7 @@ export function TopBar({
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-colors hover:brightness-125"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider tappable"
             style={{
               color: "var(--brand)",
               border: "1px solid color-mix(in srgb, var(--brand) 32%, transparent)",
@@ -68,7 +68,7 @@ export function TopBar({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onBooth}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-colors hover:brightness-125"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider tappable"
               style={
                 booth
                   ? { color: "var(--bg)", background: "var(--brand)", border: "1px solid var(--brand)" }
@@ -88,7 +88,7 @@ export function TopBar({
             {booth && onMute && (
               <button
                 onClick={onMute}
-                className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:brightness-125"
+                className="grid h-7 w-7 place-items-center rounded-full tappable"
                 style={{ color: muted ? "var(--text-dim)" : "var(--brand)", border: "1px solid var(--line-2)" }}
                 title={muted ? "Audio muted — click to unmute the siren + evacuation voice" : "Audio on — click to mute"}
               >

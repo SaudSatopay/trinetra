@@ -33,7 +33,7 @@ export function RiskGauge({ score, level, size = 168 }: { score: number; level: 
             strokeWidth="9"
             strokeDasharray={`${val} ${C}`}
             strokeLinecap="round"
-            style={{ transition: "stroke-dasharray .55s cubic-bezier(.4,0,.2,1), stroke .3s", filter: `drop-shadow(0 0 11px ${color})` }}
+            style={{ transition: "stroke-dasharray var(--dur-3) var(--ease-out-expo), stroke var(--dur-2) ease, filter var(--dur-2) ease", filter: `drop-shadow(0 0 ${6 + (score / 100) * 15}px ${color})` }}
           />
         </g>
         {/* tick marks */}

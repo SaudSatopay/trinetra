@@ -272,10 +272,12 @@ export default function Page() {
 
   return (
     <main className="flex h-screen min-w-[900px] flex-col overflow-hidden">
-      <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} booth={boothOn} muted={muted} onBooth={toggleBooth} onMute={toggleMute} />
+      <div className="stagger-in shrink-0">
+        <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} booth={boothOn} muted={muted} onBooth={toggleBooth} onMute={toggleMute} />
+      </div>
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
-        <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+        <div className="stagger-in flex min-h-0 flex-1 flex-col gap-4 overflow-hidden" style={{ animationDelay: "0.08s" }}>
           <ErrorBoundary label="Plant schematic unavailable">
             {mainView === "fleet" ? (
               <FleetView view={mainView} onView={setMainView} />
@@ -290,14 +292,14 @@ export default function Page() {
             <DualStatus frames={frames} index={index} />
           </div>
         </div>
-        <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.12s" }}>
+        <div className="stagger-in flex w-[372px] shrink-0 flex-col" style={{ animationDelay: "0.16s" }}>
           <ErrorBoundary label="Threat panel unavailable">
             <ThreatPanel zone={activeZone} thresholds={plant.thresholds} scenario={scenario} tMin={frame.t_min} responseScenario={incident?.key} suppressAuto={suppressAuto} />
           </ErrorBoundary>
         </div>
       </div>
 
-      <div className="space-y-3 px-4 py-4">
+      <div className="stagger-in space-y-3 px-4 py-4" style={{ animationDelay: "0.24s" }}>
         {boothOn && (
           <div
             className="hud-panel rise-in flex items-center gap-3 px-5 py-2.5"
