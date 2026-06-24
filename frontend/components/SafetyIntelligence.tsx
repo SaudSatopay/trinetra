@@ -196,10 +196,18 @@ export function SafetyIntelligence({
 }
 
 function Chip({ label, onClick, badge, alert }: { label: string; onClick: () => void; badge: number | null; alert?: boolean }) {
+  const [h, setH] = useState(false);
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 border-l border-line px-2.5 py-1.5 text-[9.5px] font-medium uppercase tracking-wider text-ink-dim transition-colors first:border-l-0 hover:text-ink"
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      className="flex items-center gap-1.5 border-l border-line px-2.5 py-1.5 text-[9.5px] font-medium uppercase tracking-wider transition-all first:border-l-0"
+      style={{
+        color: h ? "var(--text-bright)" : "var(--text-dim)",
+        background: h ? "color-mix(in srgb, var(--brand) 11%, transparent)" : "transparent",
+        transform: h ? "scale(1.06)" : "scale(1)",
+      }}
     >
       {label}
       {badge !== null && (
@@ -274,7 +282,7 @@ function ComplianceModal({ data, onClose }: { data: Compliance | null; onClose: 
           return (
             <div
               key={i}
-              className="rounded-lg p-3.5"
+              className="lift rounded-lg p-3.5"
               style={{
                 background: dev ? "color-mix(in srgb, var(--lvl-critical) 7%, transparent)" : "color-mix(in srgb, var(--brand) 5%, transparent)",
                 border: `1px solid color-mix(in srgb, ${col} ${dev ? 26 : 16}%, transparent)`,
@@ -295,6 +303,11 @@ function ComplianceModal({ data, onClose }: { data: Compliance | null; onClose: 
                   → {it.corrective}
                 </p>
               )}
+              <div className="reveal font-mono text-[9px]" style={{ color: "var(--text-dim)" }}>
+                <span className="mt-2 inline-block border-t pt-1.5" style={{ borderColor: "var(--line)" }}>
+                  zone {it.zone} · audited live against {it.regulation}
+                </span>
+              </div>
             </div>
           );
         })}
@@ -321,7 +334,7 @@ function PatternsModal({ data, onClose }: { data: Patterns | null; onClose: () =
       <div className="label mb-3">Recurring patterns · prevention priorities</div>
       <div className="space-y-2.5">
         {(data?.patterns ?? []).map((p, i) => (
-          <div key={i} className="rounded-lg p-3.5" style={{ border: "1px solid var(--line-2)" }}>
+          <div key={i} className="lift rounded-lg p-3.5" style={{ border: "1px solid var(--line-2)" }}>
             <div className="flex items-start justify-between gap-3">
               <span className="text-[12.5px] font-medium leading-snug text-ink-bright">
                 <span className="tnum mr-2 text-ink-dim">{i + 1}.</span>
@@ -338,6 +351,13 @@ function PatternsModal({ data, onClose }: { data: Patterns | null; onClose: () =
             <p className="mt-2 text-[11px] leading-relaxed" style={{ color: "var(--brand)" }}>
               → {p.prevention}
             </p>
+            {p.examples && p.examples.length > 0 && (
+              <div className="reveal font-mono text-[9px]" style={{ color: "var(--text-dim)" }}>
+                <span className="mt-2 inline-block border-t pt-1.5" style={{ borderColor: "var(--line)" }}>
+                  seen in: {p.examples.join(" · ")}
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -364,7 +384,7 @@ function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: ()
         <>
           <div className="mb-4 grid grid-cols-4 gap-2">
             {tiles.map(([l, n, c], i) => (
-              <div key={i} className="rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
+              <div key={i} className="lift rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
                 <div className="tnum text-[22px] font-bold" style={{ color: c }}>
                   {n}
                 </div>
@@ -378,7 +398,7 @@ function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: ()
             {data.findings.map((f, i) => (
               <div
                 key={i}
-                className="rounded-lg p-3.5"
+                className="lift rounded-lg p-3.5"
                 style={{
                   background: f.cross_zone ? "color-mix(in srgb, var(--lvl-high) 6%, transparent)" : "transparent",
                   border: `1px solid ${f.cross_zone ? "color-mix(in srgb, var(--lvl-high) 26%, transparent)" : "var(--line-2)"}`,
@@ -402,6 +422,13 @@ function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: ()
                 <div className="mt-1.5 font-mono text-[9px] text-ink-dim">
                   blast radius {f.blast_radius_zones} zones · CRITICAL by T+{f.t_critical} · {f.exposed} exposed
                 </div>
+                {f.blast_zones && f.blast_zones.length > 0 && (
+                  <div className="reveal font-mono text-[9px]" style={{ color: "var(--lvl-high)" }}>
+                    <span className="mt-2 inline-block border-t pt-1.5" style={{ borderColor: "var(--line)" }}>
+                      within blast radius: {f.blast_zones.join(" · ")}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -438,7 +465,7 @@ function ReasoningModal({ data, onClose }: { data: AgentsTrace | null; onClose: 
               </li>
             ))}
           </ol>
-          <div className="rounded-lg p-3.5" style={{ border: "1px solid var(--line-2)" }}>
+          <div className="lift rounded-lg p-3.5" style={{ border: "1px solid var(--line-2)" }}>
             <div className="label mb-2.5">Causal chain · precursors → hazard → precedent</div>
             <div className="flex flex-wrap items-center gap-1.5 text-[10.5px]">
               {data.reasoning.factors.map((f, i) => (
@@ -558,7 +585,7 @@ function PermitGateModal({ scenario, tMin, zone, onClose }: { scenario: string; 
       {data && v && (
         <>
           <div
-            className="rounded-lg p-4"
+            className="lift rounded-lg p-4"
             style={{ background: `color-mix(in srgb, ${v.color} 10%, transparent)`, border: `1px solid color-mix(in srgb, ${v.color} 38%, transparent)` }}
           >
             <div className="flex items-center gap-2.5">
@@ -629,7 +656,7 @@ const LEARN_PLANT = "vizag-steel";
 
 function LearnTile({ label, value, color }: { label: string; value: string | number; color: string }) {
   return (
-    <div className="rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
+    <div className="lift rounded-lg p-3 text-center" style={{ border: "1px solid var(--line-2)" }}>
       <div className="tnum text-[22px] font-bold" style={{ color }}>{value}</div>
       <div className="label !text-[8px] mt-1">{label}</div>
     </div>
@@ -703,11 +730,18 @@ function LearningModal({ onClose }: { onClose: () => void }) {
               {d.nuisance_sample.map((n, i) => {
                 const suppressed = !n.compound && n.score < d.threshold;
                 return (
-                  <div key={i} className="flex items-center justify-between rounded-md px-3 py-2 text-[11px]" style={{ border: "1px solid var(--line-2)", opacity: suppressed ? 0.5 : 1 }}>
-                    <span className="text-ink">{n.label}</span>
-                    <span className="flex items-center gap-2.5">
-                      <span className="tnum" style={{ color: "var(--lvl-elevated)" }}>{n.score}</span>
-                      <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: suppressed ? "var(--text-dim)" : "var(--brand)" }}>{suppressed ? "auto-ack" : "pages"}</span>
+                  <div key={i} className="lift flex flex-col rounded-md px-3 py-2 text-[11px]" style={{ border: "1px solid var(--line-2)", opacity: suppressed ? 0.55 : 1 }}>
+                    <span className="flex items-center justify-between">
+                      <span className="text-ink">{n.label}</span>
+                      <span className="flex items-center gap-2.5">
+                        <span className="tnum" style={{ color: "var(--lvl-elevated)" }}>{n.score}</span>
+                        <span className="font-mono text-[9px] uppercase tracking-wider" style={{ color: suppressed ? "var(--text-dim)" : "var(--brand)" }}>{suppressed ? "auto-ack" : "pages"}</span>
+                      </span>
+                    </span>
+                    <span className="reveal font-mono text-[8.5px]" style={{ color: "var(--text-dim)" }}>
+                      <span className="mt-1.5 inline-block border-t pt-1" style={{ borderColor: "var(--line)" }}>
+                        score {n.score} vs threshold {d.threshold} · {n.compound ? "compound — always pages" : suppressed ? "below threshold → auto-acknowledged" : "above threshold → pages the operator"}
+                      </span>
                     </span>
                   </div>
                 );
