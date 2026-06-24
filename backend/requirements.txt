@@ -22,3 +22,6 @@ numpy>=1.26
 # --- Knowledge graph (WP5) ---
 networkx>=3.0
 # neo4j>=5.25  # optional — we use in-process networkx instead of a Neo4j server
+
+# --- Live industrial-protocol ingest (OPC-UA) ---
+asyncua>=1.1   # in-process OPC-UA server+client for the live-ingest demo (optional; lazy-imported)

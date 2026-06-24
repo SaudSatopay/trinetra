@@ -451,6 +451,37 @@ def vision_feed():
         return {"available": False, "note": f"feed unreadable: {e}"}
 
 
+_opcua_cache: dict | None = None
+_opcua_lock = None
+
+
+@app.get("/api/opcua/session")
+async def opcua_session():
+    """Live OPC-UA ingest: stream the Vizag tags through an in-process OPC-UA server->client round-trip
+    into the SAME engine (the protocol a real SCADA/DCS exposes), and report the per-tick tape + the
+    read->decide latency (p50/p99). Deterministic, so cached after the first run. Returns
+    available=false if `asyncua` isn't installed (the rest of the demo is unaffected)."""
+    global _opcua_cache, _opcua_lock
+    if _opcua_cache is not None:
+        return _opcua_cache
+    import asyncio
+
+    if _opcua_lock is None:
+        _opcua_lock = asyncio.Lock()
+    async with _opcua_lock:
+        if _opcua_cache is not None:
+            return _opcua_cache
+        try:
+            from ..opcua_bridge import run_session
+
+            r = await run_session("vizag", "COB-1", 20)
+            r["available"] = True
+            _opcua_cache = r
+            return r
+        except Exception as e:
+            return {"available": False, "error": f"OPC-UA bridge unavailable: {e}"}
+
+
 _response_cache: dict = {}
 
 
