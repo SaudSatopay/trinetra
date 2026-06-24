@@ -25,3 +25,8 @@ networkx>=3.0
 
 # --- Live industrial-protocol ingest (OPC-UA) ---
 asyncua>=1.1   # in-process OPC-UA server+client for the live-ingest demo (optional; lazy-imported)
+
+# --- Testing ---
+# Property-based invariant tests (test_invariants.py). Pinned below 6.125: newer
+# 6.15x builds crash on direct (non-pytest) invocation, which is how CI runs the suite.
+hypothesis>=6.112,<6.125

@@ -1,0 +1,127 @@
+<svg viewBox="0 0 1020 600" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, sans-serif">
+  <title>Trinetra — stateless-shard scaling</title>
+  <desc>Many plant feeds (OPC-UA / MQTT / CSV historian) hash by plant id onto a pool of identical, stateless CompoundRiskEngine workers — no shared state, no per-site model — and aggregate onto one fleet board. The engine is O(zones) per assessment, so capacity scales linearly: roughly one commodity core per several thousand plants at 1 Hz.</desc>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7c6f5e"/>
+    </marker>
+  </defs>
+  <rect width="1020" height="600" fill="#0b0908"/>
+
+  <!-- brand -->
+  <path d="M40 26 L57 50 L23 50 Z" fill="none" stroke="#ff6a1a" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="40" cy="43" r="5.2" fill="none" stroke="#ff6a1a" stroke-width="1.6"/>
+  <circle cx="40" cy="43" r="1.9" fill="#ff6a1a"/>
+  <text x="76" y="40" fill="#f7efe1" font-size="25" font-weight="700" letter-spacing="5">TRINETRA</text>
+  <text x="78" y="58" fill="#ff6a1a" font-size="10" letter-spacing="2.2" font-family="ui-monospace, monospace">STATELESS-SHARD SCALING · ONE ENGINE, N PLANTS, LINEAR BY CONSTRUCTION</text>
+
+  <!-- lane labels -->
+  <g font-size="10" letter-spacing="2" font-family="ui-monospace, monospace" fill="#7c6f5e">
+    <text x="40" y="100">PLANT FEEDS</text>
+    <text x="300" y="100">SHARD ROUTER</text>
+    <text x="505" y="100">ENGINE WORKERS · STATELESS SHARDS</text>
+    <text x="835" y="100">ONE PANE OF GLASS</text>
+  </g>
+
+  <!-- ===== plant feeds ===== -->
+  <g font-size="12.5" font-weight="600">
+    <g>
+      <rect x="40" y="116" width="210" height="50" rx="9" fill="#15110d" stroke="#2a2118"/>
+      <text x="56" y="139" fill="#f7efe1">Plant 01 · Visakhapatnam</text>
+      <text x="56" y="156" fill="#7c6f5e" font-size="9.5" font-weight="400" font-family="ui-monospace, monospace">OPC-UA · 36 tags · 1 Hz</text>
+    </g>
+    <g>
+      <rect x="40" y="178" width="210" height="50" rx="9" fill="#15110d" stroke="#2a2118"/>
+      <text x="56" y="201" fill="#f7efe1">Plant 02 · Paradip</text>
+      <text x="56" y="218" fill="#7c6f5e" font-size="9.5" font-weight="400" font-family="ui-monospace, monospace">MQTT · 36 tags · 1 Hz</text>
+    </g>
+    <g>
+      <rect x="40" y="240" width="210" height="50" rx="9" fill="#15110d" stroke="#2a2118"/>
+      <text x="56" y="263" fill="#f7efe1">Plant 03 · Dahej</text>
+      <text x="56" y="280" fill="#7c6f5e" font-size="9.5" font-weight="400" font-family="ui-monospace, monospace">CSV historian · /api/ingest</text>
+    </g>
+    <text x="145" y="320" fill="#7c6f5e" font-size="11" font-family="ui-monospace, monospace" text-anchor="middle">⋮</text>
+    <g>
+      <rect x="40" y="330" width="210" height="50" rx="9" fill="#15110d" stroke="#2a2118"/>
+      <text x="56" y="353" fill="#f7efe1">Plant N · up to 1,000+</text>
+      <text x="56" y="370" fill="#7c6f5e" font-size="9.5" font-weight="400" font-family="ui-monospace, monospace">any feed is a connector, not a rewrite</text>
+    </g>
+  </g>
+
+  <!-- feeds -> router -->
+  <g stroke="#3b2e22" stroke-width="1.4" fill="none">
+    <path d="M250 141 H300" marker-end="url(#ar)"/>
+    <path d="M250 203 H300" marker-end="url(#ar)"/>
+    <path d="M250 265 H300" marker-end="url(#ar)"/>
+    <path d="M250 355 H300" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ===== shard router ===== -->
+  <rect x="300" y="170" width="160" height="170" rx="11" fill="#15110d" stroke="#ff6a1a" stroke-opacity="0.5"/>
+  <text x="380" y="222" fill="#f7efe1" font-size="13.5" font-weight="700" text-anchor="middle">Shard router</text>
+  <text x="380" y="244" fill="#ff6a1a" font-size="10" font-family="ui-monospace, monospace" text-anchor="middle">hash(plant_id)</text>
+  <text x="380" y="276" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">no shared state</text>
+  <text x="380" y="291" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">no sticky sessions</text>
+  <text x="380" y="306" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">stateless fan-out</text>
+
+  <!-- router -> workers -->
+  <g stroke="#3b2e22" stroke-width="1.4" fill="none">
+    <path d="M460 230 C485 230 485 170 510 170" marker-end="url(#ar)"/>
+    <path d="M460 255 H510" marker-end="url(#ar)"/>
+    <path d="M460 280 C485 280 485 340 510 340" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ===== engine workers (identical, stateless shards) ===== -->
+  <g>
+    <g>
+      <rect x="510" y="138" width="300" height="66" rx="10" fill="#15110d" stroke="#2a2118"/>
+      <circle cx="531" cy="160" r="4" fill="#3fc77d"/>
+      <text x="545" y="164" fill="#f7efe1" font-size="13" font-weight="600">Worker A · CompoundRiskEngine</text>
+      <text x="545" y="184" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace">O(zones)/assess · confidence MC off · pure-Python core</text>
+    </g>
+    <g>
+      <rect x="510" y="222" width="300" height="66" rx="10" fill="#15110d" stroke="#2a2118"/>
+      <circle cx="531" cy="244" r="4" fill="#3fc77d"/>
+      <text x="545" y="248" fill="#f7efe1" font-size="13" font-weight="600">Worker B · CompoundRiskEngine</text>
+      <text x="545" y="268" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace">identical image · no per-site model · independent</text>
+    </g>
+    <g>
+      <rect x="510" y="306" width="300" height="66" rx="10" fill="#15110d" stroke="#2a2118"/>
+      <circle cx="531" cy="328" r="4" fill="#3fc77d"/>
+      <text x="545" y="332" fill="#f7efe1" font-size="13" font-weight="600">Worker C … +1 per ~4,500 plants</text>
+      <text x="545" y="352" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace">add a worker to add capacity — linear, no coordination</text>
+    </g>
+  </g>
+
+  <!-- workers -> board -->
+  <g stroke="#3b2e22" stroke-width="1.4" fill="none">
+    <path d="M810 171 C828 171 832 255 850 255" marker-end="url(#ar)"/>
+    <path d="M810 255 H850" marker-end="url(#ar)"/>
+    <path d="M810 339 C828 339 832 255 850 255" marker-end="url(#ar)"/>
+  </g>
+
+  <!-- ===== fleet board ===== -->
+  <rect x="850" y="170" width="140" height="170" rx="11" fill="#15110d" stroke="#2a2118"/>
+  <text x="920" y="214" fill="#f7efe1" font-size="13.5" font-weight="700" text-anchor="middle">Fleet board</text>
+  <text x="920" y="236" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">one engine,</text>
+  <text x="920" y="250" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">every plant</text>
+  <rect x="872" y="266" width="96" height="16" rx="3" fill="#ff2b4e" fill-opacity="0.14"/>
+  <text x="920" y="278" fill="#ff2b4e" font-size="9" font-family="ui-monospace, monospace" text-anchor="middle">triage compound-first</text>
+  <text x="920" y="304" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">/api/fleet</text>
+  <text x="920" y="318" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace" text-anchor="middle">/api/fleet/scale</text>
+
+  <!-- ===== measured economics strip ===== -->
+  <rect x="40" y="430" width="950" height="118" rx="11" fill="#100c09" stroke="#2a2118"/>
+  <rect x="40" y="430" width="4" height="118" rx="2" fill="#3fc77d"/>
+  <text x="64" y="458" fill="#3fc77d" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">MEASURED · SINGLE CORE · NOT ASSERTED</text>
+
+  <g font-family="ui-monospace, monospace">
+    <text x="64" y="490" fill="#f7efe1" font-size="20" font-weight="700">~0.06 ms<tspan fill="#7c6f5e" font-size="11" font-weight="400">  p50 / plant-assessment</tspan></text>
+    <text x="330" y="490" fill="#f7efe1" font-size="20" font-weight="700">~15k<tspan fill="#7c6f5e" font-size="11" font-weight="400">  plant-assessments / s / core</tspan></text>
+    <text x="640" y="490" fill="#f7efe1" font-size="20" font-weight="700">~4,500<tspan fill="#7c6f5e" font-size="11" font-weight="400">  plants / core @ 1 Hz</tspan></text>
+    <text x="880" y="490" fill="#3fc77d" font-size="20" font-weight="700">$0.30<tspan fill="#7c6f5e" font-size="11" font-weight="400">  /plant/mo</tspan></text>
+  </g>
+
+  <text x="64" y="518" fill="#c6b9a6" font-size="11" font-family="ui-monospace, monospace">$/plant/mo falls with scale — 10→$3.00 · 100→$0.30 · 1,000→$0.03 · cores cross over linearly (5,000→2 · 10,000→3).</text>
+  <text x="64" y="536" fill="#7c6f5e" font-size="9.5" font-family="ui-monospace, monospace">Core ≈ $30/mo cloud vCPU at 4× headroom (ingest, GC). Risk-compute only. Reproduce: throughput.py · GET /api/fleet/scale.</text>
+</svg>
