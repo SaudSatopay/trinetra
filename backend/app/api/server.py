@@ -424,6 +424,33 @@ def vision():
         return {"error": f"vision unavailable: {e}"}
 
 
+_vision_feed_cache: dict | None = None
+
+
+@app.get("/api/vision/feed")
+def vision_feed():
+    """A REAL recorded CCTV clip replayed as a feed: precomputed YOLOv8 person + restricted-zone
+    detection frames (real footage, real per-frame inference). The third-party stock footage is not
+    committed; run `scripts/fetch_cctv.py` to populate backend/app/data/cctv/feed.json. Returns
+    available=false (the UI then falls back to the single-frame sample) until that's done."""
+    global _vision_feed_cache
+    if _vision_feed_cache is not None:
+        return _vision_feed_cache
+    import json
+    from pathlib import Path
+
+    p = Path(__file__).resolve().parents[1] / "data" / "cctv" / "feed.json"
+    if not p.exists():
+        return {"available": False, "note": "run scripts/fetch_cctv.py to enable the recorded CCTV feed"}
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+        _vision_feed_cache = {"available": True, "count": d.get("count", 0), "frames": d.get("frames", []),
+                              "source": d.get("source"), "license": d.get("license")}
+        return _vision_feed_cache
+    except Exception as e:
+        return {"available": False, "note": f"feed unreadable: {e}"}
+
+
 _response_cache: dict = {}
 
 

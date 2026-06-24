@@ -25,6 +25,11 @@ npm-debug.log*
 .cache/
 models/cache/
 
+# --- CCTV demo footage (third-party stock; used in-project, not redistributed) ---
+# Download + precompute locally via scripts/fetch_cctv.py — see app/data/cctv/SOURCE.md
+backend/app/data/cctv/*.mp4
+backend/app/data/cctv/feed.json
+
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
