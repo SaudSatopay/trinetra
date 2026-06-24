@@ -87,3 +87,39 @@ that switches concentration setpoints every few seconds, so even at 1-minute ave
 build-up** (it reads e.g. 0 → 290 → 5 ppm between adjacent minutes). The De Vito set's gradual, dip-laden
 diurnal CO accumulation is the far more honest match for the "deceptive slow build-up" the engine targets,
 so we chose it. The gas-sensor-array set remains a candidate for a future "robustness on messy real data" exhibit.
+
+---
+
+## Second independent source — EPA ALOHA dispersion (modeled physics, no chosen scale)
+
+The De Vito exhibit has one soft spot the round-4 review flagged: the **y-scale** (the ×6) is a choice. This
+second exhibit closes that **by construction**. The gas dynamics come from **EPA/NOAA's ALOHA dispersion
+model** (the free CAMEO tool — a recognised third party we did not write or tune), and methane converts to
+%LEL by a **fixed physical constant**, so there is no multiplier to pick:
+
+> Methane LEL = 5 %vol = 50,000 ppm  ⇒  **%LEL = ppm ÷ 500**. Fixed chemistry, zero free parameters.
+
+| | |
+|---|---|
+| **Real (ALOHA's, untouched)** | the concentration-vs-time curve at the receptor — rise, peak, decay — shaped by EPA dispersion physics we did not author or tune. |
+| **Overlaid (stated)** | the hot-work (ignition) + personnel context (ALOHA models dispersion, not permits or people — the same boundary as De Vito); the zone mapping (COB-1); 1 ALOHA-minute → 1 frame. The ppm→%LEL conversion is **not** overlaid — it is fixed chemistry. |
+
+**One honest sentence:** ALOHA validates the gas-**dynamics** half on independent physics; the compound
+**context** (ignition + people) is still overlaid — exactly as with De Vito, and no more is claimed.
+
+**Reproducible scenario (this IS the provenance — anyone can re-run it in ALOHA):**
+- **Chemical:** Methane (ties to the coke-oven/Vizag hero).
+- **Source:** a moderate, realistic near-field release — e.g. a 2-inch flange/pipe failure (state hole size +
+  line pressure/temp), or ALOHA "Direct" source at a stated rate.
+- **Atmosphere:** wind ≈ 2 m/s, stability class **F** (stable/night — the slow-accumulation case the engine
+  targets), ground roughness "urban/industrial", stated air temperature.
+- **Receptor:** a Concentration/Dose point **≈ 50 m downwind** (where a crew would stand).
+- Read ALOHA's **"Concentration by Time"** at that receptor → ~15–25 `(minute, ppm)` points; screenshot the
+  graph + text summary for the deck.
+
+**Status / how it goes live:** the code slot is already wired — `GET /api/external/aloha-methane` (and the
+generic `/api/external/{key}`) returns a clean **`"pending"`** object until the curve is committed to
+`backend/app/data/aloha_methane_leak.csv` (header style copied from the De Vito file, with the ALOHA version
++ every parameter in the `#` provenance header). The moment that file lands, the route, the connector button,
+and this section go live **with zero code change** — same connector, same untuned engine, fixed conversion.
+We commit *no* placeholder curve: an exhibit that names ALOHA must contain an actual ALOHA run, not a stand-in.

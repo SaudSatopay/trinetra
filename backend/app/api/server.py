@@ -246,52 +246,68 @@ def incident_jaipur():
 
 
 def _external_replay(key: str) -> dict:
-    """Replay a REAL, third-party measured dataset through the SAME connector + engine, untuned.
-    The CO dynamics are the dataset's (measured, not authored by us); we report when the engine
-    flags the compound risk vs the single-sensor alarm on that real signal, and state exactly what
-    is real vs overlaid. This is the direct answer to 'your eval is self-authored'."""
+    """Replay an external source through the SAME connector + engine, untuned. The gas DYNAMICS are
+    the source's (measured, or modeled by a recognised third-party tool — never our ramp); we report
+    when the engine flags the compound risk vs the single-sensor alarm on that signal, and state
+    exactly what is real vs overlaid. The direct answer to 'your eval is self-authored'. If the slot's
+    data file isn't committed yet, returns a clean 'pending' object (no fake data, no 500)."""
     ds = EXTERNAL_DATASETS[key]
+    if not external_series(key):
+        return {
+            "pending": True, "key": key, "label": ds.get("label", key),
+            "dataset": ds["dataset"], "citation": ds["citation"], "source": ds["source"],
+            "channel": ds["channel"], "real": ds["real"], "overlaid": ds["overlaid"],
+            "awaiting": f"the source curve — commit backend/app/data/{ds['file']} (see docs/EXTERNAL_DATA.md)",
+        }
+    col = ds.get("channel_col", "CO")
     snaps, meta = parse_csv(external_csv(key))
     engine = CompoundRiskEngine(compute_confidence=True)
     frames = [serialize_frame(s, engine.assess(s)) for s in snaps]
     zone = ds["zone"]
-    alert_min = single_min = peak_ppm = None
+    alert_min = single_min = peak = None
     for fr in frames:
         zr = next((z for z in fr["zones"] if z["id"] == zone), None)
         if zr is None:
             continue
-        co = zr["gases"].get("CO", {}).get("value")
-        if co is not None:
-            peak_ppm = co if peak_ppm is None else max(peak_ppm, co)
+        v = zr["gases"].get(col, {}).get("value")
+        if v is not None:
+            peak = v if peak is None else max(peak, v)
         if alert_min is None and zr["risk"]["compound"] and zr["risk"]["score"] >= 40:
             alert_min = int(fr["t_min"])
         if single_min is None and any(g["stage"] for g in zr["gases"].values()):
             single_min = int(fr["t_min"])
+    peak_unit = {"CH4": "%LEL", "O2": "%vol"}.get(col, "ppm")
     return {
         "scenario": "ingested", "key": key, "minutes": len(frames), "frames": frames, "zone": zone,
-        "provenance": "real-measured",
+        "provenance": ds.get("provenance", "real-measured"),
         "dataset": ds["dataset"], "citation": ds["citation"], "source": ds["source"],
         "channel": ds["channel"], "window": ds["window"], "real": ds["real"], "overlaid": ds["overlaid"],
         "trinetra_alert_min": alert_min, "single_sensor_min": single_min,
         "lead_min": (single_min - alert_min) if (alert_min is not None and single_min is not None) else None,
-        "peak_co_ppm": peak_ppm, "samples": len(external_series(key)), "rows": meta["rows"],
+        "peak": peak, "peak_unit": peak_unit, "peak_co_ppm": peak if col == "CO" else None,
+        "samples": len(external_series(key)), "rows": meta["rows"],
         # honesty exhibit: detection is scale-robust, the lead (baseline-relative) is scale-sensitive
-        "shipped_scale": ds["scale_ppm_per_mg"], "lead_by_scale": external_lead_sweep(key),
+        "shipped_scale": ds.get("scale_ppm_per_mg"), "lead_by_scale": external_lead_sweep(key),
     }
 
 
-@app.get("/api/external/air-quality.csv")
-def external_air_quality_csv():
-    """The real De Vito 2008 CO slice, as the SCADA feed the engine ingests — inspect the source."""
+@app.get("/api/external/{key}.csv")
+def external_csv_route(key: str):
+    """An external source as the SCADA feed the engine ingests — inspect what flows through it."""
+    if key not in EXTERNAL_DATASETS:
+        return PlainTextResponse(f"unknown external dataset '{key}'", status_code=200)
     return PlainTextResponse(
-        external_csv("air-quality"), media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=airquality_devito2008_feed.csv"},
+        external_csv(key), media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={key}_feed.csv"},
     )
 
 
-@app.get("/api/external/air-quality")
-def external_air_quality():
-    return _external_replay("air-quality")
+@app.get("/api/external/{key}")
+def external_route(key: str):
+    """Generic external-replay route: any registry key (air-quality, aloha-methane, a future STP feed)."""
+    if key not in EXTERNAL_DATASETS:
+        return {"error": f"unknown external dataset '{key}'", "available": list(EXTERNAL_DATASETS)}
+    return _external_replay(key)
 
 
 _memory = DisasterMemory()

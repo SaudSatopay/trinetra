@@ -320,17 +320,52 @@ AIR_QUALITY = {
     "hot_work": True,
     "personnel": 3,
     "window": "23 Nov 2004 05:00 -> 24 Nov 2004 01:00 (21 hourly samples)",
+    "provenance": "real-measured",
     "real": "the CO concentration trajectory - the rise, the real dips, the timing, the noise (measured, not authored)",
     "overlaid": "y-scale x6 onto the plant ppm band; 1 hour -> 1 minute; a hot-work permit + 3 personnel "
                 "context the air-quality dataset has no notion of; mapped to zone COB-1",
 }
 
-EXTERNAL_DATASETS = {"air-quality": AIR_QUALITY}
+# ---------------------------------------------------------------------------
+# Second independent source — EPA/NOAA ALOHA dispersion model (CAMEO suite).
+# ---------------------------------------------------------------------------
+# A *modeled* curve from a recognised third-party tool (not our ramp, not our sim), replayed through
+# the SAME connector + engine. Its decisive advantage over De Vito: there is NO chosen y-scale.
+# Methane converts to %LEL by a fixed physical constant (LEL = 5 %vol = 50,000 ppm -> %LEL = ppm/500),
+# so we are not picking a multiplier; the chemistry fixes it. That closes the round-4 "scale" critique
+# by construction. The data file is committed only after an actual ALOHA run (provenance = the run's
+# params, recorded in docs/EXTERNAL_DATA.md); until then this slot returns "pending", never fake data.
+ALOHA_METHANE = {
+    "key": "aloha-methane",
+    "label": "Methane dispersion - EPA ALOHA",
+    "dataset": "EPA/NOAA ALOHA dispersion model (CAMEO suite)",
+    "citation": "EPA/NOAA ALOHA (CAMEO)",
+    "source": "EPA ALOHA - modeled methane release; full scenario params in docs/EXTERNAL_DATA.md",
+    "channel": "CH4 %LEL (fixed conversion from ALOHA ppm: %LEL = ppm / 500)",
+    "file": "aloha_methane_leak.csv",   # committed after the ALOHA run; slot is pending until then
+    "zone": "COB-1",
+    "channel_col": "CH4",
+    "convert": 1.0 / 500.0,             # FIXED physics ppm->%LEL, NOT a chosen y-scale
+    "sweep_kind": "fixed",              # no y-scale freedom -> no sweep; the doc states this
+    "provenance": "modeled-dispersion (EPA ALOHA)",
+    "hot_work": True,
+    "personnel": 3,
+    "window": "ALOHA concentration-by-time at a ~50 m receptor; 1 ALOHA-minute -> 1 frame",
+    "real": "ALOHA's concentration-vs-time curve at the receptor - rise/peak/decay shaped by EPA "
+            "dispersion physics we did not author or tune",
+    "overlaid": "the hot-work + personnel context (ALOHA models dispersion, not permits/people); zone "
+                "COB-1; ppm->%LEL by the FIXED LEL constant (no chosen scale)",
+}
+
+EXTERNAL_DATASETS = {"air-quality": AIR_QUALITY, "aloha-methane": ALOHA_METHANE}
 
 
 def _load_external_series(filename: str) -> list[tuple[str, float]]:
-    """Load a committed real-measurement slice (datetime, value); skip the '#' provenance header."""
+    """Load a committed external slice (datetime, value); skip the '#' provenance header. Returns []
+    if the file isn't there yet (an exhibit slot whose data hasn't been dropped in) — never crashes."""
     path = Path(__file__).parent / "data" / filename
+    if not path.exists():
+        return []
     out: list[tuple[str, float]] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
