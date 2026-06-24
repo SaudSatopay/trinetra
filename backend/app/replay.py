@@ -330,11 +330,13 @@ AIR_QUALITY = {
 # Second independent source — EPA/NOAA ALOHA dispersion model (CAMEO suite).
 # ---------------------------------------------------------------------------
 # A *modeled* curve from a recognised third-party tool (not our ramp, not our sim), replayed through
-# the SAME connector + engine. Its decisive advantage over De Vito: there is NO chosen y-scale.
-# Methane converts to %LEL by a fixed physical constant (LEL = 5 %vol = 50,000 ppm -> %LEL = ppm/500),
-# so we are not picking a multiplier; the chemistry fixes it. That closes the round-4 "scale" critique
-# by construction. The data file is committed only after an actual ALOHA run (provenance = the run's
-# params, recorded in docs/EXTERNAL_DATA.md); until then this slot returns "pending", never fake data.
+# the SAME connector + engine. Its advantage over De Vito on the round-4 "scale" critique: the ppm->%LEL
+# conversion is a FIXED physical constant (LEL = 5 %vol = 50,000 ppm -> %LEL = ppm/500), so there is no
+# y-scale MULTIPLIER to pick -- that degree of freedom is genuinely eliminated. The one parameter that
+# remains is the receptor DISTANCE (a realistic crew standoff); we disclose it and SWEEP it (committed
+# 50/100/150 m curves, live-computed in external_distance_sweep) rather than hide it. The data file is
+# committed only after an actual ALOHA run (provenance = the run's params, recorded in
+# docs/EXTERNAL_DATA.md); until then this slot returns "pending", never fake data.
 ALOHA_METHANE = {
     "key": "aloha-methane",
     "label": "Methane dispersion - EPA ALOHA",
@@ -342,19 +344,23 @@ ALOHA_METHANE = {
     "citation": "EPA/NOAA ALOHA (CAMEO)",
     "source": "EPA ALOHA - modeled methane release; full scenario params in docs/EXTERNAL_DATA.md",
     "channel": "CH4 %LEL (fixed conversion from ALOHA ppm: %LEL = ppm / 500)",
-    "file": "aloha_methane_leak.csv",   # committed after the ALOHA run; slot is pending until then
+    "file": "aloha_methane_leak.csv",   # the shipped 100 m curve (committed after the ALOHA run)
     "zone": "COB-1",
     "channel_col": "CH4",
-    "convert": 1.0 / 500.0,             # FIXED physics ppm->%LEL, NOT a chosen y-scale
-    "sweep_kind": "fixed",              # no y-scale freedom -> no sweep; the doc states this
+    "convert": 1.0 / 500.0,             # FIXED physics ppm->%LEL, NOT a chosen y-scale multiplier
+    "sweep_kind": "distance",           # the free parameter here is the receptor DISTANCE (not a y-scale)
+    "distance_curves": {50: "aloha_methane_leak_50m.csv", 100: "aloha_methane_leak.csv",
+                        150: "aloha_methane_leak_150m.csv"},
+    "shipped_distance_m": 100,          # the disclosed crew standoff the headline result uses
     "provenance": "modeled-dispersion (EPA ALOHA)",
     "hot_work": True,
     "personnel": 3,
-    "window": "ALOHA concentration-by-time at a ~50 m receptor; 1 ALOHA-minute -> 1 frame",
-    "real": "ALOHA's concentration-vs-time curve at the receptor - rise/peak/decay shaped by EPA "
-            "dispersion physics we did not author or tune",
+    "window": "ALOHA concentration-by-time at a ~100 m receptor (crew standoff); 1 ALOHA-minute -> 1 frame",
+    "real": "ALOHA's concentration-vs-time curve at the receptor - the rise and the sustained plateau, "
+            "shaped by EPA dispersion physics we did not author or tune",
     "overlaid": "the hot-work + personnel context (ALOHA models dispersion, not permits/people); zone "
-                "COB-1; ppm->%LEL by the FIXED LEL constant (no chosen scale)",
+                "COB-1; the receptor DISTANCE (disclosed + swept). The ppm->%LEL conversion is a fixed "
+                "constant, not overlaid",
 }
 
 EXTERNAL_DATASETS = {"air-quality": AIR_QUALITY, "aloha-methane": ALOHA_METHANE}
@@ -384,17 +390,19 @@ def external_series(key: str) -> list[tuple[str, float]]:
     return _load_external_series(EXTERNAL_DATASETS[key]["file"])
 
 
-def external_csv(key: str, convert: float | None = None) -> str:
+def external_csv(key: str, convert: float | None = None, filename: str | None = None) -> str:
     """Build a SCADA CSV from an external source: the dataset's dynamics written onto ITS declared
     gas channel (channel_col), converted to plant units (convert), plus the stated hot-work +
     personnel context. One source sample -> one row. Fed through the same parse_csv the connector
-    uses. `convert` overrides the dataset's default conversion (used by the lead-vs-scale sweep).
+    uses. `convert` overrides the dataset's default conversion (used by the lead-vs-scale sweep);
+    `filename` overrides which committed curve to read (used by the distance sweep to run the
+    50/100/150 m ALOHA curves through this same path).
 
     Generalised so a new dataset just declares channel_col + convert: De Vito writes CO at a chosen
     y-scale (convert=6); an ALOHA methane curve writes CH4 at the FIXED ppm->%LEL constant
     (convert=1/500, no free parameter). De Vito output is byte-identical to the prior CO-only code."""
     ds = EXTERNAL_DATASETS[key]
-    series = _load_external_series(ds["file"])
+    series = _load_external_series(filename or ds["file"])
     col = ds.get("channel_col", "CO")
     k = convert if convert is not None else ds.get("convert", ds.get("scale_ppm_per_mg", 1.0))
     out = io.StringIO()
@@ -434,4 +442,41 @@ def external_lead_sweep(key: str, scales=(5, 6, 7, 8, 10, 12)) -> list[dict]:
                 single = int(s.t_min)
         rows.append({"scale": k, "compound_min": comp, "single_sensor_min": single,
                      "lead_min": (single - comp) if (comp is not None and single is not None) else None})
+    return rows
+
+
+def external_distance_sweep(key: str) -> list[dict]:
+    """The ALOHA honesty exhibit (the receptor-distance analogue of external_lead_sweep): run the SAME
+    untuned engine on the committed concentration curves at a range of receptor DISTANCES and report, at
+    each, the sustained plateau (%LEL), whether a single-point detector at that standoff would alarm, and
+    whether the compound engine fires. This makes the disclosed receptor-distance choice transparent and
+    one-curl reproducible (no hand-entered numbers): the cloud is dense enough to alarm even a single
+    sensor up close (50 m), the blind spot is the realistic 100 m crew standoff, and the engine correctly
+    stands down when the cloud is too dilute to be a hazard (150 m). Empty for datasets with no committed
+    distance curves."""
+    from .engine import CompoundRiskEngine
+    ds = EXTERNAL_DATASETS[key]
+    curves = ds.get("distance_curves")
+    if not curves:
+        return []
+    zone = ds["zone"]
+    rows: list[dict] = []
+    for dist in sorted(curves):
+        if not _load_external_series(curves[dist]):
+            continue  # a distance curve not committed yet -> skip it (never fabricate a row)
+        snaps, _ = parse_csv(external_csv(key, filename=curves[dist]))
+        eng = CompoundRiskEngine(compute_confidence=False)
+        compound_min = peak = None
+        single = False
+        for s in snaps:
+            zr = eng.assess(s)[zone]
+            ch4 = s.zones[zone].gases["CH4"].value
+            peak = ch4 if peak is None else max(peak, ch4)
+            if compound_min is None and zr.compound and zr.level.rank >= 2:
+                compound_min = int(s.t_min)
+            if GAS_THRESHOLDS["CH4"].in_alarm(ch4):
+                single = True
+        rows.append({"distance_m": dist, "peak_pct_lel": round(peak, 1) if peak is not None else None,
+                     "single_sensor_alarms": single, "compound_fires": compound_min is not None,
+                     "compound_min": compound_min})
     return rows

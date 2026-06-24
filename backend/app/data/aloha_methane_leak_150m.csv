@@ -1,0 +1,23 @@
+# Modeled methane dispersion (EPA ALOHA 5.4.7) - 150 m receptor curve, for the distance sweep.
+# SAME run as aloha_methane_leak.csv (the shipped 100 m curve): methane; ALOHA Gas Pipeline failure,
+# NOT burning; 2-inch (5.08 cm) bore; 50 m pipe; infinite/upstream source; smooth; 5 atm; 25 C. Wind
+# 2 m/s from 270 deg (at 3 m), stability F, urban/forest, 25 C, 50% RH, no inversion; Gaussian.
+# ONLY the receptor distance differs: Display > Threat At Point read at 150 m downwind, 0 off-centerline.
+# OUTDOOR concentration-by-time (ppm), 1-min resolution; plume establishes <2 min then holds at the
+# ~1,900 ppm (~3.8 %LEL) plateau. Convert applied IN CODE: %LEL = ppm / 500 (fixed). Used by
+# external_distance_sweep() to show that at this standoff the cloud is too dilute to be a compound
+# hazard (3.8 %LEL < the 5 %LEL compound floor) - the engine correctly stays SILENT (no cry-wolf).
+# minute,ppm
+0,0
+1,1500
+2,1900
+3,1900
+4,1900
+5,1900
+6,1900
+7,1900
+8,1900
+9,1900
+10,1900
+11,1900
+12,1900

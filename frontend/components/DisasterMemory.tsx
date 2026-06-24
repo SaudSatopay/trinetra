@@ -78,9 +78,9 @@ export function DisasterMemory({
           <span
             className="rounded px-1.5 py-0.5 font-mono text-[8px] text-ink-dim"
             style={{ border: "1px solid var(--line-2)", textTransform: "none", letterSpacing: "normal" }}
-            title="Live model rate-limited — showing verified cached analysis"
+            title="The match % is a cached cosine from a prior live embedding run (gemini-embedding-001); it recomputes live when a GEMINI_API_KEY is set. Shown cached here because the live model is rate-limited or demo mode is on — not a fabricated number."
           >
-            cached
+            cached · prior live run
           </span>
         )}
       </div>

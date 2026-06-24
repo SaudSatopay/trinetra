@@ -19,8 +19,9 @@
 #           sustained release. (50 m -> ~15,800 ppm; 150 m -> ~1,900 ppm - see the
 #           distance sweep in docs/EXTERNAL_DATA.md. 100 m is a realistic crew standoff.)
 # Convert : applied IN CODE, not here: %LEL = ppm / 500 - the FIXED methane LEL constant
-#           (50,000 ppm = 100 %LEL). There is NO chosen y-scale; the chemistry fixes the
-#           conversion. That is this exhibit's whole point (closes the y-scale critique).
+#           (50,000 ppm = 100 %LEL). No y-scale MULTIPLIER to pick (that closes the round-4
+#           y-scale critique); the one disclosed parameter is the receptor DISTANCE (this is the
+#           100 m crew-standoff curve), swept 50/100/150 m - see docs/EXTERNAL_DATA.md.
 # Overlaid: applied in code / stated in docs/EXTERNAL_DATA.md, not here: a hot-work permit
 #           + 3 personnel context (ALOHA models dispersion, not permits or people); zone
 #           COB-1; 1 ALOHA-minute -> 1 frame. ALOHA validates the gas DYNAMICS on

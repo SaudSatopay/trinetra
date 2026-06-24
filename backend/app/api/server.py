@@ -34,8 +34,9 @@ from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..permit_gate import evaluate_permit
-from ..replay import (INCIDENT_REPLAYS, EXTERNAL_DATASETS, external_csv, external_lead_sweep,
-                      external_series, jaipur_csv, parse_csv, sample_csv, texas_city_csv)
+from ..replay import (INCIDENT_REPLAYS, EXTERNAL_DATASETS, external_csv, external_distance_sweep,
+                      external_lead_sweep, external_series, jaipur_csv, parse_csv, sample_csv,
+                      texas_city_csv)
 from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
@@ -286,8 +287,11 @@ def _external_replay(key: str) -> dict:
         "lead_min": (single_min - alert_min) if (alert_min is not None and single_min is not None) else None,
         "peak": peak, "peak_unit": peak_unit, "peak_co_ppm": peak if col == "CO" else None,
         "samples": len(external_series(key)), "rows": meta["rows"],
-        # honesty exhibit: detection is scale-robust, the lead (baseline-relative) is scale-sensitive
+        # honesty exhibits, both live-computed (neither hand-entered): De Vito ships a lead-vs-y-scale
+        # sweep (detection scale-robust, lead scale-sensitive); ALOHA ships a lead-vs-receptor-distance
+        # sweep (its only free parameter is the disclosed crew standoff).
         "shipped_scale": ds.get("scale_ppm_per_mg"), "lead_by_scale": external_lead_sweep(key),
+        "shipped_distance_m": ds.get("shipped_distance_m"), "distance_sweep": external_distance_sweep(key),
     }
 
 
@@ -542,7 +546,7 @@ def response(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 13):
 
     package = {
         "zone": zone, "zone_name": z.name, "level": risk.level.value,
-        "auto_prepared": risk.level.value == "critical",
+        "auto_prepared": risk.compound and risk.level.value == "critical",
         "analysis_mode": "cached" if degraded else "live",
         "impact": impact,
         "evidence_timeline": _evidence_timeline(scenario, zone),
@@ -616,7 +620,7 @@ def ablation():
     """Ablation study: single-sensor vs gas-trend-only vs full compound fusion.
 
     Proves the contextual fusion earns its complexity — same lead time as a naive
-    gas-trend rule, but 0% false alarms instead of 64%."""
+    gas-trend rule, but 0% false alarms instead of 67%."""
     global _ablation_cache
     if _ablation_cache is None:
         from ablation import run_ablation  # lazy: benchmark eval set built on first call

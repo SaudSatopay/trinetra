@@ -180,9 +180,12 @@ _BRIEF_SYSTEM = (
 
 
 class DisasterMemory:
-    # Cached real precedent ranking for the Vizag hero path. These are the live
-    # embedding results (kept so the headline 81% stays consistent with the deck
-    # and demo when the API is rate-limited).
+    # Cached snapshot of a REAL prior live-embedding run (gemini-embedding-001): the cosine of each
+    # precedent's precursors vs the Vizag hero condition. Served verbatim for the hero path so the
+    # headline 81% stays reproducible when embeddings are unavailable (TRINETRA_DEMO_MODE or a rate
+    # limit); with a live key, match() recomputes the same ranking. It is NOT a fabricated constant, and
+    # the API/UI badge this path "cached". (The lexical index is a separate, weaker offline fallback used
+    # for non-hero conditions.)
     _HERO = [("vizag-coke-2025", 0.808), ("texas-city-2005", 0.726), ("hotwork-flammable-generic", 0.714)]
 
     def __init__(self) -> None:

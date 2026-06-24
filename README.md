@@ -224,7 +224,7 @@ Reconstructed from **two** real inquiries and replayed through the *same* engine
 
 The held-out generalization run answers "train = test" *inside* the simulator; this answers it **outside** it. We replay a **real, peer-reviewed, third-party measurement** — hourly CO from the **UCI #360 Air Quality** dataset (De Vito et al., 2008; DOI 10.24432/C5K603, CC BY 4.0) — through the **same connector and the same untuned engine**. On that real, dip-laden CO build-up the compound alert fires at **T+3** — and the engine **tracks the real signal**: it relaxes during the dataset's genuine CO dips (no crying wolf) and stands down when the CO clears overnight. The early **detection is scale-robust** (T+2–4 across every y-scale); the lead in minutes is measured against the single-sensor baseline and *is* scale-sensitive, so rather than quote one number we publish the full **lead-vs-scale sweep** (`lead_by_scale`; +10 at our disclosed ×6). What is real (the CO **dynamics**) vs overlaid (the y-scale + a hot-work/personnel context) — and the honest scale correction — is spelled out in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Air Quality · De Vito '08**.)*
 
-A **second** external exhibit comes from a *recognized third-party physics model* rather than a measurement: **EPA/NOAA ALOHA** (the CAMEO dispersion tool). A modeled methane release runs through the **same connector + untuned engine**, and because methane → %LEL is fixed chemistry (`%LEL = ppm ÷ 500`) **there is no chosen scale** — the one soft spot of the De Vito exhibit, closed by construction. It lands the **blind-spot axis**: at a realistic 100 m crew standoff EPA's physics put a *sustained ~8.2 %LEL* cloud where a single 10 %LEL detector reads **green for the entire release**, yet Trinetra (sub-threshold gas + hot-work permit + crew) flags **compound at T+1 and holds it**. A published **distance sweep** (50 / 100 / 150 m) shows it isn't cherry-picked — dense enough to alarm even a single sensor at 50 m, correctly **silent** at 150 m. Full provenance (ALOHA 5.4.7 + every parameter) and the real-vs-overlaid split are in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Methane · EPA ALOHA**.)*
+A **second** external exhibit comes from a *recognized third-party physics model* rather than a measurement: **EPA/NOAA ALOHA** (the CAMEO dispersion tool). A modeled methane release runs through the **same connector + untuned engine**, and because methane → %LEL is fixed chemistry (`%LEL = ppm ÷ 500`) **the y-scale multiplier is eliminated** — De Vito's one soft spot — leaving the **receptor distance** as the only chosen parameter, which is **disclosed and swept**, not hidden. It lands the **blind-spot axis**: at a realistic 100 m crew standoff EPA's physics put a *sustained ~8.2 %LEL* cloud where a single 10 %LEL detector reads **green for the entire release**, yet Trinetra (sub-threshold gas + hot-work permit + crew) flags **compound at T+1 and holds it**. A **live-computed distance sweep** (`distance_sweep` in the endpoint; 50 / 100 / 150 m committed curves) shows it isn't cherry-picked — dense enough to alarm even a single sensor at 50 m, correctly **silent** at 150 m. Full provenance (ALOHA 5.4.7 + every parameter) and the real-vs-overlaid split are in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Methane · EPA ALOHA**.)*
 
 ---
 
@@ -236,7 +236,7 @@ A **second** external exhibit comes from a *recognized third-party physics model
 | 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 3.3% FP | `python test_generalization.py` |
 | 🧯 **Real-incident replay** | CSB Texas City (2005) → fires 10 min before the documented ignition | `/api/incident/texas-city` |
 | 🛰️ **External-data replay** | real measured CO (UCI #360, De Vito 2008) through the same untuned engine — the answer to "you authored the data" | `/api/external/air-quality` |
-| 🧪 **Modeled-physics replay** | EPA ALOHA methane dispersion, fixed ppm→%LEL (no chosen scale) — single sensor blind at 8.2 %LEL while compound fires | `/api/external/aloha-methane` |
+| 🧪 **Modeled-physics replay** | EPA ALOHA methane dispersion, fixed ppm→%LEL (no y-scale; receptor distance disclosed + swept) — single sensor blind at 8.2 %LEL while compound fires | `/api/external/aloha-methane` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
 | 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
 | 🚫 **Shift-left permit gate** | refuses a permit that would *create* a compound hazard — prevention at the permit desk, not detection after | `/api/permit-gate` |
@@ -314,7 +314,7 @@ python benchmark.py                         # the headline metrics
 
 ## API reference
 
-FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint exists for push deployments; the demo control room replays precomputed frames so the timeline is scrubbable). Base: `http://127.0.0.1:8000`.
+FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint exists for push deployments; the demo control room replays precomputed frames so the timeline is scrubbable). Base: `http://127.0.0.1:8000`. *(Responses are UTF-8 JSON; some engine factor strings use en/em-dashes — view in a browser or a UTF-8 terminal, not a legacy cp1252 console, to avoid mojibake.)*
 
 | Route | Purpose |
 |---|---|
@@ -327,7 +327,7 @@ FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint
 | `GET /api/ingest/sample` · `POST /api/ingest` | download / replay a SCADA-permit CSV |
 | `GET /api/incident/texas-city` · `…/texas-city.csv` | the CSB Texas City reconstruction + raw feed |
 | `GET /api/external/air-quality` · `…/air-quality.csv` | real measured CO (UCI #360, De Vito 2008) replayed + raw feed |
-| `GET /api/external/aloha-methane` · `…/aloha-methane.csv` | EPA ALOHA methane dispersion replayed (fixed ppm→%LEL, no chosen scale) + raw feed |
+| `GET /api/external/aloha-methane` · `…/aloha-methane.csv` | EPA ALOHA methane dispersion replayed (fixed ppm→%LEL, no y-scale; live `distance_sweep`) + raw feed |
 | `GET /api/agents` | the 6-stage reasoning trace |
 | `GET /api/disaster-memory` | closest historical precedent + grounded briefing |
 | `GET /api/vision` | YOLOv8 person / zone-intrusion detection |

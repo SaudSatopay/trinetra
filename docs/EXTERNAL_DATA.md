@@ -90,14 +90,20 @@ so we chose it. The gas-sensor-array set remains a candidate for a future "robus
 
 ---
 
-## Second independent source — EPA ALOHA dispersion (modeled physics, no chosen scale)
+## Second independent source — EPA ALOHA dispersion (modeled physics, no y-scale, disclosed receptor distance)
 
 The De Vito exhibit has one soft spot the round-4 review flagged: the **y-scale** (the ×6) is a choice. This
-second exhibit closes that **by construction**. The gas dynamics come from **EPA/NOAA's ALOHA dispersion
-model** (the free CAMEO tool — a recognised third party we did not write or tune), and methane converts to
-%LEL by a **fixed physical constant**, so there is no multiplier to pick:
+second exhibit **eliminates that specific degree of freedom**: the gas dynamics come from **EPA/NOAA's ALOHA
+dispersion model** (the free CAMEO tool — a recognised third party we did not write or tune), and methane
+converts to %LEL by a **fixed physical constant**, so there is no y-scale *multiplier* to pick:
 
 > Methane LEL = 5 %vol = 50,000 ppm  ⇒  **%LEL = ppm ÷ 500**. Fixed chemistry, zero free parameters.
+
+**The honest caveat (so we don't over-claim):** eliminating the y-scale does *not* mean there is no chosen
+parameter at all — the remaining choice is the **receptor distance** (where downwind the reading is taken).
+We pick a realistic **100 m crew standoff** for the headline and **disclose + sweep** it (50 / 100 / 150 m,
+below) rather than hide it. The precise claim: the conversion is fixed chemistry (no y-scale); the receptor
+distance is a disclosed, swept parameter.
 
 | | |
 |---|---|
@@ -130,9 +136,10 @@ This exhibit lands a *different* axis from the lead-time exhibits (De Vito +10, 
 green" for the **entire release** — it is not *late*, it is structurally **blind**. Trinetra, seeing the same
 sub-threshold gas **plus** the live hot-work permit **plus** the 3 crew, flags **compound at T+1 and holds it**
 (CRITICAL as the cloud arrives, settling into a sustained HIGH). Same connector, same untuned engine, and —
-because methane → %LEL is fixed chemistry — **no chosen scale**.
+because methane → %LEL is fixed chemistry — **no y-scale multiplier** (the only disclosed parameter is the
+100 m receptor distance, swept below).
 
-**Distance sweep (the honesty exhibit — the same untuned engine across receptor distance; nothing cherry-picked):**
+**Distance sweep — live-computed, not hand-entered** (reproduce: `GET /api/external/aloha-methane` → `distance_sweep`; each row replays a committed ALOHA curve — `aloha_methane_leak_50m.csv` / `…leak.csv` / `…leak_150m.csv` — through the same untuned engine, nothing cherry-picked):
 
 | Receptor | ALOHA outdoor plateau | %LEL (= ppm ÷ 500) | Single sensor (10 %LEL) | Trinetra compound |
 |---|---|---|---|---|
@@ -150,5 +157,12 @@ parameters in the conversion.
 trace is the real-measurement exhibit; this is the recognized-third-party-physics exhibit). ALOHA models the
 gas **dynamics**; the hot-work permit + personnel **context** is overlaid, exactly as with De Vito — ALOHA has
 no notion of permits or people. And it is a *sustained-leak* curve (a rise to a plateau, not a slow diurnal
-build), so this exhibit speaks to **detection sensitivity**, not lead-time. No placeholder was ever committed:
-this section went live only after an actual EPA ALOHA 5.4.7 run.
+build), so this exhibit speaks to **detection sensitivity**, not lead-time. Two more notes a reviewer will
+(fairly) raise: (1) the "blind" detector is the **area monitor at the crew's 100 m standoff** — a sensor
+mounted *at the leak source* (≈100 %LEL at the orifice) would of course alarm; the point is that you cannot
+blanket a plant with detectors, which is exactly why the compound layer reasons about crew exposure + permit,
+not a gas number at one fixed probe. (2) The ~4,100 ppm at 100 m is **ALOHA's** value under its urban /
+class-F dispersion; a textbook open-country Gaussian hand-check will *undershoot* it (urban roughness + a
+stable class give higher near-field concentrations), so reproduce it **in ALOHA**, not by hand — the full run
+parameters are in the CSV header. No placeholder was ever committed: this section went live only after an
+actual EPA ALOHA 5.4.7 run.

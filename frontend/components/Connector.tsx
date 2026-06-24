@@ -130,7 +130,7 @@ export function Connector({
           border: "1px solid color-mix(in srgb, var(--brand) 42%, transparent)",
           background: "color-mix(in srgb, var(--brand) 10%, transparent)",
         }}
-        title="Replay EPA ALOHA-modeled methane dispersion through the same connector — fixed ppm→%LEL, no chosen scale"
+        title="EPA ALOHA-modeled methane dispersion through the same connector — fixed ppm→%LEL (no y-scale); the single sensor is the area monitor at the 100 m crew standoff (distance-swept 50/100/150 m), not a source-side detector"
       >
         Methane · EPA ALOHA
       </button>
