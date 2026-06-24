@@ -52,7 +52,9 @@ O2_ASPHYXIA = 16.0               # %vol: at/below this an UNPROTECTED person is 
 CONF_SAMPLES = 128               # Monte-Carlo draws for calibrated confidence
 INERTED_DISPLAY_CAP = 45.0       # a genuinely inerted, supplied-air zone is a CONTROLLED high-hazard
                                  # operation (both compound pathways closed) — hold its DISPLAY risk in
-                                 # the ELEVATED band so the map never paints a non-compound zone critical-red
+                                 # the ELEVATED band so a controlled zone doesn't read as a live critical
+                                 # emergency. (Other non-compound zones may still colour by their continuous
+                                 # danger; the emergency HALO is separately gated on the compound verdict.)
 
 
 @dataclass
@@ -149,11 +151,14 @@ class CompoundRiskEngine:
         # asphyxiation needs a SUSTAINED deficiency, not a one-sample dropout: O2 below the
         # immediate-danger line now AND already below the 19.5% OSHA deficiency line one sample
         # back (i.e. genuinely depleting). This makes the O2 leg symmetric with the flammable leg
-        # (level + trend), so a lone faulty/transient low O2 reading can't manufacture a phantom alert.
+        # (level + trend). Requiring a REAL prior sample (fail-closed on cold start) means a lone
+        # faulty/transient low O2 reading — or a first ingested row that happens to be low — cannot
+        # manufacture a phantom asphyxiation alert; a genuine deficiency persists and fires next sample.
         o2_now = z.gases["O2"].value
         h = self._hist[zid]
         o2_prev = h[-2][1]["O2"] if len(h) >= 2 else None
-        o2_sustained = o2_now < O2_ASPHYXIA and (o2_prev is None or o2_prev < GAS_THRESHOLDS["O2"].low_alarm)
+        o2_sustained = (o2_now < O2_ASPHYXIA and o2_prev is not None
+                        and o2_prev < GAS_THRESHOLDS["O2"].low_alarm)
         return _Features(flam_level, flam_slope, toxic_level, o2_deficit,
                          ignition_same, ignition_adj, z.worker_count, personnel_adj, confined,
                          fastest, fastest_raw, o2_now, breathing_protected, o2_sustained)
@@ -163,14 +168,18 @@ class CompoundRiskEngine:
                ventilate=False) -> float:
         flam_level = f.flam_level * (0.4 if ventilate else 1.0)
         flam_slope = f.flam_slope * (0.2 if ventilate else 1.0)
+        # ventilation/purge restores oxygen as well as diluting fuel, so the counterfactual relaxes
+        # the O2 deficit toward ambient too — otherwise the % "credit" for an O2-deficiency hazard
+        # would come from diluting background gas, not from the remedy that actually matters (fresh air).
+        o2_deficit = f.o2_deficit * (0.3 if ventilate else 1.0)
         a_flam = max(0.0, flam_level - FLOOR_FLAM)      # abnormal flammable level (background removed)
         m_flam = max(0.0, flam_slope * LOOKAHEAD)       # projected rise over the lookahead
         a_tox = max(0.0, f.toxic_level - FLOOR_TOXIC)
-        raw = W_LEVEL * a_flam + W_SLOPE * m_flam + W_TOXIC * a_tox + W_O2 * f.o2_deficit
+        raw = W_LEVEL * a_flam + W_SLOPE * m_flam + W_TOXIC * a_tox + W_O2 * o2_deficit
         ign = 0.0 if drop_ignition else (M_IGNITION_SAME * f.ignition_same
                                          + M_IGNITION_ADJ * f.ignition_adj)
         per = 0.0 if drop_personnel else (M_PERSONNEL if f.personnel > 0 else 0.0)
-        conf = M_CONFINED * f.o2_deficit if f.confined else 0.0
+        conf = M_CONFINED * o2_deficit if f.confined else 0.0
         return 100.0 * raw * (1.0 + ign + per + conf)   # uncapped on purpose
 
     @staticmethod
@@ -269,9 +278,11 @@ class CompoundRiskEngine:
         # Display: a genuinely inerted, supplied-air zone is a CONTROLLED high-hazard operation, not
         # a live emergency — the explosion pathway (no oxidizer) and the asphyxiation pathway (crew
         # protected) are both closed, so the realized compound risk is low even though the raw flammable
-        # inventory reads high (still shown in telemetry/factors). Hold the displayed risk in the
-        # ELEVATED band so the map never paints a non-compound zone critical-red. Detection is
-        # unchanged: the compound gate already returned False, and the benchmark scores the compound flag.
+        # inventory reads high (still shown in telemetry/factors). Hold THIS controlled zone's displayed
+        # risk in the ELEVATED band so it doesn't read as a live critical emergency. (Other non-compound
+        # zones still colour by their continuous danger — e.g. a zone trending toward asphyxiation reads
+        # high before the verdict locks; the emergency HALO is what's gated on the compound verdict in the
+        # UI.) Detection is unchanged: the compound gate already returned False; the benchmark scores it.
         if inerted:
             score = min(score, INERTED_DISPLAY_CAP)
         level = self._level(score)
@@ -353,9 +364,10 @@ class CompoundRiskEngine:
                 s = self._score(f, drop_personnel=True)
                 cands.append(Intervention("Evacuate personnel from zone",
                                           self._level(min(100.0, s)), reduction(s)))
-            if oxidizer:
-                # ventilation only helps when an oxidizer is already present; never recommend
-                # ventilating an inerted, flammable atmosphere — it re-introduces the oxidizer.
+            if oxidizer and not asphyxiation:
+                # ventilation/purge is valid only when an oxidizer is present AND the zone is not
+                # already an occupied O2-deficient space — there the answer is Evacuate now, not
+                # ventilate-while-people-breathe-it; and never ventilate an inerted flammable atmosphere.
                 s = self._score(f, ventilate=True)
                 cands.append(Intervention("Force ventilation / gas purge",
                                           self._level(min(100.0, s)), reduction(s)))
