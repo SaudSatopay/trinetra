@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from pathlib import Path
 
 from .constants import GAS_THRESHOLDS, ZONES
@@ -32,38 +33,125 @@ _MAX_ROWS = 50_000
 _MAX_SNAPSHOTS = 240
 
 
+_NUM_RE = re.compile(r"[-+]?\d*\.?\d+")
+
+
+def _num(s) -> float | None:
+    """First number in a string -> float (so '12.5 %LEL' or '45 ppm' parse). None if none."""
+    m = _NUM_RE.search(str(s or ""))
+    return float(m.group()) if m else None
+
+
+# canonical plant column -> what a real export might actually call it. Exact canonical headers
+# always win (so existing CSVs are an exact-match no-op); aliases let a foreign plant export
+# ingest without anyone renaming columns first.
+def _canon_map(fieldnames) -> dict[str, str]:
+    raw = [(f or "").strip() for f in fieldnames]
+    canon_names = {"t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"}
+    mapping: dict[str, str] = {}
+    taken: set[str] = set()
+    for f in raw:  # pass 1 — exact canonical
+        if f in canon_names and f not in taken:
+            mapping[f] = f
+            taken.add(f)
+
+    def pick(canon: str, test):  # pass 2 — first un-mapped header matching the alias test
+        if canon in taken:
+            return
+        for f in raw:
+            if f in mapping:
+                continue
+            if test(f.lower()):
+                mapping[f] = canon
+                taken.add(canon)
+                return
+
+    tok = lambda h: re.split(r"[^a-z0-9]+", h)  # split on _, space, (), etc. -> ['co','ppm']
+    pick("CH4", lambda h: any(k in h for k in ("ch4", "methane", "lel", "combust", "flammab")))
+    pick("CO", lambda h: "co" in tok(h) or "carbon monoxide" in h)   # 'co'/'co_ppm' yes; 'co2'/'cost' no
+    pick("H2S", lambda h: any(k in h for k in ("h2s", "sulfid", "sulphid")))
+    pick("O2", lambda h: "o2" in tok(h) or "oxygen" in h)
+    pick("personnel", lambda h: any(k in h for k in ("personnel", "people", "occup", "crew", "worker", "headcount", "entrant", "person")))
+    pick("hot_work", lambda h: any(k in h for k in ("hot", "ignition", "welding", "spark")))
+    pick("zone", lambda h: any(k in h for k in ("zone", "location", "area", "unit", "cell", "point", "site")) or h == "loc")
+    pick("t_min", lambda h: any(k in h for k in ("time", "minute", "timestamp", "datetime", "elapsed")) or h in ("t", "min", "date", "sample", "t_min", "tmin"))
+    return mapping
+
+
 def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
-    """Parse a SCADA/permit CSV into ordered PlantSnapshots. Raises ValueError on bad input."""
+    """Parse a SCADA/permit CSV into ordered PlantSnapshots. Forgiving by design so a real plant's
+    historian export ingests as-is: aliased column names, units embedded in values ('12.5 %LEL'),
+    a real timestamp column (mapped to a frame index), and arbitrary zone/location names (mapped
+    deterministically onto the twin's zones). Existing canonical CSVs parse byte-identically. Raises
+    ValueError only on genuinely unusable input; the API layer still wraps this so it can never 500."""
+    text = text.replace("\x00", "")  # NUL-safe even when called directly (the API also strips on decode)
     reader = csv.DictReader(io.StringIO(text))
     if not reader.fieldnames:
         raise ValueError("empty CSV (no header row)")
-    cols = {(c or "").strip() for c in reader.fieldnames}
-    if "t_min" not in cols or "zone" not in cols:
-        raise ValueError("CSV must include at least 't_min' and 'zone' columns")
+    cmap = _canon_map(reader.fieldnames)
+    canon = set(cmap.values())
+    if "t_min" not in canon or "zone" not in canon:
+        raise ValueError("CSV needs a time column (t_min/time/timestamp) and a zone/location column")
+
+    rows: list[dict] = []
+    for raw in reader:
+        if len(rows) >= _MAX_ROWS:
+            break
+        row: dict[str, str] = {}
+        for k, v in raw.items():
+            ck = cmap.get((k or "").strip())
+            if ck:
+                row[ck] = (v or "").strip()
+        rows.append(row)
+
+    # t_min: a clean number where possible, else ordinal by first-seen value. Detect numeric STRICTLY
+    # (a real timestamp like '2024-03-01T08:00' must NOT be read as its leading year 2024).
+    def _strict_num(s) -> bool:
+        try:
+            float(str(s).strip())
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    numeric_t = all(_strict_num(r.get("t_min", "")) for r in rows) if rows else True
+    t_order: dict[str, int] = {}
+    # unknown zone/location names -> deterministically cycle onto the twin's known zones
+    zone_remap: dict[str, str] = {}
+    zlist = list(ZONES)
+
+    def map_zone(z: str) -> str:
+        if z in ZONES:
+            return z
+        if z not in zone_remap:
+            zone_remap[z] = zlist[len(zone_remap) % len(zlist)]
+        return zone_remap[z]
 
     rows_by_t: dict[int, list[dict]] = {}
-    bad_zones: set[str] = set()
+    remapped: set[str] = set()
     n_rows = 0
-    seen = 0
-    for raw in reader:
-        seen += 1
-        if seen > _MAX_ROWS:
-            break
-        row = {(k or "").strip(): (v or "").strip() for k, v in raw.items()}
-        try:
-            t = int(float(row["t_min"]))
-        except (KeyError, ValueError):
+    for r in rows:
+        tv = r.get("t_min", "")
+        if numeric_t:
+            try:
+                t = int(float(tv))
+            except (TypeError, ValueError):
+                continue
+        else:
+            if tv not in t_order:
+                t_order[tv] = len(t_order)
+            t = t_order[tv]
+        zraw = r.get("zone", "")
+        if not zraw:
             continue
-        zid = row.get("zone", "")
-        if zid not in ZONES:
-            if zid:
-                bad_zones.add(zid)
-            continue
-        rows_by_t.setdefault(t, []).append(row)
+        zid = map_zone(zraw)
+        if zid != zraw:
+            remapped.add(zraw)
+        r["zone"] = zid
+        rows_by_t.setdefault(t, []).append(r)
         n_rows += 1
 
     if not rows_by_t:
-        raise ValueError("no valid data rows (check 't_min' and known zone ids)")
+        raise ValueError("no valid data rows (need a time + zone/location column with values)")
 
     snapshots: list[PlantSnapshot] = []
     for t in sorted(rows_by_t)[:_MAX_SNAPSHOTS]:
@@ -75,21 +163,18 @@ def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
             for sp, thr in GAS_THRESHOLDS.items():
                 val = spec.baseline.get(sp, 0.0)
                 if r and r.get(sp):
-                    try:
-                        val = float(r[sp])
-                    except ValueError:
-                        pass
+                    num = _num(r[sp])
+                    if num is not None:
+                        val = num
                 gases[sp] = GasReading(sp, round(val, 2), thr.unit)
 
             permits, worker_ids = [], []
             if r:
-                if r.get("hot_work", "").lower() in _TRUE:
+                hw = r.get("hot_work", "")
+                if hw.lower() in _TRUE or _num(hw) == 1:
                     permits.append(Permit(f"CSV-HW-{zid}", PermitType.HOT_WORK, zid, [], t, 1,
                                           "ingested hot-work permit"))
-                try:
-                    n = int(float(r.get("personnel", "0") or 0))
-                except ValueError:
-                    n = 0
+                n = int(_num(r.get("personnel", "0")) or 0)
                 worker_ids = [f"{zid}-P{i + 1}" for i in range(max(0, n))]
 
             zones[zid] = ZoneState(zid, spec.name, spec.kind, spec.x, spec.y, gases,
@@ -100,8 +185,8 @@ def parse_csv(text: str) -> tuple[list[PlantSnapshot], dict]:
                                        zones=zones, permits=all_permits, workers=[]))
 
     meta = {"rows": n_rows, "minutes_ingested": len(snapshots)}
-    if bad_zones:
-        meta["ignored_zones"] = sorted(bad_zones)
+    if remapped:
+        meta["remapped_zones"] = sorted(remapped)
     return snapshots, meta
 
 
@@ -229,6 +314,9 @@ AIR_QUALITY = {
     "file": "airquality_co_devito2008.csv",
     "zone": "COB-1",
     "scale_ppm_per_mg": 6.0,   # real CO mg/m^3 -> plant ppm band: peak 11.9 -> ~71 ppm (~1.4x the 50 ppm CO alarm)
+    "channel_col": "CO",       # which plant gas column this dataset's values map onto
+    "convert": 6.0,            # value -> column units. De Vito: a CHOSEN y-scale (disclosed + swept below)
+    "sweep_kind": "y-scale",   # the convert IS a free y-scale here -> we publish the lead-vs-scale sweep
     "hot_work": True,
     "personnel": 3,
     "window": "23 Nov 2004 05:00 -> 24 Nov 2004 01:00 (21 hourly samples)",
@@ -261,20 +349,28 @@ def external_series(key: str) -> list[tuple[str, float]]:
     return _load_external_series(EXTERNAL_DATASETS[key]["file"])
 
 
-def external_csv(key: str, scale: float | None = None) -> str:
-    """Build a SCADA CSV from a REAL external measurement: the dataset's CO dynamics on the CO
-    channel (linearly scaled to the plant ppm band) plus the stated hot-work + personnel context.
-    One real hour -> one row. Fed through the same parse_csv the connector uses. `scale` overrides
-    the dataset's default y-scale (used by the lead-vs-scale honesty sweep)."""
+def external_csv(key: str, convert: float | None = None) -> str:
+    """Build a SCADA CSV from an external source: the dataset's dynamics written onto ITS declared
+    gas channel (channel_col), converted to plant units (convert), plus the stated hot-work +
+    personnel context. One source sample -> one row. Fed through the same parse_csv the connector
+    uses. `convert` overrides the dataset's default conversion (used by the lead-vs-scale sweep).
+
+    Generalised so a new dataset just declares channel_col + convert: De Vito writes CO at a chosen
+    y-scale (convert=6); an ALOHA methane curve writes CH4 at the FIXED ppm->%LEL constant
+    (convert=1/500, no free parameter). De Vito output is byte-identical to the prior CO-only code."""
     ds = EXTERNAL_DATASETS[key]
     series = _load_external_series(ds["file"])
-    k = ds["scale_ppm_per_mg"] if scale is None else scale
+    col = ds.get("channel_col", "CO")
+    k = convert if convert is not None else ds.get("convert", ds.get("scale_ppm_per_mg", 1.0))
     out = io.StringIO()
     w = csv.writer(out)
-    w.writerow(["t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"])
+    cols = ["CH4", "CO", "H2S", "O2"]
+    w.writerow(["t_min", "zone", *cols, "hot_work", "personnel"])
     for t, (_dt, val) in enumerate(series):
-        ppm = round(val * k, 1)
-        w.writerow([t, ds["zone"], "", ppm, "", "", 1 if ds["hot_work"] else 0, ds["personnel"]])
+        gas = {c: "" for c in cols}
+        gas[col] = round(val * k, 1)
+        w.writerow([t, ds["zone"], gas["CH4"], gas["CO"], gas["H2S"], gas["O2"],
+                    1 if ds["hot_work"] else 0, ds["personnel"]])
     return out.getvalue()
 
 
@@ -285,10 +381,13 @@ def external_lead_sweep(key: str, scales=(5, 6, 7, 8, 10, 12)) -> list[dict]:
     (being relative to the baseline) is scale-sensitive — so the disclosed scale is one honest choice,
     not a cherry-pick."""
     from .engine import CompoundRiskEngine
-    zone = EXTERNAL_DATASETS[key]["zone"]
+    ds = EXTERNAL_DATASETS[key]
+    if ds.get("sweep_kind") != "y-scale":
+        return []  # the conversion is fixed physics (e.g. ALOHA ppm->%LEL) — no y-scale to sweep
+    zone = ds["zone"]
     rows: list[dict] = []
     for k in scales:
-        snaps, _ = parse_csv(external_csv(key, scale=k))
+        snaps, _ = parse_csv(external_csv(key, convert=k))
         eng = CompoundRiskEngine(compute_confidence=False)
         comp = single = None
         for s in snaps:
