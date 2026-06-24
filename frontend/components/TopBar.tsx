@@ -2,6 +2,7 @@ import { Level } from "@/lib/types";
 import { levelColor, levelLabel } from "@/lib/risk";
 import { Logo } from "./Logo";
 import { SafetyIntelligence } from "./SafetyIntelligence";
+import { LiveIngest } from "./LiveIngest";
 
 export function TopBar({
   tMin,
@@ -47,6 +48,7 @@ export function TopBar({
           </span>
         )}
         <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} zone={zone} />
+        <LiveIngest />
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}
