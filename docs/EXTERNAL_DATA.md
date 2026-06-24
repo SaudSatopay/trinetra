@@ -29,11 +29,31 @@
 | **Real (the dataset's, untouched)** | the CO concentration **trajectory** — the rise, the genuine dips, the timing, the measurement noise. This is the hard part to author convincingly, and it is not authored here. |
 | **Overlaid (stated, applied in code)** | (1) a linear **y-scale ×6** mapping the dataset's mg/m³ range onto the plant's ppm band (peak 11.9 → ~71 ppm ≈ 1.4× the 50 ppm CO alarm); (2) **1 hour → 1 minute** on the time axis; (3) a **hot-work permit + 3 personnel** context the air-quality dataset has no notion of (Trinetra's compound layer needs ignition + exposure); (4) mapped to zone **COB-1**. |
 
-The scaling does **not** manufacture the result. The lead time is **scale-invariant**: compound fires at
-`flam_level = 0.5×` the alarm and the single-sensor at `1.0×`, so the gap depends only on the real data's
-**shape** and the alarm ratio — multiply every value by any constant and the two crossing-minutes move
-together. The ×6 only decides *whether* the trace reaches plant-hazard magnitude at all; at the true
-ambient scale (~10 ppm peak) the engine correctly reads this as non-hazardous.
+### On the y-scale, and an honest correction
+
+An earlier version of this doc claimed the lead is "scale-invariant." **That was wrong, and we correct it
+here rather than bury it.** The compound **detection time is** scale-robust — it fires at a near-constant
+**T+2–4** across every scale, because it triggers at a fixed 0.5×-of-alarm fraction of a rising signal —
+but the **lead in minutes is *not* scale-invariant**, because the lead is measured against the
+single-sensor baseline, whose alarm time *is* scale-sensitive: a higher scale lifts the real midday CO
+plateau (~5–7 mg/m³) over the 50 ppm setpoint, so the baseline alarms earlier and the gap shrinks. We run
+the **same** real series through the **same** engine across a sweep of scales and publish it
+(`/api/external/air-quality` → `lead_by_scale`; reproduce it yourself):
+
+| y-scale (×) | compound alert | single-sensor alarm | lead (min) |
+|---|---|---|---|
+| 5 | T+4 | T+13 | 9 |
+| **6 (shipped)** | **T+3** | **T+13** | **10** |
+| 7 | T+3 | T+9 | 6 |
+| 8 | T+3 | T+5 | 2 |
+| 10 | T+3 | T+4 | 1 |
+| 12 | T+2 | T+3 | 1 |
+
+Read it honestly: **Trinetra's early detection is the scale-robust part** (T+2–4 everywhere); the headline
+"+10" is the lead *at our disclosed ×6*, and ×6 — chosen so the peak reaches ~1.4× the alarm (a moderate
+leak) — happens to also sit near the top of the lead range. So we don't quote the lead as a fixed property;
+we show the whole sweep and let you pick the scale. At the *true* ambient scale (~10 ppm peak, ×0.87) the
+engine correctly reads this trace as non-hazardous and stays silent.
 
 ## The result (reproduce: `GET /api/external/air-quality`)
 

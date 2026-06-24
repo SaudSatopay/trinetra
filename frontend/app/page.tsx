@@ -378,10 +378,23 @@ export default function Page() {
             </span>
             <span className="font-display text-[12.5px] font-semibold text-ink-bright">{external.dataset}</span>
             <span className="font-mono text-[10px] text-ink-dim">{external.source}</span>
-            {external.lead_min != null && (
+            {external.trinetra_alert_min != null && (
               <span className="font-mono text-[10px]" style={{ color: "var(--brand)" }}>
-                Trinetra alert T+{external.trinetra_alert_min} · single-sensor T+{external.single_sensor_min} →{" "}
-                <span className="font-bold">{external.lead_min} min earlier</span>
+                Trinetra detects <span className="font-bold">T+{external.trinetra_alert_min}</span>
+                {external.lead_min != null && <> · +{external.lead_min} vs single-sensor @×{external.shipped_scale}</>}
+              </span>
+            )}
+            {external.lead_by_scale && external.lead_by_scale.length > 0 && (
+              <span
+                className="cursor-help font-mono text-[9px] text-ink-dim underline decoration-dotted underline-offset-2"
+                title={
+                  "Honesty: detection is scale-robust (T+2-4 every scale); the LEAD is baseline-relative, so it is scale-sensitive. Same data, same engine:\n" +
+                  external.lead_by_scale
+                    .map((r) => `  x${r.scale}${r.scale === external.shipped_scale ? " (shipped)" : ""}: detect T+${r.compound_min}, single-sensor T+${r.single_sensor_min}, lead ${r.lead_min} min`)
+                    .join("\n")
+                }
+              >
+                lead varies by y-scale ⓘ
               </span>
             )}
             <span className="font-mono text-[9px] text-ink-dim" title={`overlaid: ${external.overlaid}`}>

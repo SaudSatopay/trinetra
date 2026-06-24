@@ -212,9 +212,13 @@ def jaipur_csv() -> str:
 # data, so 100/0 only proves self-consistency." Here a channel's DYNAMICS come from a real,
 # peer-reviewed, third-party measurement (NOT our ramp()) and flow through the SAME parse_csv
 # connector and the SAME untuned engine. The committed slice (app/data/) carries the raw values
-# so anyone can diff them against the public dataset. What is real vs overlaid is stated, and the
-# lead time is scale-invariant: compound fires at flam_level 0.5x the alarm, single-sensor at 1.0x,
-# so the gap follows from the real data's SHAPE and the alarm ratio, not from any magnitude we chose.
+# so anyone can diff them against the public dataset. What is real vs overlaid is stated. HONESTY NOTE:
+# the compound *detection* time is scale-robust (it fires at a near-constant T+2..4 across every y-scale
+# we tried, because it triggers at a fixed 0.5x-of-alarm fraction of a rising signal); the *lead in
+# minutes* is NOT scale-invariant — it is measured against the single-sensor baseline, whose alarm time
+# IS scale-sensitive (a higher scale lifts the real midday plateau over the 50 ppm setpoint so the
+# baseline alarms earlier). We disclose our scale (x6, chosen for magnitude: peak ~1.4x alarm) and
+# publish the full lead-vs-scale sweep (external_lead_sweep) rather than quote the flattering number.
 AIR_QUALITY = {
     "key": "air-quality",
     "label": "Air Quality - De Vito 2008",
@@ -257,16 +261,43 @@ def external_series(key: str) -> list[tuple[str, float]]:
     return _load_external_series(EXTERNAL_DATASETS[key]["file"])
 
 
-def external_csv(key: str) -> str:
+def external_csv(key: str, scale: float | None = None) -> str:
     """Build a SCADA CSV from a REAL external measurement: the dataset's CO dynamics on the CO
     channel (linearly scaled to the plant ppm band) plus the stated hot-work + personnel context.
-    One real hour -> one row. Fed through the same parse_csv the connector uses."""
+    One real hour -> one row. Fed through the same parse_csv the connector uses. `scale` overrides
+    the dataset's default y-scale (used by the lead-vs-scale honesty sweep)."""
     ds = EXTERNAL_DATASETS[key]
     series = _load_external_series(ds["file"])
+    k = ds["scale_ppm_per_mg"] if scale is None else scale
     out = io.StringIO()
     w = csv.writer(out)
     w.writerow(["t_min", "zone", "CH4", "CO", "H2S", "O2", "hot_work", "personnel"])
     for t, (_dt, val) in enumerate(series):
-        ppm = round(val * ds["scale_ppm_per_mg"], 1)
+        ppm = round(val * k, 1)
         w.writerow([t, ds["zone"], "", ppm, "", "", 1 if ds["hot_work"] else 0, ds["personnel"]])
     return out.getvalue()
+
+
+def external_lead_sweep(key: str, scales=(5, 6, 7, 8, 10, 12)) -> list[dict]:
+    """The honesty exhibit: run the SAME real series through the SAME engine at a range of y-scales
+    and report when the compound alert fires, when the single-sensor baseline alarms, and the lead.
+    Shows transparently that compound *detection* is scale-robust (near-constant) while the *lead*
+    (being relative to the baseline) is scale-sensitive — so the disclosed scale is one honest choice,
+    not a cherry-pick."""
+    from .engine import CompoundRiskEngine
+    zone = EXTERNAL_DATASETS[key]["zone"]
+    rows: list[dict] = []
+    for k in scales:
+        snaps, _ = parse_csv(external_csv(key, scale=k))
+        eng = CompoundRiskEngine(compute_confidence=False)
+        comp = single = None
+        for s in snaps:
+            zr = eng.assess(s)[zone]
+            z = s.zones[zone]
+            if comp is None and zr.compound and zr.level.rank >= 2:
+                comp = int(s.t_min)
+            if single is None and any(GAS_THRESHOLDS[sp].in_alarm(r.value) for sp, r in z.gases.items()):
+                single = int(s.t_min)
+        rows.append({"scale": k, "compound_min": comp, "single_sensor_min": single,
+                     "lead_min": (single - comp) if (comp is not None and single is not None) else None})
+    return rows

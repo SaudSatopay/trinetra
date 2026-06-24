@@ -117,6 +117,8 @@ export interface ExternalReplay {
   lead_min: number | null;
   peak_co_ppm: number | null;
   samples: number;
+  shipped_scale: number;
+  lead_by_scale: { scale: number; compound_min: number | null; single_sensor_min: number | null; lead_min: number | null }[];
 }
 
 export async function getExternal(key: string): Promise<ExternalReplay> {

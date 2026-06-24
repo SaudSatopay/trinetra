@@ -34,8 +34,8 @@ from ..fleet import fleet_overview
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..permit_gate import evaluate_permit
-from ..replay import (INCIDENT_REPLAYS, EXTERNAL_DATASETS, external_csv, external_series,
-                      jaipur_csv, parse_csv, sample_csv, texas_city_csv)
+from ..replay import (INCIDENT_REPLAYS, EXTERNAL_DATASETS, external_csv, external_lead_sweep,
+                      external_series, jaipur_csv, parse_csv, sample_csv, texas_city_csv)
 from ..scenarios import SCENARIOS, Scenario, ramp
 from ..simulator import PlantSimulator
 from .serialize import plant_layout, serialize_frame
@@ -275,6 +275,8 @@ def _external_replay(key: str) -> dict:
         "trinetra_alert_min": alert_min, "single_sensor_min": single_min,
         "lead_min": (single_min - alert_min) if (alert_min is not None and single_min is not None) else None,
         "peak_co_ppm": peak_ppm, "samples": len(external_series(key)), "rows": meta["rows"],
+        # honesty exhibit: detection is scale-robust, the lead (baseline-relative) is scale-sensitive
+        "shipped_scale": ds["scale_ppm_per_mg"], "lead_by_scale": external_lead_sweep(key),
     }
 
 
