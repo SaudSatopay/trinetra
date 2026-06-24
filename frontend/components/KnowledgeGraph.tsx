@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import { MainView } from "@/lib/types";
 import { ViewToggle } from "./ViewToggle";
@@ -29,7 +29,7 @@ const TYPE_COLOR: Record<string, string> = {
   hazard: "var(--lvl-critical)",
   precursor: "var(--brand)",
   gas: "var(--lvl-watch)",
-  permit: "var(--lvl-normal)",
+  permit: "var(--good)",
   incident: "var(--text-dim)",
   zone: "var(--lvl-elevated)",
 };
@@ -91,6 +91,18 @@ function layout(nodes: KGNode[]): Record<string, { x: number; y: number }> {
 
 export function KnowledgeGraph({ view, onView }: { view: MainView; onView: (v: MainView) => void }) {
   const [kg, setKg] = useState<KG | null>(null);
+  const [hover, setHover] = useState<string | null>(null);
+  const [k, setK] = useState(1);
+  const [tx, setTx] = useState(0);
+  const [ty, setTy] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const drag = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null);
+  const st = useRef({ k: 1, tx: 0, ty: 0 });
+
+  useEffect(() => {
+    st.current = { k, tx, ty };
+  }, [k, tx, ty]);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/knowledge-graph`)
@@ -98,6 +110,63 @@ export function KnowledgeGraph({ view, onView }: { view: MainView; onView: (v: M
       .then((d) => !d.error && setKg(d))
       .catch(() => {});
   }, []);
+
+  const toVB = useCallback((cx: number, cy: number) => {
+    const svg = svgRef.current;
+    const ctm = svg?.getScreenCTM();
+    if (!svg || !ctm) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = cx;
+    pt.y = cy;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }, []);
+
+  // wheel-to-zoom toward the cursor — native non-passive listener so preventDefault works
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const { x: vx, y: vy } = toVB(e.clientX, e.clientY);
+      const { k: pk, tx: ptx, ty: pty } = st.current;
+      const nk = Math.min(4.5, Math.max(0.55, pk * (e.deltaY < 0 ? 1.16 : 1 / 1.16)));
+      setK(nk);
+      setTx(vx - ((vx - ptx) / pk) * nk);
+      setTy(vy - ((vy - pty) / pk) * nk);
+    };
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
+  }, [toVB]);
+
+  const onDown = (e: React.PointerEvent) => {
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, tx, ty };
+    setDragging(true);
+  };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current) return;
+    const a = svgRef.current?.getScreenCTM()?.a || 1;
+    setTx(drag.current.tx + (e.clientX - drag.current.x) / a);
+    setTy(drag.current.ty + (e.clientY - drag.current.y) / a);
+  };
+  const onUp = () => {
+    drag.current = null;
+    setDragging(false);
+  };
+  const zoom = (f: number) => {
+    const { k: pk } = st.current;
+    const nk = Math.min(4.5, Math.max(0.55, pk * f));
+    // zoom about the centre of the canvas
+    setTx((p) => W / 2 - ((W / 2 - p) / pk) * nk);
+    setTy((p) => H / 2 - ((H / 2 - p) / pk) * nk);
+    setK(nk);
+  };
+  const reset = () => {
+    setK(1);
+    setTx(0);
+    setTy(0);
+  };
 
   const pos = kg ? layout(kg.nodes) : {};
 
@@ -114,61 +183,126 @@ export function KnowledgeGraph({ view, onView }: { view: MainView; onView: (v: M
       </div>
 
       <div className="relative min-h-0 flex-1 p-3">
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className="h-full w-full">
-          {kg?.edges.map((e, i) => {
-            const a = pos[e.source];
-            const b = pos[e.target];
-            if (!a || !b) return null;
-            const toHazard = e.target === HAZARD;
-            return (
-              <line
-                key={i}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke={toHazard ? "var(--lvl-critical)" : "var(--line-2)"}
-                strokeWidth={toHazard ? 1.4 : 1}
-                opacity={toHazard ? 0.45 : 0.22}
-              />
-            );
-          })}
-          {kg?.nodes.map((n) => {
-            const p = pos[n.id];
-            if (!p) return null;
-            const col = TYPE_COLOR[n.type] ?? "var(--text-dim)";
-            const hazard = n.type === "hazard";
-            const label = short(n);
-            const w = hazard ? 176 : Math.max(58, label.length * 7 + 18);
-            const h = hazard ? 46 : 27;
-            return (
-              <g key={n.id} transform={`translate(${p.x - w / 2}, ${p.y - h / 2})`}>
-                <title>{n.label}</title>
-                <rect
-                  width={w}
-                  height={h}
-                  rx={hazard ? 9 : 6}
-                  fill={`color-mix(in srgb, ${col} ${hazard ? 24 : 11}%, var(--panel))`}
-                  stroke={col}
-                  strokeWidth={hazard ? 1.7 : 1}
-                  style={hazard ? { filter: `drop-shadow(0 0 12px ${col})` } : undefined}
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="h-full w-full touch-none select-none"
+          style={{ cursor: dragging ? "grabbing" : "grab" }}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerLeave={onUp}
+        >
+          <g transform={`translate(${tx} ${ty}) scale(${k})`}>
+            {kg?.edges.map((e, i) => {
+              const a = pos[e.source];
+              const b = pos[e.target];
+              if (!a || !b) return null;
+              const toHazard = e.target === HAZARD;
+              const lit = !!hover && (e.source === hover || e.target === hover);
+              return (
+                <line
+                  key={i}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke={lit ? "var(--brand)" : toHazard ? "var(--lvl-critical)" : "var(--line-2)"}
+                  strokeWidth={lit ? 1.9 : toHazard ? 1.4 : 1}
+                  opacity={lit ? 0.92 : toHazard ? 0.45 : hover ? 0.12 : 0.22}
+                  style={{ transition: "stroke .15s ease, opacity .15s ease" }}
                 />
-                <text
-                  x={w / 2}
-                  y={h / 2 + 0.5}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={hazard ? 12.5 : 10}
-                  fontWeight={hazard ? 700 : 500}
-                  fill={hazard ? "var(--text-bright)" : "var(--text)"}
-                  style={{ fontFamily: "var(--font-mono)", letterSpacing: hazard ? "0.06em" : "0" }}
+              );
+            })}
+            {kg?.nodes.map((n) => {
+              const p = pos[n.id];
+              if (!p) return null;
+              const col = TYPE_COLOR[n.type] ?? "var(--text-dim)";
+              const hazard = n.type === "hazard";
+              const label = short(n);
+              const isH = hover === n.id;
+              const w = hazard ? 176 : Math.max(58, label.length * 7 + 18);
+              const h = hazard ? 46 : 27;
+              const full = n.label.replace(/_/g, " ");
+              return (
+                <g
+                  key={n.id}
+                  transform={`translate(${p.x} ${p.y}) scale(${isH ? 1.16 : 1})`}
+                  onMouseEnter={() => setHover(n.id)}
+                  onMouseLeave={() => setHover((cur) => (cur === n.id ? null : cur))}
+                  style={{ transition: "transform .18s cubic-bezier(.34,1.3,.5,1)" }}
                 >
-                  {label}
-                </text>
-              </g>
-            );
-          })}
+                  <rect
+                    x={-w / 2}
+                    y={-h / 2}
+                    width={w}
+                    height={h}
+                    rx={hazard ? 9 : 6}
+                    fill={`color-mix(in srgb, ${col} ${hazard ? 24 : isH ? 20 : 11}%, var(--panel))`}
+                    stroke={col}
+                    strokeWidth={isH ? (hazard ? 2.3 : 1.8) : hazard ? 1.7 : 1}
+                    style={{
+                      filter: hazard || isH ? `drop-shadow(0 0 ${isH ? 15 : 12}px ${col})` : undefined,
+                      transition: "fill .15s ease, stroke-width .12s ease",
+                    }}
+                  />
+                  <text
+                    x={0}
+                    y={0.5}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={hazard ? 12.5 : 10}
+                    fontWeight={hazard ? 700 : 500}
+                    fill={hazard || isH ? "var(--text-bright)" : "var(--text)"}
+                    style={{ fontFamily: "var(--font-mono)", letterSpacing: hazard ? "0.06em" : "0" }}
+                  >
+                    {label}
+                  </text>
+                  {isH && full && full.toLowerCase() !== label.toLowerCase() && (
+                    <text
+                      x={0}
+                      y={h / 2 + 10}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fill="var(--text-dim)"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      {n.type} · {full.length > 44 ? full.slice(0, 44) + "…" : full}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
         </svg>
+
+        {/* zoom controls */}
+        <div className="absolute right-4 top-4 flex flex-col gap-1.5">
+          {([["+", () => zoom(1.25)], ["−", () => zoom(1 / 1.25)]] as [string, () => void][]).map(([t, fn]) => (
+            <button
+              key={t}
+              onClick={fn}
+              className="lift flex h-7 w-7 items-center justify-center rounded-md font-mono text-base leading-none"
+              style={{ background: "var(--panel)", border: "1px solid var(--line-2)", color: "var(--text)" }}
+            >
+              {t}
+            </button>
+          ))}
+          <button
+            onClick={reset}
+            className="lift flex h-7 w-7 items-center justify-center rounded-md font-mono text-[8px] uppercase tracking-wider"
+            style={{ background: "var(--panel)", border: "1px solid var(--line-2)", color: "var(--text-dim)" }}
+          >
+            fit
+          </button>
+        </div>
+        <span
+          className="pointer-events-none absolute bottom-3 left-5 font-mono text-[9px]"
+          style={{ color: "color-mix(in srgb, var(--text-dim) 70%, transparent)" }}
+        >
+          scroll to zoom · drag to pan{Math.abs(k - 1) > 0.01 ? ` · ${k.toFixed(1)}×` : ""}
+        </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-line px-6 py-2.5">

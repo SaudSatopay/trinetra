@@ -15,6 +15,7 @@ import { CCTVTile } from "@/components/CCTVTile";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { FleetView } from "@/components/FleetView";
+import { SweepChart } from "@/components/SweepChart";
 import { boothAudio, BOOTH_STEPS, EVAC_LINE } from "@/lib/booth";
 
 export default function Page() {
@@ -384,18 +385,8 @@ export default function Page() {
                 {external.lead_min != null && <> · +{external.lead_min} vs single-sensor @×{external.shipped_scale}</>}
               </span>
             )}
-            {external.lead_by_scale && external.lead_by_scale.length > 0 && (
-              <span
-                className="cursor-help font-mono text-[9px] text-ink-dim underline decoration-dotted underline-offset-2"
-                title={
-                  "Honesty: detection is scale-robust (T+2-4 every scale); the LEAD is baseline-relative, so it is scale-sensitive. Same data, same engine:\n" +
-                  external.lead_by_scale
-                    .map((r) => `  x${r.scale}${r.scale === external.shipped_scale ? " (shipped)" : ""}: detect T+${r.compound_min}, single-sensor T+${r.single_sensor_min}, lead ${r.lead_min} min`)
-                    .join("\n")
-                }
-              >
-                lead varies by y-scale ⓘ
-              </span>
+            {external.lead_by_scale && external.lead_by_scale.length > 1 && (
+              <SweepChart rows={external.lead_by_scale} shipped={external.shipped_scale} />
             )}
             <span className="font-mono text-[9px] text-ink-dim" title={`overlaid: ${external.overlaid}`}>
               real: {external.channel} — engine untuned; only the y-scale + permit context are overlaid

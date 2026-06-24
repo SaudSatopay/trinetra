@@ -15,8 +15,10 @@
   --text-bright: #f7efe1;
   --brand: #ff6a1a;
   --brand-glow: rgba(255, 106, 26, 0.34);
-  --lvl-normal: #6b7886;    /* cold steel — the calm resting state */
-  --lvl-watch: #efc23c;     /* caution */
+  --good: #3fc77d;          /* signal-lamp green — the "SAFE / RUN" console lamp */
+  --good-glow: rgba(63, 199, 125, 0.34);
+  --lvl-normal: #3fc77d;    /* GOOD = GREEN — an all-clear, actively-safe zone */
+  --lvl-watch: #efc23c;     /* caution — the ramp starts to heat */
   --lvl-elevated: #f5902b;  /* amber */
   --lvl-high: #f4552a;      /* molten */
   --lvl-critical: #ff2b4e;  /* danger */
@@ -189,6 +191,47 @@ main {
   animation: rise-in 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
+/* magic pass — a tile grows + lifts on hover, with a hairline brand glow */
+.lift {
+  transition: transform 0.26s cubic-bezier(0.34, 1.2, 0.4, 1), box-shadow 0.26s ease,
+    border-color 0.26s ease, filter 0.26s ease;
+}
+.lift:hover {
+  transform: translateY(-3px) scale(1.022);
+  box-shadow: 0 20px 44px -24px rgba(0, 0, 0, 0.85),
+    0 0 0 1px color-mix(in srgb, var(--brand) 26%, transparent);
+  filter: brightness(1.05);
+  z-index: 20;
+}
+/* detail that unfurls when its tile is hovered (hidden until then) */
+.reveal {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.34s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.26s ease, margin-top 0.3s ease;
+}
+.lift:hover .reveal,
+.peek:hover .reveal {
+  max-height: 110px;
+  opacity: 1;
+}
+/* the GOOD/all-clear green breath + a one-shot money-shot flash */
+.good-glow {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--good) 32%, transparent), 0 0 28px -6px var(--good-glow);
+}
+@keyframes money-flash {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  18% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
+}
+.money-flash {
+  animation: money-flash 1.1s cubic-bezier(0, 0.5, 0.3, 1) forwards;
+}
+@keyframes count-tick {
+  0% { transform: translateY(0.18em); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flow-line,
   .soft-pulse,
@@ -197,11 +240,14 @@ main {
   .shockwave,
   .response-charge,
   .attn-ring,
-  .stagger-in {
+  .stagger-in,
+  .money-flash {
     animation: none;
     opacity: 1;
   }
-  .card-hover {
+  .card-hover,
+  .lift,
+  .reveal {
     transition: none;
   }
 }
