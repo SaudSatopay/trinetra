@@ -7,6 +7,7 @@
 # (skips the live model path) while recording the demo.
 
 $ErrorActionPreference = "Stop"
+$env:PYTHONUTF8 = "1"                              # UTF-8 stdio so harness banners don't mojibake on cp1252
 $root = Split-Path -Parent $PSScriptRoot          # repo root (scripts/ -> ..)
 $backend = Join-Path $root "backend"
 $frontend = Join-Path $root "frontend"

@@ -178,7 +178,7 @@ def main() -> bool:
 
     print(f"  Held-out set : {N_POSITIVE} randomized compound hazards + {N_NEGATIVE} randomized decoys")
     print(f"                 (random zone / gas / ramp / peak / permit timing / ignition locality / crew;")
-    print(f"                  a quarter of the decoys are 'inerted' hard negatives — all three factors")
+    print(f"                  a quarter of the decoys are 'inerted' hard negatives - all three factors")
     print(f"                  present but no oxidizer; simulator seeds 100+, never the seed-42 tuning set)")
     print("-" * 80)
     print(f"  Compound recall        : {recall:6.1%}   ({tp}/{tp + fn})")

@@ -214,7 +214,7 @@ def main():
     print(f"    False-positive rate       : {fpr:6.1%}   ({fp}/{fp + tn} benign scenarios)")
     print(f"    Precision                 : {precision:6.1%}")
     print(f"    Hardest negatives         : 3 inerted decoys carry ALL three compound factors")
-    print(f"                                (gas + ignition + crew) yet are safe — no oxidizer, no")
+    print(f"                                (gas + ignition + crew) yet are safe - no oxidizer, no")
     print(f"                                explosion; held as true negatives on physics, not rules")
     print(f"    False-negative reduction  : {recall:6.1%} of compound hazards the single-sensor")
     print(f"                                baseline is blind to until the gas crosses its setpoint")
