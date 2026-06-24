@@ -1,6 +1,6 @@
 """Robustness checks: how the compound engine behaves under sensor/permit faults.
 
-Judges reliably ask "what about bad or missing data?". This exercises nine realistic
+Judges reliably ask "what about bad or missing data?". This exercises ten realistic
 fault modes against the deterministic engine and asserts sensible behaviour:
 
   1. Stuck (frozen-high) sensor, no context      -> must NOT raise a compound alert
@@ -12,6 +12,7 @@ fault modes against the deterministic engine and asserts sensible behaviour:
   7. Inerted entry WITH supplied air              -> no compound (genuinely safe)
   8. Faulty-low O2 mid-incident                   -> explosion alert NOT silently suppressed
   9. Transient single-sample low O2 (occupied)    -> no phantom asphyxiation (persistence gate)
+ 10. Cold-start single low-O2 row (no history)    -> no phantom asphyxiation (fail-closed gate)
 
 (Missing CCTV is handled at the API layer: /api/vision degrades to an error object
 and the engine never depends on CV — personnel come from the permit-to-work system.)
@@ -142,6 +143,16 @@ def main() -> bool:
     hits = compound_minutes(o2_blip, "CST-2")
     results.append(case("Transient single-sample low O2 (occupied) -> no phantom asphyxiation",
                         hits == [], f"compound minutes = {hits or 'none'} (expected none)"))
+
+    # 10. Cold start: the FIRST sample a zone ever sees is a low O2 reading (e.g. the first row of an
+    #     ingested SCADA CSV). With no prior sample to confirm a depleting trend, a single low O2 must
+    #     NOT fabricate an asphyxiation compound — the persistence gate fails CLOSED on cold start
+    #     (a genuine deficiency persists and fires on the next sample, so recall is preserved).
+    from app.replay import parse_csv
+    cold_snaps, _ = parse_csv("t_min,zone,CH4,CO,H2S,O2,hot_work,personnel\n0,CST-2,,,,12,,2\n")
+    cold_zr = CompoundRiskEngine().assess(cold_snaps[0])["CST-2"]
+    results.append(case("Cold-start single low-O2 row (no history) -> no phantom asphyxiation",
+                        not cold_zr.compound, f"frame0 compound={cold_zr.compound} (expected False)"))
 
     print("\n  " + ("ALL ROBUSTNESS CHECKS PASSED" if all(results) else "SOME CHECKS FAILED"))
     return all(results)

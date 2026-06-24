@@ -102,7 +102,7 @@ Reconstructing the conditions of the **13 January 2025 Visakhapatnam coke-oven-b
 
 ## Robustness (fault modes)
 
-Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under nine fault modes:
+Real plants have flaky sensors and out-of-sync permits. A dedicated check (`backend/test_robustness.py`) asserts the engine behaves under ten fault modes:
 
 | Fault mode | Expected & verified behaviour |
 |---|---|
@@ -115,6 +115,7 @@ Real plants have flaky sensors and out-of-sync permits. A dedicated check (`back
 | Inerted entry WITH supplied air | No compound — no oxidizer for an explosion AND the crew is protected; the engine reads the supplied-air permit, it doesn't just count three factors |
 | Faulty-low O2 mid-incident | Explosion alert **not** suppressed — a lone low O2 with no inerting context is treated as a suspect sensor, so one bad reading can't silently hide a real hazard |
 | Transient single-sample low O2 (occupied zone) | **No phantom asphyxiation** — the asphyxiation leg requires a *sustained* deficiency, so a one-sample O2 dropout doesn't fabricate a CRITICAL (symmetric with the flammable level-and-trend leg) |
+| Cold-start low O2 (first row of an ingested feed, no history) | **No phantom asphyxiation** — with no prior sample to confirm a depleting trend the persistence gate **fails closed**; a genuine deficiency persists and fires on the next sample, so recall is preserved |
 
 > Reproduce: `cd backend && python test_robustness.py`
 

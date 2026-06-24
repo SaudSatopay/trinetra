@@ -374,7 +374,7 @@ GitHub Actions runs the full suite on every push (badge above):
 cd backend
 python benchmark.py            # 100% recall / 0% FP / 7.4 min
 python ablation.py             # 67% → 0% false alarms
-python test_robustness.py      # 9 sensor/permit fault modes
+python test_robustness.py      # 10 sensor/permit fault modes
 python test_generalization.py  # 240 held-out scenarios
 python smoke_api.py            # REST + WebSocket smoke
 ```
