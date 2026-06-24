@@ -1,4 +1,4 @@
-import { FleetOverview, Frame, Plant, ScenarioInfo } from "./types";
+import { FleetOverview, FleetScale, Frame, Plant, ScenarioInfo } from "./types";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
@@ -46,6 +46,7 @@ export async function retryFetch(path: string, init?: RequestInit, retries = 2):
 export const getPlant = () => j<Plant>("/api/plant");
 export const getScenarios = () => j<ScenarioInfo[]>("/api/scenarios");
 export const getFleet = () => j<FleetOverview>("/api/fleet");
+export const getFleetScale = () => j<FleetScale>("/api/fleet/scale");
 
 export async function getFrames(scenario: string, minutes = 50): Promise<Frame[]> {
   const data = await j<{ frames: Frame[] }>(`/api/frames/${scenario}?minutes=${minutes}`);

@@ -30,7 +30,7 @@ from ..domain import IGNITION_PERMITS, Permit, PermitType, RiskLevel, Worker
 from ..compliance import audit as compliance_audit
 from ..engine import CompoundRiskEngine
 from ..feedback import overview as feedback_overview, record as feedback_record, reset as feedback_reset
-from ..fleet import fleet_overview
+from ..fleet import fleet_overview, measure_scale
 from ..impact import compute_impact, parse_toll
 from ..kg import kg_export
 from ..permit_gate import evaluate_permit
@@ -751,6 +751,21 @@ def fleet():
     return _fleet_cache
 
 
+_fleet_scale_cache: dict | None = None
+
+
+@app.get("/api/fleet/scale")
+def fleet_scale():
+    """Measured scale economics: time one engine instance assessing a whole plant over a
+    representative snapshot pool (p50/p99 + sustained rate), then derive plants-per-core at
+    1 Hz and a $/plant/month cost curve. Measured, not asserted; each plant is a stateless
+    shard, so the fleet scales horizontally (linear, no coordination)."""
+    global _fleet_scale_cache
+    if _fleet_scale_cache is None:
+        _fleet_scale_cache = measure_scale()
+    return _fleet_scale_cache
+
+
 @app.on_event("startup")
 def _prewarm_caches():
     """Warm the hero-scenario caches in the background so the first demo open is
@@ -766,6 +781,7 @@ def _prewarm_caches():
             (vision, ()),
             (premortem, ()),
             (fleet, ()),
+            (fleet_scale, ()),
         ):
             try:
                 fn(*args)

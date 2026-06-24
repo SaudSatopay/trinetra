@@ -28,13 +28,49 @@ export interface FleetOverview {
     sites: number;
     in_alert: number;
     critical: number;
+    compound_sites: number;
     compound_alerts: number;
     workers_monitored: number;
     workers_exposed: number;
     zones_monitored: number;
+    sensors_monitored: number;
     max_lead_min: number | null;
   };
   scale: { engine: string; per_site: string; note: string };
+}
+
+export interface FleetCostRow {
+  plants: number;
+  cores: number;
+  total_usd_mo: number;
+  per_plant_usd_mo: number;
+}
+
+// Measured scale economics from /api/fleet/scale — timed, not asserted.
+export interface FleetScale {
+  n_plants: number;
+  zones_per_plant: number;
+  tags_per_zone: number;
+  total_sensors: number;
+  measured: {
+    p50_ms: number;
+    p99_ms: number;
+    mean_ms: number;
+    assessments_per_sec: number;
+    iters: number;
+    pool_size: number;
+  };
+  provisioning: {
+    core_cost_usd_mo: number;
+    headroom_x: number;
+    plants_per_core_1hz: number;
+    cores_for_fleet: number;
+    fleet_cost_usd_mo: number;
+    fleet_per_plant_usd_mo: number;
+  };
+  cost_curve: FleetCostRow[];
+  shard: string;
+  basis: string;
 }
 
 export interface Gas {
