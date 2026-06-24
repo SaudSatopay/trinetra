@@ -184,12 +184,12 @@ export function SafetyIntelligence({
         {known && <Chip label="Reasoning" onClick={() => setOpen("reasoning")} badge={reasoning ? reasoning.trace.length : null} />}
       </div>
       <AnimatePresence>
-        {open === "compliance" && <ComplianceModal data={comp} onClose={() => setOpen(null)} />}
+        {open === "compliance" && <ComplianceModal data={comp} notApplicable={!known} onClose={() => setOpen(null)} />}
         {open === "patterns" && <PatternsModal data={patterns} onClose={() => setOpen(null)} />}
         {open === "premortem" && <PremortemModal data={premortem} onClose={() => setOpen(null)} />}
         {open === "permit" && <PermitGateModal scenario={scenario} tMin={tMin} zone={zone} onClose={() => setOpen(null)} />}
         {open === "learning" && <LearningModal onClose={() => setOpen(null)} />}
-        {open === "reasoning" && <ReasoningModal data={reasoning} onClose={() => setOpen(null)} />}
+        {open === "reasoning" && <ReasoningModal data={reasoning} notApplicable={!known} onClose={() => setOpen(null)} />}
       </AnimatePresence>
     </>
   );
@@ -267,14 +267,32 @@ function Shell({ title, sub, onClose, children }: { title: string; sub?: string;
   return typeof document !== "undefined" ? createPortal(content, document.body) : null;
 }
 
-function ComplianceModal({ data, onClose }: { data: Compliance | null; onClose: () => void }) {
+function NotApplicable({ what }: { what: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
+      <span
+        className="rounded px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-ink-dim"
+        style={{ border: "1px solid var(--line-2)" }}
+      >
+        not applicable here
+      </span>
+      <p className="max-w-[22rem] text-[12px] leading-relaxed text-ink">
+        {what} runs on the built-in plant scenarios. You&apos;re viewing an ingested / custom feed — pick a
+        plant scenario (e.g. <span style={{ color: "var(--brand)" }}>Vizag</span>) in the player below to run it.
+      </p>
+    </div>
+  );
+}
+
+function ComplianceModal({ data, onClose, notApplicable }: { data: Compliance | null; onClose: () => void; notApplicable?: boolean }) {
   const s = data?.summary;
   return (
     <Shell
       title="Compliance & Audit"
-      sub={s ? `${s.deviations} deviation${s.deviations === 1 ? "" : "s"} · ${s.compliant} compliant · OISD / DGMS / Factory Act` : "auditing…"}
+      sub={s ? `${s.deviations} deviation${s.deviations === 1 ? "" : "s"} · ${s.compliant} compliant · OISD / DGMS / Factory Act` : notApplicable ? "not run on an ingested feed" : "auditing…"}
       onClose={onClose}
     >
+      {notApplicable && !s && <NotApplicable what="The compliance audit" />}
       <div className="space-y-2.5">
         {(data?.items ?? []).map((it, i) => {
           const dev = it.status === "deviation";
@@ -438,7 +456,7 @@ function PremortemModal({ data, onClose }: { data: Premortem | null; onClose: ()
   );
 }
 
-function ReasoningModal({ data, onClose }: { data: AgentsTrace | null; onClose: () => void }) {
+function ReasoningModal({ data, onClose, notApplicable }: { data: AgentsTrace | null; onClose: () => void; notApplicable?: boolean }) {
   const stages = (data?.trace ?? []).map((s) => {
     const i = s.indexOf(" - ");
     return i > 0 ? [s.slice(0, i), s.slice(i + 3)] : [s, ""];
@@ -446,9 +464,10 @@ function ReasoningModal({ data, onClose }: { data: AgentsTrace | null; onClose: 
   return (
     <Shell
       title="Reasoning trace"
-      sub={data ? `6-stage auditable graph — compound ${data.reasoning.compound ? "confirmed" : "not present"}` : "tracing…"}
+      sub={data ? `6-stage auditable graph — compound ${data.reasoning.compound ? "confirmed" : "not present"}` : notApplicable ? "not run on an ingested feed" : "tracing…"}
       onClose={onClose}
     >
+      {notApplicable && !data && <NotApplicable what="The reasoning trace" />}
       {data && (
         <>
           <ol className="mb-4">
