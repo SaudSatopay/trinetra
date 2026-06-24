@@ -11,6 +11,8 @@ export function TopBar({
   scenario,
   zone,
   shiftHandover,
+  onStory,
+  storyOn,
   onJudgeMode,
   booth,
   muted,
@@ -23,6 +25,8 @@ export function TopBar({
   scenario: string;
   zone?: string;
   shiftHandover?: boolean;
+  onStory?: () => void;
+  storyOn?: boolean;
   onJudgeMode?: () => void;
   booth?: boolean;
   muted?: boolean;
@@ -49,6 +53,23 @@ export function TopBar({
         )}
         <SafetyIntelligence scenario={scenario} tMin={tMin} compound={compound} zone={zone} />
         <LiveIngest />
+        {onStory && (
+          <button
+            onClick={onStory}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider tappable"
+            style={
+              storyOn
+                ? { color: "var(--bg)", background: "var(--brand)", border: "1px solid var(--brand)" }
+                : { color: "var(--brand)", border: "1px solid color-mix(in srgb, var(--brand) 32%, transparent)", background: "color-mix(in srgb, var(--brand) 8%, transparent)" }
+            }
+            title="Story mode — a narrated, captioned ~60-second walkthrough of the Vizag case, built for a first-time viewer"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M5 7h14 M5 12h14 M5 17h9" />
+            </svg>
+            Story
+          </button>
+        )}
         {onJudgeMode && (
           <button
             onClick={onJudgeMode}

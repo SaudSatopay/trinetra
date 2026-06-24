@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { API_BASE } from "@/lib/api";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { PhonePush } from "./PhonePush";
 
 interface ImpactItem {
   key: string;
@@ -352,6 +353,11 @@ function Modal({
                 >
                   {data.alert[lang]}
                 </p>
+                {/* the same alert as it lands on the on-shift safety officer's phone (mockup) */}
+                <div className="mt-3 flex flex-col items-center gap-1.5">
+                  <PhonePush zoneName={data.zone_name} message={data.alert[lang]} />
+                  <span className="font-mono text-[8.5px] text-ink-dim">worker mobile-app push · presentation mockup</span>
+                </div>
               </div>
 
               {data.channels && data.channels.length > 0 && (

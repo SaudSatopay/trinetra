@@ -16,7 +16,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { KnowledgeGraph } from "@/components/KnowledgeGraph";
 import { FleetView } from "@/components/FleetView";
 import { SweepChart } from "@/components/SweepChart";
+import { StoryOverlay } from "@/components/StoryOverlay";
 import { boothAudio, BOOTH_STEPS, EVAC_LINE } from "@/lib/booth";
+import { STORY_STEPS } from "@/lib/story";
 
 export default function Page() {
   const [plant, setPlant] = useState<Plant | null>(null);
@@ -42,6 +44,8 @@ export default function Page() {
   const [boothStep, setBoothStep] = useState(0);
   const beatArmed = useRef(false);
   const alarmFired = useRef(false);
+  const [storyOn, setStoryOn] = useState(false);
+  const [storyStep, setStoryStep] = useState(0);
 
   const handleIngest = (f: Frame[], summary: string) => {
     prevScenario.current = "ingested";
@@ -157,7 +161,9 @@ export default function Page() {
   const activeZone: Zone | null = frame ? frame.zones.find((z) => z.id === activeZoneId) ?? null : null;
 
   const currentStep = BOOTH_STEPS[boothStep % BOOTH_STEPS.length];
-  const suppressAuto = boothOn && mainView !== "plant";
+  // hold the auto-popping response modal during the narrated story (the story paces the
+  // reveal itself) and whenever attract mode shows a non-plant view
+  const suppressAuto = (boothOn && mainView !== "plant") || storyOn;
   // surface the spoken evacuation on screen too, so the booth message still lands if the browser's
   // speech synthesis is silent or unavailable (audio is a bonus, not the only channel)
   const boothAlarming = boothOn && currentStep.audio && !!frame?.summary.compound_alert;
@@ -218,7 +224,42 @@ export default function Page() {
   }, [boothOn]);
   useEffect(() => () => boothAudio.stop(), []);
 
+  // story-mode scheduler: walk the Vizag run through its narrated beats, seeking the player
+  // to each beat's frame and holding it there while the caption is read (we control the clock).
+  useEffect(() => {
+    if (!storyOn) return;
+    if (scenario !== "vizag") {
+      setScenario("vizag");
+      return;
+    }
+    if (!frames.length) return;
+    const step = STORY_STEPS[storyStep] ?? STORY_STEPS[0];
+    setMainView("plant");
+    setSelected("COB-1");
+    setPlaying(false);
+    setIndex(Math.min(step.t, frames.length - 1));
+    const last = storyStep >= STORY_STEPS.length - 1;
+    const id = window.setTimeout(() => {
+      if (last) setStoryOn(false); // end on the final beat (the alert reaching the phone)
+      else setStoryStep((s) => s + 1);
+    }, step.dwellMs);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyOn, storyStep, scenario, frames]);
+
+  const startStory = () => {
+    setBoothOn(false); // story and booth are mutually exclusive
+    setSpeed(4);
+    setMainView("plant");
+    setSelected("COB-1");
+    if (scenario !== "vizag") setScenario("vizag");
+    setStoryStep(0);
+    setStoryOn(true);
+  };
+  const exitStory = () => setStoryOn(false);
+
   const toggleBooth = () => {
+    setStoryOn(false); // booth and story are mutually exclusive
     setBoothOn((on) => {
       const next = !on;
       if (next) {
@@ -234,6 +275,7 @@ export default function Page() {
   const toggleMute = () => setMuted((m) => !m);
 
   const judgeMode = () => {
+    setStoryOn(false);
     setSpeed(4);
     setSelected(null);
     if (scenario === "vizag" && frames.length) {
@@ -273,7 +315,7 @@ export default function Page() {
   return (
     <main className="flex h-screen min-w-[900px] flex-col overflow-hidden">
       <div className="stagger-in shrink-0">
-        <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onJudgeMode={judgeMode} booth={boothOn} muted={muted} onBooth={toggleBooth} onMute={toggleMute} />
+        <TopBar tMin={frame.t_min} topLevel={frame.summary.top_level} compound={frame.summary.compound_alert} scenario={scenario} zone={activeZoneId ?? undefined} shiftHandover={frame.summary.shift_handover} onStory={startStory} storyOn={storyOn} onJudgeMode={judgeMode} booth={boothOn} muted={muted} onBooth={toggleBooth} onMute={toggleMute} />
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-4">
@@ -439,6 +481,17 @@ export default function Page() {
           }}
         />
       </div>
+
+      {storyOn && (
+        <StoryOverlay
+          step={STORY_STEPS[storyStep] ?? STORY_STEPS[0]}
+          idx={storyStep}
+          total={STORY_STEPS.length}
+          onExit={exitStory}
+          zoneName="Coke Oven Battery #1"
+          evacMessage="Evacuate the coke-oven battery immediately. Do not operate hot work or electrical equipment."
+        />
+      )}
     </main>
   );
 }

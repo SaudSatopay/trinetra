@@ -33,6 +33,9 @@ export function ThreatPanel({
   const col = levelColor[r.level];
   const top = r.interventions[0];
   const rest = r.interventions.slice(1, 3);
+  // the money shot, made legible: are ALL gas sensors below their single-sensor alarm
+  // right now? If so, a legacy system would be silent while Trinetra is escalating.
+  const allGreen = GAS_ORDER.every((sp) => !zone.gases[sp]?.stage);
 
   return (
     <div className="hud-panel flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -60,6 +63,61 @@ export function ThreatPanel({
             <div className="text-[11px] text-ink-dim">{zone.name}</div>
           </div>
         </div>
+
+        {/* why — the compound rationale, spelled plainly (the 5-second money shot) */}
+        {r.factors.length > 0 && (
+          <div className="border-t border-line pt-4">
+            {r.compound ? (
+              <>
+                <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                  <span className="label" style={{ color: "var(--lvl-critical)" }}>Why critical</span>
+                  <span className="font-mono text-[8.5px] uppercase tracking-wider text-ink-dim">
+                    three green lights · one lethal combination
+                  </span>
+                </div>
+                {allGreen && (
+                  <div
+                    className="rise-in mb-3 rounded-lg px-3 py-2.5"
+                    style={{
+                      background: "color-mix(in srgb, var(--lvl-critical) 11%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--lvl-critical) 34%, transparent)",
+                    }}
+                  >
+                    <span className="text-[12.5px] font-semibold leading-snug text-ink-bright">
+                      Every gas sensor reads <span style={{ color: "var(--good)" }}>below alarm</span> — yet this zone is{" "}
+                      <span style={{ color: "var(--lvl-critical)" }}>CRITICAL</span>.
+                    </span>
+                  </div>
+                )}
+                <ol className="space-y-2.5">
+                  {r.factors.slice(0, 3).map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span
+                        className="mt-px grid h-4 w-4 shrink-0 place-items-center rounded-full font-mono text-[9px] font-bold"
+                        style={{ background: "color-mix(in srgb, var(--lvl-critical) 18%, transparent)", color: "var(--lvl-critical)" }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-[12.5px] leading-snug text-ink">{f}</span>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            ) : (
+              <>
+                <div className="label mb-3">Why</div>
+                <ul className="space-y-2.5">
+                  {r.factors.slice(0, 4).map((f, i) => (
+                    <li key={i} className="flex gap-2.5 text-[12px] leading-snug text-ink">
+                      <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full" style={{ background: col }} />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
 
         {/* breach */}
         {r.time_to_threshold_min !== null && (
@@ -89,21 +147,6 @@ export function ThreatPanel({
         )}
 
         <DisasterMemory scenario={scenario} zoneId={zone.id} tMin={tMin} active={r.compound && scenario !== "custom" && scenario !== "ingested"} />
-
-        {/* factors */}
-        {r.factors.length > 0 && (
-          <div className="border-t border-line pt-4">
-            <div className="label mb-3">Why</div>
-            <ul className="space-y-2.5">
-              {r.factors.slice(0, 4).map((f, i) => (
-                <li key={i} className="flex gap-2.5 text-[12px] leading-snug text-ink">
-                  <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full" style={{ background: col }} />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* recommended action */}
         {top && (

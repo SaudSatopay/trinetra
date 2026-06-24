@@ -161,6 +161,19 @@ main {
   animation: rise-in var(--dur-3) var(--ease-out-expo) both;
 }
 
+/* story mode — caption progress fill + the evac-push phone sliding in */
+@keyframes storyFill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+@keyframes phoneSlideIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(28px) scale(0.96); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="storyFill"], [style*="phoneSlideIn"] { animation: none !important; }
+}
+
 /* smooth, reusable hover lift for interactive cards */
 .card-hover {
   transition: transform var(--dur-2) var(--ease-out-quint), border-color var(--dur-2) ease,
