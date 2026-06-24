@@ -115,9 +115,12 @@ export interface ExternalReplay {
   trinetra_alert_min: number | null;
   single_sensor_min: number | null;
   lead_min: number | null;
+  peak: number | null;
+  peak_unit: string;
   peak_co_ppm: number | null;
   samples: number;
-  shipped_scale: number;
+  shipped_scale: number | null;   // null for a fixed-conversion source (e.g. ALOHA ppm->%LEL) — no scale to sweep
+  pending?: boolean;
   lead_by_scale: { scale: number; compound_min: number | null; single_sensor_min: number | null; lead_min: number | null }[];
 }
 

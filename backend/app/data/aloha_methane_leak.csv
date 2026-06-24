@@ -1,0 +1,54 @@
+# Modeled methane dispersion - NOT authored by Trinetra.
+# Source  : EPA/NOAA ALOHA 5.4.7 (CAMEO suite) - the standard air-dispersion model. A
+#           recognised third-party tool; the concentration-vs-time curve below is ALOHA's
+#           output, not our ramp() and not our simulator. We did not author or tune it.
+# Chemical: Methane (CAS 74-82-8, MW 16.04 g/mol; LEL 50,000 ppm = 5 %vol).
+# Release : Gas Pipeline failure, NOT burning. 2-inch (5.08 cm) hole = full pipe bore;
+#           50 m pipe; unbroken end connected to an infinite/upstream source (a sustained
+#           leak from a live line); smooth pipe; line pressure 5 atm; 25 C ambient. ALOHA-
+#           derived max sustained release rate 66.3 lb/min (~30 kg/min) - the rate is
+#           COMPUTED by ALOHA from the hole + pressure, not picked by us.
+# Weather : wind 2 m/s from 270 deg (measured at 3 m); stability class F (user override -
+#           stable/night, the slow-accumulation case); ground roughness urban/forest; air
+#           temp 25 C; 50% RH; no inversion; 5/10 cloud. Model run: Gaussian.
+# Site    : Ames, Iowa (location only sets elevation defaults - negligible at 100 m).
+# Receptor: 100 m downwind, 0 m off-centerline, ground level. Values below are the OUTDOOR
+#           concentration-by-time at that point (ALOHA "Threat At Point"), in ppm, read at
+#           1-minute resolution: clean at t0, the plume establishes within ~2 min (50 s
+#           travel + dispersion), then holds at its ~4,100 ppm (~8.2 %LEL) plateau for the
+#           sustained release. (50 m -> ~15,800 ppm; 150 m -> ~1,900 ppm - see the
+#           distance sweep in docs/EXTERNAL_DATA.md. 100 m is a realistic crew standoff.)
+# Convert : applied IN CODE, not here: %LEL = ppm / 500 - the FIXED methane LEL constant
+#           (50,000 ppm = 100 %LEL). There is NO chosen y-scale; the chemistry fixes the
+#           conversion. That is this exhibit's whole point (closes the y-scale critique).
+# Overlaid: applied in code / stated in docs/EXTERNAL_DATA.md, not here: a hot-work permit
+#           + 3 personnel context (ALOHA models dispersion, not permits or people); zone
+#           COB-1; 1 ALOHA-minute -> 1 frame. ALOHA validates the gas DYNAMICS on
+#           independent physics; the compound CONTEXT is overlaid - exactly as with De Vito.
+# Reproduce: re-run the scenario above in EPA ALOHA 5.4.7; Display > Threat At Point @100 m.
+# minute,ppm
+0,0
+1,3300
+2,4100
+3,4100
+4,4100
+5,4100
+6,4100
+7,4100
+8,4100
+9,4100
+10,4100
+11,4100
+12,4100
+13,4100
+14,4100
+15,4100
+16,4100
+17,4100
+18,4100
+19,4100
+20,4100
+21,4100
+22,4100
+23,4100
+24,4100

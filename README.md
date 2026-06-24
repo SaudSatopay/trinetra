@@ -224,6 +224,8 @@ Reconstructed from **two** real inquiries and replayed through the *same* engine
 
 The held-out generalization run answers "train = test" *inside* the simulator; this answers it **outside** it. We replay a **real, peer-reviewed, third-party measurement** — hourly CO from the **UCI #360 Air Quality** dataset (De Vito et al., 2008; DOI 10.24432/C5K603, CC BY 4.0) — through the **same connector and the same untuned engine**. On that real, dip-laden CO build-up the compound alert fires at **T+3** — and the engine **tracks the real signal**: it relaxes during the dataset's genuine CO dips (no crying wolf) and stands down when the CO clears overnight. The early **detection is scale-robust** (T+2–4 across every y-scale); the lead in minutes is measured against the single-sensor baseline and *is* scale-sensitive, so rather than quote one number we publish the full **lead-vs-scale sweep** (`lead_by_scale`; +10 at our disclosed ×6). What is real (the CO **dynamics**) vs overlaid (the y-scale + a hot-work/personnel context) — and the honest scale correction — is spelled out in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Air Quality · De Vito '08**.)*
 
+A **second** external exhibit comes from a *recognized third-party physics model* rather than a measurement: **EPA/NOAA ALOHA** (the CAMEO dispersion tool). A modeled methane release runs through the **same connector + untuned engine**, and because methane → %LEL is fixed chemistry (`%LEL = ppm ÷ 500`) **there is no chosen scale** — the one soft spot of the De Vito exhibit, closed by construction. It lands the **blind-spot axis**: at a realistic 100 m crew standoff EPA's physics put a *sustained ~8.2 %LEL* cloud where a single 10 %LEL detector reads **green for the entire release**, yet Trinetra (sub-threshold gas + hot-work permit + crew) flags **compound at T+1 and holds it**. A published **distance sweep** (50 / 100 / 150 m) shows it isn't cherry-picked — dense enough to alarm even a single sensor at 50 m, correctly **silent** at 150 m. Full provenance (ALOHA 5.4.7 + every parameter) and the real-vs-overlaid split are in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Methane · EPA ALOHA**.)*
+
 ---
 
 ## Capabilities
@@ -234,6 +236,7 @@ The held-out generalization run answers "train = test" *inside* the simulator; t
 | 🎲 **Generalization** | 240 held-out randomized scenarios → 100% recall / 3.3% FP | `python test_generalization.py` |
 | 🧯 **Real-incident replay** | CSB Texas City (2005) → fires 10 min before the documented ignition | `/api/incident/texas-city` |
 | 🛰️ **External-data replay** | real measured CO (UCI #360, De Vito 2008) through the same untuned engine — the answer to "you authored the data" | `/api/external/air-quality` |
+| 🧪 **Modeled-physics replay** | EPA ALOHA methane dispersion, fixed ppm→%LEL (no chosen scale) — single sensor blind at 8.2 %LEL while compound fires | `/api/external/aloha-methane` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
 | 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
 | 🚫 **Shift-left permit gate** | refuses a permit that would *create* a compound hazard — prevention at the permit desk, not detection after | `/api/permit-gate` |
@@ -324,6 +327,7 @@ FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint
 | `GET /api/ingest/sample` · `POST /api/ingest` | download / replay a SCADA-permit CSV |
 | `GET /api/incident/texas-city` · `…/texas-city.csv` | the CSB Texas City reconstruction + raw feed |
 | `GET /api/external/air-quality` · `…/air-quality.csv` | real measured CO (UCI #360, De Vito 2008) replayed + raw feed |
+| `GET /api/external/aloha-methane` · `…/aloha-methane.csv` | EPA ALOHA methane dispersion replayed (fixed ppm→%LEL, no chosen scale) + raw feed |
 | `GET /api/agents` | the 6-stage reasoning trace |
 | `GET /api/disaster-memory` | closest historical precedent + grounded briefing |
 | `GET /api/vision` | YOLOv8 person / zone-intrusion detection |
@@ -381,7 +385,7 @@ python smoke_api.py            # REST + WebSocket smoke
 
 ## Honest caveats
 
-- The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` connector — proven by the Texas City / Jaipur replays and, most directly, by replaying a **real third-party measured dataset** (UCI #360 CO, De Vito 2008) the engine never authored; see [docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md).
+- The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` connector — proven by the Texas City / Jaipur replays and, most directly, by replaying a **real third-party measured dataset** (UCI #360 CO, De Vito 2008) and a **recognized third-party physics model** (EPA ALOHA methane dispersion, fixed ppm→%LEL) the engine never authored; see [docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md).
 - The 29 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe, and a single-sample O2-sensor dropout that must not fabricate an asphyxiation alert — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios) and **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur) address the "train = test" critique.
 - The headline metrics are measured on the **compound flag** (the lethal pattern), distinct from ordinary gas alarms — the value is the *combination* and the *lead time*.
 - The reasoning "agents" are **deterministic feature-extraction stages**, not autonomous LLM agents — a strength for a reproducible life-safety path.

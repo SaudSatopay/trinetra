@@ -101,25 +101,54 @@ model** (the free CAMEO tool — a recognised third party we did not write or tu
 
 | | |
 |---|---|
-| **Real (ALOHA's, untouched)** | the concentration-vs-time curve at the receptor — rise, peak, decay — shaped by EPA dispersion physics we did not author or tune. |
+| **Real (ALOHA's, untouched)** | the concentration-vs-time curve at the receptor — the rise and the sustained plateau — shaped by EPA dispersion physics we did not author or tune. |
 | **Overlaid (stated)** | the hot-work (ignition) + personnel context (ALOHA models dispersion, not permits or people — the same boundary as De Vito); the zone mapping (COB-1); 1 ALOHA-minute → 1 frame. The ppm→%LEL conversion is **not** overlaid — it is fixed chemistry. |
 
 **One honest sentence:** ALOHA validates the gas-**dynamics** half on independent physics; the compound
 **context** (ignition + people) is still overlaid — exactly as with De Vito, and no more is claimed.
 
-**Reproducible scenario (this IS the provenance — anyone can re-run it in ALOHA):**
-- **Chemical:** Methane (ties to the coke-oven/Vizag hero).
-- **Source:** a moderate, realistic near-field release — e.g. a 2-inch flange/pipe failure (state hole size +
-  line pressure/temp), or ALOHA "Direct" source at a stated rate.
-- **Atmosphere:** wind ≈ 2 m/s, stability class **F** (stable/night — the slow-accumulation case the engine
-  targets), ground roughness "urban/industrial", stated air temperature.
-- **Receptor:** a Concentration/Dose point **≈ 50 m downwind** (where a crew would stand).
-- Read ALOHA's **"Concentration by Time"** at that receptor → ~15–25 `(minute, ppm)` points; screenshot the
-  graph + text summary for the deck.
+**Reproducible scenario (this IS the provenance — anyone can re-run it in EPA ALOHA 5.4.7):**
+- **Chemical:** Methane (CAS 74-82-8; ties to the coke-oven/Vizag hero).
+- **Source:** ALOHA **Gas Pipeline** failure, *not burning* — a **2-inch (5.08 cm)** bore, 50 m pipe, the
+  unbroken end connected to an infinite/upstream source (a sustained leak from a live line), smooth pipe,
+  **5 atm**, 25 °C. ALOHA computes the release rate from the hole + pressure (**66.3 lb/min ≈ 30 kg/min,
+  sustained**) — we do *not* pick a rate.
+- **Atmosphere:** wind **2 m/s** from 270° (measured at 3 m), stability class **F** (stable/night — the
+  slow-accumulation case the engine targets), ground roughness **urban/forest**, **25 °C**, 50% RH, no
+  inversion. Model run: Gaussian.
+- **Receptor:** ALOHA **Threat At Point** (outdoor concentration-by-time) at **100 m downwind** (a realistic
+  crew standoff in the adjacent area), plus 50 m and 150 m for the distance sweep below.
+- The committed slice [`backend/app/data/aloha_methane_leak.csv`](../backend/app/data/aloha_methane_leak.csv)
+  carries the digitized 100 m curve with the full ALOHA version + every parameter in its `#` provenance
+  header; the engine applies the **fixed** `%LEL = ppm / 500` and the stated permit/personnel context, nothing else.
 
-**Status / how it goes live:** the code slot is already wired — `GET /api/external/aloha-methane` (and the
-generic `/api/external/{key}`) returns a clean **`"pending"`** object until the curve is committed to
-`backend/app/data/aloha_methane_leak.csv` (header style copied from the De Vito file, with the ALOHA version
-+ every parameter in the `#` provenance header). The moment that file lands, the route, the connector button,
-and this section go live **with zero code change** — same connector, same untuned engine, fixed conversion.
-We commit *no* placeholder curve: an exhibit that names ALOHA must contain an actual ALOHA run, not a stand-in.
+### The result (reproduce: `GET /api/external/aloha-methane`)
+
+This exhibit lands a *different* axis from the lead-time exhibits (De Vito +10, Texas City +10, Jaipur +36):
+**the sensitivity / blind-spot axis.** EPA's dispersion physics put a **sustained ~8.2 %LEL methane cloud**
+(≈ 4,100 ppm) at the 100 m receptor. A single-point detector set at the **10 %LEL** alarm reads "normal /
+green" for the **entire release** — it is not *late*, it is structurally **blind**. Trinetra, seeing the same
+sub-threshold gas **plus** the live hot-work permit **plus** the 3 crew, flags **compound at T+1 and holds it**
+(CRITICAL as the cloud arrives, settling into a sustained HIGH). Same connector, same untuned engine, and —
+because methane → %LEL is fixed chemistry — **no chosen scale**.
+
+**Distance sweep (the honesty exhibit — the same untuned engine across receptor distance; nothing cherry-picked):**
+
+| Receptor | ALOHA outdoor plateau | %LEL (= ppm ÷ 500) | Single sensor (10 %LEL) | Trinetra compound |
+|---|---|---|---|---|
+| 50 m | ~15,800 ppm | 31.6% | **alarms** (T+1) | CRITICAL (T+1) |
+| **100 m (shipped)** | **~4,100 ppm** | **8.2%** | **silent — blind** | **fires T+1, sustained** |
+| 150 m | ~1,900 ppm | 3.8% | silent | **silent (correct)** |
+
+Read it honestly: at the realistic standoff (100 m) Trinetra catches a hazard the single sensor cannot see;
+move closer (50 m) and the cloud is dense enough that even the single sensor finally alarms; move farther
+(150 m) and Trinetra **correctly stands down** — at 3.8 %LEL there is no compound hazard and it does not cry
+wolf. The "three green lights, one lethal combination" thesis, on independent EPA physics, with zero free
+parameters in the conversion.
+
+**Honest limitations (what this is *not*):** it is **modeled** dispersion, not a measurement (the De Vito CO
+trace is the real-measurement exhibit; this is the recognized-third-party-physics exhibit). ALOHA models the
+gas **dynamics**; the hot-work permit + personnel **context** is overlaid, exactly as with De Vito — ALOHA has
+no notion of permits or people. And it is a *sustained-leak* curve (a rise to a plateau, not a slow diurnal
+build), so this exhibit speaks to **detection sensitivity**, not lead-time. No placeholder was ever committed:
+this section went live only after an actual EPA ALOHA 5.4.7 run.

@@ -375,26 +375,34 @@ export default function Page() {
               className="rounded px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
               style={{ color: "var(--brand)", background: "color-mix(in srgb, var(--brand) 15%, transparent)" }}
             >
-              Real measured data
+              {external.provenance.startsWith("modeled") ? "Modeled · EPA ALOHA" : "Real measured data"}
             </span>
             <span className="font-display text-[12.5px] font-semibold text-ink-bright">{external.dataset}</span>
             <span className="font-mono text-[10px] text-ink-dim">{external.source}</span>
             {external.trinetra_alert_min != null && (
               <span className="font-mono text-[10px]" style={{ color: "var(--brand)" }}>
                 Trinetra detects <span className="font-bold">T+{external.trinetra_alert_min}</span>
-                {external.lead_min != null && <> · +{external.lead_min} vs single-sensor @×{external.shipped_scale}</>}
+                {external.lead_min != null && (
+                  <> · +{external.lead_min} vs single-sensor{external.shipped_scale != null && <> @×{external.shipped_scale}</>}</>
+                )}
+                {external.lead_min == null && external.single_sensor_min == null && (
+                  <> · single-sensor stays blind{external.peak != null && <> (peak {external.peak} {external.peak_unit}, below the 10% alarm)</>}</>
+                )}
               </span>
             )}
             {external.lead_by_scale && external.lead_by_scale.length > 1 && (
-              <SweepChart rows={external.lead_by_scale} shipped={external.shipped_scale} />
+              <SweepChart rows={external.lead_by_scale} shipped={external.shipped_scale ?? 0} />
             )}
             <span className="font-mono text-[9px] text-ink-dim" title={`overlaid: ${external.overlaid}`}>
-              real: {external.channel} — engine untuned; only the y-scale + permit context are overlaid
+              real: {external.channel} — engine untuned;{" "}
+              {external.provenance.startsWith("modeled")
+                ? "ppm→%LEL is fixed chemistry (no chosen scale) — only the permit/personnel context is overlaid"
+                : "only the y-scale + permit context are overlaid"}
             </span>
             <a
               href={`${API_BASE}/api/external/${external.key}.csv`}
               className="font-mono text-[10px] text-ink-dim underline-offset-2 hover:underline"
-              title="Download the exact feed the engine ingested — the real measured CO values, scaled to the plant band"
+              title="Download the exact feed the engine ingested"
             >
               source CSV
             </a>

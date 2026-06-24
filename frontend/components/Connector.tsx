@@ -121,6 +121,19 @@ export function Connector({
       >
         Air Quality · De Vito ’08
       </button>
+      <button
+        onClick={() => replayExternal("aloha-methane")}
+        disabled={busy}
+        className="rounded-md px-2.5 py-1.5 text-[11px] transition-colors hover:brightness-125"
+        style={{
+          color: "var(--brand)",
+          border: "1px solid color-mix(in srgb, var(--brand) 42%, transparent)",
+          background: "color-mix(in srgb, var(--brand) 10%, transparent)",
+        }}
+        title="Replay EPA ALOHA-modeled methane dispersion through the same connector — fixed ppm→%LEL, no chosen scale"
+      >
+        Methane · EPA ALOHA
+      </button>
       {err && (
         <span className="font-mono text-[9px]" style={{ color: "var(--lvl-high)" }}>
           · {err}
