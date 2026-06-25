@@ -65,6 +65,15 @@ function headline(s, t, o) {
     fontSize: o.size || 33, color: o.color || WHITE, charSpacing: o.cs || 0, lineSpacingMultiple: o.ls || 1.0, align: o.align || "left" });
 }
 function footnote(s, t) { tx(s, t, { x: MX, y: H - 1.02, w: CW, h: 0.4, fontFace: BODY, fontSize: 11, italic: true, color: T3, lineSpacingMultiple: 1.1 }); }
+// a labelled box for the architecture diagram
+function dbox(s, x, y, w, h, title, lines, o) {
+  o = o || {};
+  rect(s, x, y, w, h, o.fill || CARD, o.line || LINE, o.lw || 1);
+  if (o.topbar) rect(s, x, y, w, 0.05, o.topbar);
+  tx(s, title, { x: x + 0.16, y: y + 0.15, w: w - 0.3, h: 0.32, fontFace: SUB, fontSize: o.tsize || 12.5, color: o.tcolor || WHITE });
+  tx(s, lines, { x: x + 0.16, y: y + 0.56, w: w - 0.3, h: h - 0.66, fontFace: o.lface || BODY, fontSize: o.lsize || 9.5, color: o.lcolor || T2, lineSpacingMultiple: 1.22 });
+}
+function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, fontSize: 17, color: BRAND, align: "center", valign: "middle" }); }
 
 // =====================================================================
 // 01 — TITLE
@@ -120,14 +129,14 @@ function footnote(s, t) { tx(s, t, { x: MX, y: H - 1.02, w: CW, h: 0.4, fontFace
     { x: MX + 0.4, y: 2.18, w: CW - 0.4, h: 2.0, fontFace: DISPL, fontSize: 22, color: WHITE, lineSpacingMultiple: 1.16 });
   tx(s, "NISHAT MULLA   ·   PLANT MANAGER   ·   30+ YEARS ACROSS GAS & HEAVY INDUSTRY", { x: MX + 0.4, y: 4.32, w: CW - 0.4, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1 });
 
-  rect(s, MX, 5.1, CW, 1.5, PANEL, LINE);
-  rect(s, MX, 5.1, 0.05, 1.5, BRAND);
-  tx(s, "TRINETRA — OUR RESPONSE", { x: MX + 0.35, y: 5.3, w: 8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 2 });
+  rect(s, MX, 4.86, CW, 1.4, PANEL, LINE);
+  rect(s, MX, 4.86, 0.05, 1.4, BRAND);
+  tx(s, "TRINETRA — OUR RESPONSE", { x: MX + 0.35, y: 5.04, w: 8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 2 });
   tx(s, [
     { text: "Trinetra is that experience, encoded", options: { color: BRAND, bold: true } },
     { text: " — it watches every zone 24/7 and flags the combination the moment it forms, so the catch never depends on the right person paying attention at 3 a.m. We enforce safety culture consistently across every shift and handover.", options: { color: T2 } },
-  ], { x: MX + 0.35, y: 5.66, w: CW - 0.7, h: 0.85, fontFace: BODY, fontSize: 13, lineSpacingMultiple: 1.18 });
-  tx(s, "Independent field validation of the problem — a practitioner, in his own words.", { x: MX, y: H - 0.95, w: CW, h: 0.3, fontFace: BODY, fontSize: 10.5, italic: true, color: T3 });
+  ], { x: MX + 0.35, y: 5.40, w: CW - 0.7, h: 0.8, fontFace: BODY, fontSize: 13, lineSpacingMultiple: 1.18 });
+  tx(s, "Independent field validation of the problem — a practitioner, in his own words.", { x: MX, y: 6.52, w: CW, h: 0.3, fontFace: BODY, fontSize: 10.5, italic: true, color: T3 });
 }
 
 // =====================================================================
@@ -192,30 +201,33 @@ function footnote(s, t) { tx(s, t, { x: MX, y: H - 1.02, w: CW, h: 0.4, fontFace
 // 06 — ARCHITECTURE
 // =====================================================================
 {
-  const s = S(); chrome(s); kicker(s, "HOW IT WORKS");
-  headline(s, "One multi-modal brain", { size: 33 });
-  const cols = [
-    ["Compound\nEngine", "fuses gas trend +\npermits + people", BRAND],
-    ["Vision", "person & zone-intrusion\n(monitoring layer)", T2],
-    ["Reasoning\nGraph", "6-stage auditable\ntrace", T2],
-    ["Disaster\nRAG", "Gemini precedent\nmatching", T2],
-    ["Response", "report + multilingual\nalerts", RED],
-  ];
-  const cw = CW / 5; let x = MX;
-  cols.forEach(([t, d, c], i) => {
-    if (i > 0) vline(s, x, 2.4, 2.5, LINE);
-    rect(s, x + 0.18, 2.42, 0.4, 0.05, c);
-    tx(s, String(i + 1).padStart(2, "0"), { x: x + 0.18, y: 2.6, w: cw - 0.3, h: 0.3, fontFace: MONO, fontSize: 10, color: c });
-    tx(s, t.replace(/\n/g, "\n"), { x: x + 0.18, y: 2.95, w: cw - 0.32, h: 0.95, fontFace: SUB, fontSize: 17, color: WHITE, lineSpacingMultiple: 0.98 });
-    tx(s, d.replace(/\n/g, " "), { x: x + 0.18, y: 4.0, w: cw - 0.32, h: 0.9, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
-    x += cw;
-  });
-  rect(s, MX, 5.45, CW, 1.0, PANEL, LINE);
-  rect(s, MX, 5.45, 0.05, 1.0, BRAND);
-  tx(s, [
-    { text: "Hybrid by design.  ", options: { color: BRAND, bold: true, fontFace: SUB } },
-    { text: "A transparent, deterministic backbone makes the life-safety decision — the LLM only explains, retrieves precedent, and drafts reports. No black box in the loop.", options: { color: T2, fontFace: BODY } },
-  ], { x: MX + 0.35, y: 5.45, w: CW - 0.7, h: 1.0, fontSize: 14.5, valign: "middle", lineSpacingMultiple: 1.15 });
+  const s = S(); chrome(s); kicker(s, "ARCHITECTURE");
+  headline(s, "How it works", { size: 33 });
+
+  // intelligence layer (top band) — LLM-assisted, explains/retrieves/drafts, never decides
+  rect(s, MX, 2.12, CW, 0.74, PANEL, LINE2);
+  tx(s, "INTELLIGENCE LAYER · LLM-ASSISTED", { x: MX + 0.25, y: 2.24, w: 8, h: 0.25, fontFace: MONO, fontSize: 9, color: BRAND, charSpacing: 1 });
+  tx(s, "Vision (YOLOv8) · Disaster-Memory RAG (Gemini) · 6-stage reasoning graph · Compliance & permit-gate · Pre-mortem · Knowledge graph",
+    { x: MX + 0.25, y: 2.49, w: CW - 0.5, h: 0.3, fontFace: BODY, fontSize: 11, color: T2 });
+
+  // the fused pipeline — data flows left to right; the deterministic engine is the core
+  const fy = 3.62, fh = 1.82;
+  dbox(s, 0.85, fy, 2.02, fh, "DATA SOURCES", "Gas sensors\nPermit-to-work\nCCTV · shift logs\nSCADA / historian");
+  arrow(s, 2.87, fy, fh);
+  dbox(s, 3.15, fy, 1.88, fh, "INGEST", "OPC-UA · MQTT\nCSV connector\nEdge pre-filter\n→ digital twin");
+  arrow(s, 5.03, fy, fh);
+  dbox(s, 5.31, fy, 2.72, fh, "COMPOUND ENGINE", "gas level + trend\n+ ignition + personnel\n+ blast-radius · O2 gate\n→ verdict · lead · actions",
+    { fill: PANEL2, line: BRAND, lw: 2, topbar: BRAND, tcolor: BRAND, tsize: 13.5 });
+  arrow(s, 8.03, fy, fh);
+  dbox(s, 8.31, fy, 1.96, fh, "RESPONSE", "Incident report\nMultilingual alert\nMulti-channel dispatch\nEvidence freeze");
+  arrow(s, 10.27, fy, fh);
+  dbox(s, 10.54, fy, 1.94, fh, "CONTROL ROOM", "Next.js split-reality\nHMI · plant · fleet\nFastAPI REST + WS");
+
+  // intelligence band feeds the engine (explains its verdict)
+  s.addShape(p.shapes.LINE, { x: 6.67, y: 2.86, w: 0, h: 0.76, line: { color: LINE2, width: 1, dashType: "dash" } });
+  tx(s, "DETERMINISTIC · AUDITABLE · NO LLM IN THE DECISION", { x: 5.31, y: fy + fh + 0.08, w: 2.72, h: 0.25, fontFace: MONO, fontSize: 7.5, color: BRAND, align: "center", charSpacing: 0.5 });
+
+  footnote(s, "Hybrid by design — the deterministic engine makes every life-safety call; the LLM layer only explains it, retrieves precedent, and drafts reports.");
 }
 
 // =====================================================================
