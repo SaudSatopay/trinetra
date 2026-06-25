@@ -1,123 +1,142 @@
-<svg viewBox="0 0 1000 690" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, sans-serif">
-  <title>Trinetra — compound-risk intelligence architecture</title>
-  <desc>A digital-twin data layer (gas sensors, permits, CCTV, regulatory corpus) feeds a LangGraph multi-agent layer, a hybrid compound-risk reasoner, an autonomous response orchestrator, and a Next.js control room over FastAPI.</desc>
+<svg viewBox="0 0 1200 860" xmlns="http://www.w3.org/2000/svg" role="img" fill="#C6B9A6" font-family="Bahnschrift, 'Segoe UI', system-ui, sans-serif">
+  <title>Trinetra — compound-risk intelligence: system architecture</title>
+  <desc>Plant data (gas sensors, permit-to-work, CCTV, shift logs, SCADA) is ingested over OPC-UA / MQTT / CSV into a digital twin, scored by a deterministic compound-risk engine (the decision core), enriched by an LLM-assisted intelligence layer that only explains/retrieves/drafts, then handed to a response orchestrator and a Next.js control room over FastAPI. Hybrid by design: no LLM in the life-safety decision.</desc>
   <defs>
-    <marker id="ar" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#3a4a5a"/>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7c6f5e"/>
     </marker>
+    <marker id="arB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#FF6A1A"/>
+    </marker>
+    <style>
+      text { font-family: Bahnschrift, "Segoe UI", system-ui, -apple-system, sans-serif; fill: #C6B9A6; }
+      .mono { font-family: "Cascadia Mono", Consolas, ui-monospace, monospace; }
+      .h { fill: #F7EFE1; font-weight: 700; }
+      .lbl { font-family: "Cascadia Mono", Consolas, monospace; fill: #8A7B68; font-size: 10px; letter-spacing: 1.6px; }
+      .br { fill: #FF6A1A; }
+      .dim { fill: #8A7B68; }
+    </style>
   </defs>
-  <rect width="1000" height="690" fill="#0b0f14"/>
 
-  <!-- brand -->
-  <path d="M40 26 L58 52 L22 52 Z" fill="none" stroke="#34d3bd" stroke-width="2" stroke-linejoin="round"/>
-  <circle cx="40" cy="44" r="5.5" fill="none" stroke="#34d3bd" stroke-width="1.6"/>
-  <circle cx="40" cy="44" r="2" fill="#34d3bd"/>
-  <text x="78" y="42" fill="#eaf2fa" font-size="26" font-weight="700" letter-spacing="5">TRINETRA</text>
-  <text x="80" y="61" fill="#34d3bd" font-size="10.5" letter-spacing="2.5" font-family="ui-monospace, monospace">COMPOUND-RISK INTELLIGENCE · ZERO-HARM OPERATIONS</text>
+  <rect width="1200" height="860" fill="#0B0908"/>
 
-  <!-- ===== DATA ===== -->
-  <text x="40" y="104" fill="#5f6e7e" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">DATA · DIGITAL TWIN</text>
-  <g font-size="13" font-weight="600">
-    <g>
-      <rect x="40" y="114" width="216" height="58" rx="9" fill="#121821" stroke="#26313e"/>
-      <text x="58" y="140" fill="#eaf2fa">IoT Gas Sensors</text>
-      <text x="58" y="159" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">CH4 · CO · H2S · O2</text>
-    </g>
-    <g>
-      <rect x="288" y="114" width="216" height="58" rx="9" fill="#121821" stroke="#26313e"/>
-      <text x="306" y="140" fill="#eaf2fa">Permits-to-Work</text>
-      <text x="306" y="159" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">hot-work · confined space</text>
-    </g>
-    <g>
-      <rect x="536" y="114" width="216" height="58" rx="9" fill="#121821" stroke="#26313e"/>
-      <text x="554" y="140" fill="#eaf2fa">CCTV Feed</text>
-      <text x="554" y="159" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">worker · zone intrusion</text>
-    </g>
-    <g>
-      <rect x="784" y="114" width="176" height="58" rx="9" fill="#121821" stroke="#26313e"/>
-      <text x="802" y="140" fill="#eaf2fa">Reg. Corpus</text>
-      <text x="802" y="159" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">OISD · incidents</text>
-    </g>
+  <!-- ===== header ===== -->
+  <path d="M44 20 L63 58 L25 58 Z" fill="none" stroke="#FF6A1A" stroke-width="2.2" stroke-linejoin="round"/>
+  <ellipse cx="44" cy="47" rx="8.5" ry="5.2" fill="none" stroke="#FF6A1A" stroke-width="1.6"/>
+  <circle cx="44" cy="47" r="2" fill="#FF6A1A"/>
+  <text x="86" y="40" class="h" font-size="27" letter-spacing="5">TRINETRA</text>
+  <text x="88" y="60" class="mono br" font-size="10.5" letter-spacing="2.5">COMPOUND-RISK INTELLIGENCE · SYSTEM ARCHITECTURE</text>
+  <line x1="40" y1="80" x2="1160" y2="80" stroke="#2A2118" stroke-width="1"/>
+
+  <!-- ===== DATA SOURCES ===== -->
+  <text x="40" y="106" class="lbl">DATA SOURCES · DIGITAL TWIN</text>
+  <g font-size="13">
+    <g><rect x="40" y="112" width="128" height="66" rx="7" fill="#120D08" stroke="#2A2118"/>
+      <text x="56" y="142" class="h" font-size="13">Gas sensors</text><text x="56" y="161" class="mono dim" font-size="9.5">CH4·CO·H2S·O2</text></g>
+    <g><rect x="178" y="112" width="128" height="66" rx="7" fill="#120D08" stroke="#2A2118"/>
+      <text x="194" y="142" class="h" font-size="13">Permit-to-work</text><text x="194" y="161" class="mono dim" font-size="9.5">hot-work·confined</text></g>
+    <g><rect x="316" y="112" width="128" height="66" rx="7" fill="#120D08" stroke="#2A2118"/>
+      <text x="332" y="142" class="h" font-size="13">CCTV</text><text x="332" y="161" class="mono dim" font-size="9.5">person·intrusion</text></g>
+    <g><rect x="454" y="112" width="128" height="66" rx="7" fill="#120D08" stroke="#2A2118"/>
+      <text x="470" y="142" class="h" font-size="13">Shift logs</text><text x="470" y="161" class="mono dim" font-size="9.5">handover window</text></g>
+    <g><rect x="592" y="112" width="128" height="66" rx="7" fill="#120D08" stroke="#2A2118"/>
+      <text x="608" y="142" class="h" font-size="13">SCADA</text><text x="608" y="161" class="mono dim" font-size="9.5">historian / PI</text></g>
+  </g>
+  <g stroke="#473726" stroke-width="1.4">
+    <line x1="104" y1="178" x2="104" y2="204" marker-end="url(#ar)"/>
+    <line x1="242" y1="178" x2="242" y2="204" marker-end="url(#ar)"/>
+    <line x1="380" y1="178" x2="380" y2="204" marker-end="url(#ar)"/>
+    <line x1="518" y1="178" x2="518" y2="204" marker-end="url(#ar)"/>
+    <line x1="656" y1="178" x2="656" y2="204" marker-end="url(#ar)"/>
   </g>
 
-  <!-- data -> agents -->
-  <g stroke="#2a3a48" stroke-width="1.5">
-    <line x1="148" y1="172" x2="148" y2="206" marker-end="url(#ar)"/>
-    <line x1="396" y1="172" x2="396" y2="206" marker-end="url(#ar)"/>
-    <line x1="644" y1="172" x2="644" y2="206" marker-end="url(#ar)"/>
-    <line x1="872" y1="172" x2="872" y2="206" marker-end="url(#ar)"/>
+  <!-- ===== INGEST ===== -->
+  <rect x="40" y="206" width="680" height="60" rx="9" fill="#15110D" stroke="#2A2118"/>
+  <text x="60" y="232" class="h" font-size="14">Ingest · connectors</text>
+  <text x="60" y="251" class="mono" fill="#C6B9A6" font-size="10">OPC-UA bridge · MQTT · CSV (/api/ingest) · edge pre-filter  →  digital twin · PlantSnapshot</text>
+  <text x="700" y="232" class="mono br" font-size="9.5" text-anchor="end">connector,</text>
+  <text x="700" y="248" class="mono dim" font-size="9.5" text-anchor="end">not a rewrite</text>
+  <line x1="380" y1="266" x2="380" y2="292" stroke="#473726" stroke-width="1.4" marker-end="url(#ar)"/>
+
+  <!-- ===== COMPOUND ENGINE (the core) ===== -->
+  <rect x="40" y="296" width="680" height="244" rx="10" fill="#1A130B" stroke="#FF6A1A" stroke-width="2"/>
+  <rect x="40" y="296" width="680" height="5" rx="2" fill="#FF6A1A"/>
+  <text x="60" y="330" class="br" font-size="17" font-weight="700">COMPOUND-RISK ENGINE</text>
+  <text x="60" y="349" class="mono" fill="#FF8A3D" font-size="10">the deterministic core · the IP</text>
+  <text x="700" y="328" class="mono br" font-size="10" text-anchor="end">hybrid</text>
+  <text x="700" y="344" class="mono dim" font-size="9" text-anchor="end">scoring backbone</text>
+
+  <!-- col 1: feature extraction -->
+  <text x="60" y="380" class="lbl" font-size="9.5">FEATURE EXTRACTION</text>
+  <g font-size="10.5" fill="#C6B9A6">
+    <text x="60" y="402">level + trend (baseline-subtracted)</text>
+    <text x="60" y="421">ignition · in-zone / adjacent</text>
+    <text x="60" y="440">personnel · in-zone / blast-radius</text>
+    <text x="60" y="459">confined-space O2</text>
+    <text x="60" y="478">fire-triangle oxidizer</text>
   </g>
-
-  <!-- ===== AGENTS ===== -->
-  <text x="40" y="201" fill="#5f6e7e" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">INTELLIGENCE · LANGGRAPH MULTI-AGENT</text>
-  <g font-size="13" font-weight="600">
-    <g>
-      <rect x="40" y="210" width="216" height="58" rx="9" fill="#101820" stroke="#2c5f57"/>
-      <text x="58" y="236" fill="#eaf2fa">Sensor Agent</text>
-      <text x="58" y="255" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">trend + slope</text>
-    </g>
-    <g>
-      <rect x="288" y="210" width="216" height="58" rx="9" fill="#101820" stroke="#2c5f57"/>
-      <text x="306" y="236" fill="#eaf2fa">Permit Agent</text>
-      <text x="306" y="255" fill="#6b7888" font-size="10" font-weight="400" font-family="ui-monospace, monospace">ignition · conflict</text>
-    </g>
-    <g>
-      <rect x="536" y="210" width="216" height="58" rx="9" fill="#101820" stroke="#2c5f57"/>
-      <text x="554" y="236" fill="#eaf2fa">Vision Agent</text>
-      <text x="554" y="255" fill="#34d3bd" font-size="10" font-weight="400" font-family="ui-monospace, monospace">YOLOv8</text>
-    </g>
-    <g>
-      <rect x="784" y="210" width="176" height="58" rx="9" fill="#101820" stroke="#2c5f57"/>
-      <text x="802" y="236" fill="#eaf2fa">Context Agent</text>
-      <text x="802" y="255" fill="#34d3bd" font-size="10" font-weight="400" font-family="ui-monospace, monospace">Gemini RAG</text>
-    </g>
+  <line x1="280" y1="372" x2="280" y2="496" stroke="#2A2118" stroke-width="1"/>
+  <!-- col 2: verdict gate -->
+  <text x="298" y="380" class="lbl" font-size="9.5">VERDICT GATE</text>
+  <g font-size="10.5" fill="#C6B9A6">
+    <text x="298" y="402">explosion: fuel+ignition+O2+crew</text>
+    <text x="298" y="421">asphyxiation: O2-deficient + crew</text>
+    <text x="298" y="440">sensor-trust: suspect O2 ≠ suppress</text>
+    <text x="298" y="459">inerting: two-key (O2 + air)</text>
   </g>
-
-  <!-- agents -> reasoner (bus) -->
-  <g stroke="#2a3a48" stroke-width="1.5" fill="none">
-    <line x1="148" y1="268" x2="148" y2="292"/>
-    <line x1="396" y1="268" x2="396" y2="292"/>
-    <line x1="644" y1="268" x2="644" y2="292"/>
-    <line x1="872" y1="268" x2="872" y2="292"/>
-    <line x1="148" y1="292" x2="872" y2="292"/>
-    <line x1="500" y1="292" x2="500" y2="312" marker-end="url(#ar)"/>
+  <line x1="510" y1="372" x2="510" y2="496" stroke="#2A2118" stroke-width="1"/>
+  <!-- col 3: outputs -->
+  <text x="528" y="380" class="lbl" font-size="9.5">OUTPUTS</text>
+  <g font-size="10.5" fill="#C6B9A6">
+    <text x="528" y="402">compound flag</text>
+    <text x="528" y="421">score 0–100 · level</text>
+    <text x="528" y="440">time-to-threshold</text>
+    <text x="528" y="459">ranked interventions</text>
+    <text x="528" y="478">calibrated confidence</text>
   </g>
+  <line x1="56" y1="506" x2="704" y2="506" stroke="#2A2118" stroke-width="1"/>
+  <text x="380" y="526" class="mono br" font-size="9.5" text-anchor="middle">DETERMINISTIC · AUDITABLE · NO LLM IN THE DECISION · O(zones)/frame · ~0.65M tags/s single-core</text>
 
-  <!-- ===== REASONER ===== -->
-  <rect x="40" y="316" width="920" height="62" rx="10" fill="#0f1a1c" stroke="#34d3bd" stroke-width="1.6"/>
-  <circle cx="70" cy="347" r="6" fill="none" stroke="#34d3bd" stroke-width="1.6"/><circle cx="70" cy="347" r="2" fill="#34d3bd"/>
-  <text x="92" y="343" fill="#eaf2fa" font-size="15" font-weight="700">Compound-Risk Reasoner</text>
-  <text x="92" y="362" fill="#8aa6a0" font-size="10.5" font-family="ui-monospace, monospace">hybrid: deterministic engine + LLM · knowledge graph</text>
-  <text x="936" y="343" fill="#34d3bd" font-size="11" text-anchor="end" font-family="ui-monospace, monospace">100/100</text>
-  <text x="936" y="360" fill="#5f6e7e" font-size="9" text-anchor="end" font-family="ui-monospace, monospace">compound · lead-time</text>
-
-  <!-- reasoner -> orchestrator -->
-  <line x1="500" y1="378" x2="500" y2="400" stroke="#2a3a48" stroke-width="1.5" marker-end="url(#ar)"/>
-  <text x="512" y="394" fill="#fb3b4e" font-size="9" font-family="ui-monospace, monospace">if compound</text>
-
-  <!-- ===== ORCHESTRATOR ===== -->
-  <rect x="40" y="404" width="920" height="60" rx="10" fill="#190f12" stroke="#fb3b4e" stroke-width="1.6"/>
-  <circle cx="70" cy="434" r="5" fill="#fb3b4e"/>
-  <text x="92" y="430" fill="#eaf2fa" font-size="15" font-weight="700">Response Orchestrator</text>
-  <text x="92" y="449" fill="#b88" font-size="10.5" font-family="ui-monospace, monospace">alert · evacuate · OISD report · EN / Telugu / Hindi</text>
-
-  <!-- orchestrator -> presentation -->
-  <line x1="500" y1="464" x2="500" y2="492" stroke="#2a3a48" stroke-width="1.5" marker-end="url(#ar)"/>
-
-  <!-- ===== PRESENTATION ===== -->
-  <text x="40" y="487" fill="#5f6e7e" font-size="10" letter-spacing="2" font-family="ui-monospace, monospace">PRESENTATION</text>
-  <rect x="40" y="496" width="920" height="60" rx="10" fill="#121821" stroke="#26313e"/>
-  <text x="62" y="522" fill="#eaf2fa" font-size="15" font-weight="700">Next.js Control Room</text>
-  <text x="62" y="541" fill="#6b7888" font-size="10.5" font-family="ui-monospace, monospace">geospatial HMI · disaster memory · CCTV · response modal</text>
-  <text x="938" y="530" fill="#5f6e7e" font-size="10" text-anchor="end" font-family="ui-monospace, monospace">FastAPI REST + WebSocket</text>
-
-  <!-- legend + metrics -->
-  <g font-family="ui-monospace, monospace" font-size="10">
-    <rect x="40" y="600" width="12" height="12" rx="3" fill="none" stroke="#34d3bd" stroke-width="1.5"/>
-    <text x="58" y="610" fill="#8a98a6">Trinetra intelligence</text>
-    <rect x="210" y="600" width="12" height="12" rx="3" fill="none" stroke="#fb3b4e" stroke-width="1.5"/>
-    <text x="228" y="610" fill="#8a98a6">compound-hazard response path</text>
+  <!-- ===== INTELLIGENCE LAYER (sidecar) ===== -->
+  <rect x="760" y="296" width="400" height="340" rx="10" fill="#1C140C" stroke="#473726"/>
+  <text x="782" y="326" class="mono br" font-size="11" letter-spacing="1">INTELLIGENCE LAYER</text>
+  <text x="782" y="344" class="dim" font-size="10">LLM-assisted · explains · retrieves · drafts —</text>
+  <text x="782" y="360" font-size="10" fill="#FF8A3D" font-style="italic">never makes the decision</text>
+  <line x1="782" y1="372" x2="1138" y2="372" stroke="#2A2118" stroke-width="1"/>
+  <g>
+    <text x="782" y="394" class="h" font-size="11.5">6-stage reasoning graph</text><text x="782" y="409" class="mono dim" font-size="8.8">Sensor→Permit→Vision→Reasoner→RAG→Response · auditable</text>
+    <text x="782" y="431" class="h" font-size="11.5">Disaster-Memory RAG</text><text x="782" y="446" class="mono dim" font-size="8.8">Gemini embeddings · 81% Vizag match</text>
+    <text x="782" y="468" class="h" font-size="11.5">Vision (YOLOv8)</text><text x="782" y="483" class="mono dim" font-size="8.8">person + zone-intrusion · monitoring layer</text>
+    <text x="782" y="505" class="h" font-size="11.5">Incident-pattern intelligence</text><text x="782" y="520" class="mono dim" font-size="8.8">recurring causal combinations</text>
+    <text x="782" y="542" class="h" font-size="11.5">Compliance audit</text><text x="782" y="557" class="mono dim" font-size="8.8">OISD · DGMS · Factory Act</text>
+    <text x="782" y="579" class="h" font-size="11.5">Shift-left permit gate · Pre-mortem</text><text x="782" y="594" class="mono dim" font-size="8.8">block before issue · hazards before they occur</text>
+    <text x="782" y="616" class="h" font-size="11.5">Knowledge graph</text><text x="782" y="631" class="mono dim" font-size="8.8">gas→precursor→compound←precedent · networkx</text>
   </g>
-  <text x="40" y="648" fill="#eaf2fa" font-size="13" font-weight="600">100% compound recall<tspan fill="#5f6e7e" font-weight="400">  ·  </tspan>0% false-positive<tspan fill="#5f6e7e" font-weight="400">  ·  </tspan>7.4 min mean early-warning</text>
-  <text x="40" y="668" fill="#5f6e7e" font-size="10" font-family="ui-monospace, monospace">29-scenario benchmark · deterministic (seed=42) · vs single-sensor baseline</text>
+  <!-- engine <-> intelligence (LLM-assist, not the decision path) -->
+  <line x1="720" y1="420" x2="760" y2="420" stroke="#FF6A1A" stroke-width="1.3" stroke-dasharray="4 3" marker-start="url(#arB)" marker-end="url(#arB)"/>
+
+  <!-- ===== RESPONSE ===== -->
+  <line x1="380" y1="540" x2="380" y2="570" stroke="#473726" stroke-width="1.4" marker-end="url(#ar)"/>
+  <text x="392" y="562" class="mono" fill="#FF2B4E" font-size="9">if compound ∧ score ≥ 40</text>
+  <rect x="40" y="572" width="680" height="62" rx="9" fill="#190F0C" stroke="#FF2B4E" stroke-width="1.5"/>
+  <circle cx="66" cy="603" r="5" fill="#FF2B4E"/>
+  <text x="84" y="599" class="h" font-size="14">Response orchestrator</text>
+  <text x="84" y="618" class="mono" fill="#C6B9A6" font-size="9">report · §36/37/38 · OISD-STD-105 · multilingual evac · multi-channel dispatch · evidence freeze · operator-gated</text>
+
+  <!-- ===== CONTROL ROOM (full width) ===== -->
+  <line x1="380" y1="634" x2="380" y2="664" stroke="#473726" stroke-width="1.4" marker-end="url(#ar)"/>
+  <rect x="40" y="666" width="1120" height="62" rx="9" fill="#15110D" stroke="#2A2118"/>
+  <text x="60" y="692" class="h" font-size="14">Next.js control room</text>
+  <text x="60" y="711" class="mono" fill="#C6B9A6" font-size="9.5">split-reality HMI · plant schematic · fleet board · knowledge-graph view · booth / story modes</text>
+  <text x="1140" y="692" class="mono br" font-size="10" text-anchor="end">FastAPI · 30 REST + WebSocket</text>
+  <text x="1140" y="711" class="mono dim" font-size="9" text-anchor="end">edge or on-prem · data stays in the plant</text>
+
+  <!-- ===== footer metrics + legend ===== -->
+  <line x1="40" y1="758" x2="1160" y2="758" stroke="#2A2118" stroke-width="1"/>
+  <text x="40" y="788" class="h" font-size="14"><tspan fill="#FF6A1A">100%</tspan> compound recall<tspan class="dim" font-weight="400">    ·    </tspan><tspan fill="#FF6A1A">0%</tspan> false-positive<tspan class="dim" font-weight="400">    ·    </tspan><tspan fill="#FF6A1A">7.4 min</tspan> mean lead</text>
+  <text x="40" y="810" class="mono dim" font-size="10">29-scenario benchmark · 240-scenario held-out 100% / 3.3% FP · robustness 10/10 · property-tested · deterministic (seed = 42) · vs single-sensor baseline</text>
+  <g class="mono" font-size="9.5">
+    <rect x="820" y="778" width="12" height="12" rx="3" fill="none" stroke="#FF6A1A" stroke-width="1.5"/><text x="838" y="788" class="dim">deterministic decision core</text>
+    <rect x="1010" y="778" width="12" height="12" rx="3" fill="none" stroke="#FF2B4E" stroke-width="1.5"/><text x="1028" y="788" class="dim">compound-response path</text>
+  </g>
 </svg>
