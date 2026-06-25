@@ -7,13 +7,38 @@
 **An AI compound-risk intelligence layer for zero-harm industrial operations.**
 Trinetra fuses gas sensors, permits, CCTV and shift logs into one real-time brain that catches the **lethal combinations** every individual safety system rates as "normal" — *minutes before they kill.*
 
+<br/>
+
 [![CI](https://github.com/SaudSatopay/trinetra/actions/workflows/ci.yml/badge.svg)](https://github.com/SaudSatopay/trinetra/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-ff6a1a)
 ![Python](https://img.shields.io/badge/python-3.10-e8862f?logo=python&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-14-f7efe1?logo=next.js&logoColor=black)
 ![Gemini](https://img.shields.io/badge/Gemini-2.5--flash-ff2b4e?logo=googlegemini&logoColor=white)
 
-**`100%` compound recall** · **`0%` false-positive** · **`7.4 min` mean early-warning**
+![Recall](https://img.shields.io/badge/compound_recall-100%25-3FC77D)
+![FP](https://img.shields.io/badge/false_positive-0%25-3FC77D)
+![Lead](https://img.shields.io/badge/mean_lead-7.4_min-ff6a1a)
+![Latency](https://img.shields.io/badge/p50_frame_to_alert-~50us-e8862f)
+![API](https://img.shields.io/badge/REST_API-30_routes-ff6a1a)
+![WebSocket](https://img.shields.io/badge/stream-WebSocket-e8862f)
+
+**`100%` compound recall · `0%` false-positive · `7.4 min` mean early-warning**
+
+[**The problem**](#the-8-minutes-that-should-not-have-been-silent) · [**Thesis**](#the-thesis-compound-risk) · [**The moment**](#the-moment-that-wins-the-room-) · [**Architecture**](#architecture) · [**Evidence**](#evidence--how-we-know-it-works) · [**Performance**](#performance--scale) · [**Quickstart**](#quickstart) · [**API**](#api-reference)
+
+</div>
+
+---
+
+<div align="center">
+
+### By the numbers — every figure reproducible (seed 42)
+
+| | | | |
+|:---:|:---:|:---:|:---:|
+| **100%** compound recall | **0%** false-positive | **+7.4 min** mean lead | **+6 min** at Vizag |
+| **~50 µs** p50 frame→alert | **~0.7M** sensor-tags/sec/core | **$0.30** per plant / month | **~5,000** plants / core |
+| **30** REST routes + WS | **10/10** fault-mode checks | **5/5** property invariants | **240** held-out scenarios |
 
 </div>
 
@@ -29,7 +54,9 @@ Trinetra fuses gas sensors, permits, CCTV and shift logs into one real-time brai
 - [The multi-modal brain](#the-multi-modal-brain)
 - [The knowledge graph](#the-knowledge-graph)
 - [Evidence — how we know it works](#evidence--how-we-know-it-works)
+- [Performance & scale](#performance--scale)
 - [Capabilities](#capabilities)
+- [Full problem-statement coverage](#full-problem-statement-coverage)
 - [The control room](#the-control-room)
 - [Deployment — a connector, not a rewrite](#deployment--a-connector-not-a-rewrite)
 - [Quickstart](#quickstart)
@@ -89,6 +116,21 @@ While the incident develops, the two systems live in **split realities**:
 
 **+6 minutes of early warning** — while every gas sensor still reads below its setpoint. Six minutes is the window an operator gets to suspend the permit and clear the floor before ignition.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#15110d','primaryTextColor':'#f7efe1','primaryBorderColor':'#ff6a1a','lineColor':'#8a7d6a','actorBkg':'#15110d','actorBorder':'#ff6a1a','noteBkgColor':'#1C140C','noteBorderColor':'#473726','fontFamily':'ui-monospace, monospace'}}}%%
+sequenceDiagram
+  participant G as Gas sensors
+  participant L as Legacy single-sensor
+  participant T as Trinetra compound AI
+  Note over G,T: t = 0 — baseline, every gas below setpoint
+  G->>T: rising CH4 (sub-alarm) + hot-work permit + 3 crew
+  T-->>T: t = 8 — 🔴 COMPOUND ALERT · breach ~36 min
+  Note over L: still 🟢 ALL CLEAR
+  G->>L: t = 14 — CH4 finally crosses its setpoint
+  L-->>L: first single-sensor gas alarm
+  Note over T,L: Trinetra led by +6 minutes
+```
+
 ---
 
 ## Architecture
@@ -103,7 +145,8 @@ flowchart LR
   subgraph DATA["DATA — digital twin / connectors"]
     SIM["Plant Simulator<br/>6 zones · seed 42"]
     CSV["SCADA / permit CSV<br/>/api/ingest"]
-    CAM["CCTV frame<br/>YOLOv8"]
+    OPC["Live OPC-UA bridge<br/>/api/opcua/session"]
+    CAM["CCTV frame / clip<br/>YOLOv8"]
   end
   subgraph INTEL["INTELLIGENCE — deterministic-first"]
     ENG["⚙️ Compound-Risk Engine<br/>auditable scoring"]
@@ -117,6 +160,7 @@ flowchart LR
   end
   SIM --> ENG
   CSV --> ENG
+  OPC --> ENG
   CAM --> AG
   KG -.blast radius.-> ENG
   ENG --> AG --> RAG
@@ -158,7 +202,7 @@ Everything is deterministic given the simulator seed, so every number below is r
 | | Capability | Endpoint |
 |---|---|---|
 | ⚙️ | **Compound engine** — catches danger *below* single-sensor thresholds | `100% recall · 0% FP` |
-| 👁️ | **Computer vision** — YOLOv8 person + restricted-zone-intrusion on a sample frame | `/api/vision` |
+| 👁️ | **Computer vision** — YOLOv8 person + restricted-zone-intrusion (single frame + a looping recorded feed) | `/api/vision · /api/vision/feed` |
 | 🤖 | **Reasoning graph** — LangGraph **6-stage auditable trace** (deterministic stages) | `/api/agents` |
 | 📚 | **Disaster memory (RAG)** — matches live conditions to real disasters via Gemini embeddings | `81% Vizag match` |
 | 🚨 | **Autonomous response** — OISD/Factory-Act incident report + **EN/Telugu/Hindi** alerts | `/api/response` |
@@ -210,17 +254,17 @@ flowchart LR
 
 ### Ablation — is the full fusion necessary?
 
-| Detector tier | Recall | False-alarm | Lead |
-|---|---|---|---|
-| Single-sensor threshold (incumbent) | 100% | 73% | 0 min |
-| Gas-trend rule (**no context**) | 100% | 67% | 7.4 min |
-| **Trinetra (full compound fusion)** | 100% | **0%** | **7.4 min** |
+| Detector tier | Recall | False-alarm | Precision | Lead |
+|---|---|---|---|---|
+| Single-sensor threshold (incumbent) | 100% | 73% | 56% | 0 min |
+| Gas-trend rule (**no context**) | 100% | 67% | 58% | 7.4 min |
+| **Trinetra (full compound fusion)** | 100% | **0%** | **100%** | **7.4 min** |
 
 Context is what turns *early* detection into *actionable* early detection (67% → 0% false alarms at the same lead).
 
 ### Generalization — held-out, unseen seeds
 
-**240 randomized scenarios** at seeds the thresholds were never tuned on → **100% recall, 3.3% false-positive**. Not overfit to the curated 29.
+**240 randomized scenarios** (120 hazards + 120 decoys) at seeds the thresholds were never tuned on → **100% recall, 3.3% false-positive** (96.8% precision, 7.7 min lead). Not overfit to the curated 29.
 
 ### Real-incident replay — reconstructed from two real inquiries
 
@@ -231,6 +275,51 @@ Reconstructed from **two** real inquiries and replayed through the *same* engine
 The held-out generalization run answers "train = test" *inside* the simulator; this answers it **outside** it. We replay a **real, peer-reviewed, third-party measurement** — hourly CO from the **UCI #360 Air Quality** dataset (De Vito et al., 2008; DOI 10.24432/C5K603, CC BY 4.0) — through the **same connector and the same untuned engine**. On that real, dip-laden CO build-up the compound alert fires at **T+3** — and the engine **tracks the real signal**: it relaxes during the dataset's genuine CO dips (no crying wolf) and stands down when the CO clears overnight. The early **detection is scale-robust** (T+2–4 across every y-scale); the lead in minutes is measured against the single-sensor baseline and *is* scale-sensitive, so rather than quote one number we publish the full **lead-vs-scale sweep** (`lead_by_scale`; +10 at our disclosed ×6). What is real (the CO **dynamics**) vs overlaid (the y-scale + a hot-work/personnel context) — and the honest scale correction — is spelled out in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Air Quality · De Vito '08**.)*
 
 A **second** external exhibit comes from a *recognized third-party physics model* rather than a measurement: **EPA/NOAA ALOHA** (the CAMEO dispersion tool). A modeled methane release runs through the **same connector + untuned engine**, and because methane → %LEL is fixed chemistry (`%LEL = ppm ÷ 500`) **the y-scale multiplier is eliminated** — De Vito's one soft spot — leaving the **receptor distance** as the only chosen parameter, which is **disclosed and swept**, not hidden. It lands the **blind-spot axis**: at a realistic 100 m crew standoff EPA's physics put a *sustained ~8.2 %LEL* cloud where a single 10 %LEL detector reads **green for the entire release**, yet Trinetra (sub-threshold gas + hot-work permit + crew) flags **compound at T+1 and holds it**. A **live-computed distance sweep** (`distance_sweep` in the endpoint; 50 / 100 / 150 m committed curves) shows it isn't cherry-picked — dense enough to alarm even a single sensor at 50 m, correctly **silent** at 150 m. Full provenance (ALOHA 5.4.7 + every parameter) and the real-vs-overlaid split are in **[docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md)**. *(In-app: connector → **Methane · EPA ALOHA**.)*
+
+### Engine invariants — property-tested
+
+Beyond the labelled scenarios, **5 engine invariants are property-tested with Hypothesis** (`test_invariants.py`) across thousands of generated inputs — level is monotonic in score, the score stays bounded, a compound alert always carries an intervention, a suspect O2 reading can never *silence* an explosion, and protected inerting stays zone-local. **5/5 hold.**
+
+---
+
+## Performance & scale
+
+Real-time on commodity hardware, and the unit economics fall with the fleet. Both are **measured, not asserted** — re-run `python throughput.py` and `GET /api/fleet/scale`.
+
+### Latency — frame → alert, single core, no GPU
+
+| | p50 | p90 | p99 | p99.9 |
+|---|---|---|---|---|
+| **frame → alert** | **~50 µs** | ~62 µs | ~90 µs | ~150 µs |
+
+≈ **0.7M sensor-tags/sec** on one core (≈117k zone-assessments/sec). A 10,000-tag plant assesses in **~14 ms per 1 Hz frame — ≈70× real-time**, no GPU in the life-safety path. *(Representative single-core run; `throughput.py` is a noisy micro-benchmark — figures land in this band.)*
+
+### Fleet economics — one engine, every plant
+
+The engine is `O(zones)` and **stateless per plant** — no shared state, no per-site model — so the fleet scales horizontally by adding plain workers. `GET /api/fleet/scale` *times* the engine live and derives the cost curve:
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#15110d','primaryTextColor':'#f7efe1','primaryBorderColor':'#ff6a1a','lineColor':'#8a7d6a','clusterBkg':'#0f0c0a','clusterBorder':'#3b2e22','fontFamily':'ui-monospace, monospace'}}}%%
+flowchart LR
+  E["⚙️ One deterministic engine — O(zones)<br/>~5,000 plants per core"]
+  E --> P1["Plant 1 · stateless shard"]
+  E --> P2["Plant 2 · stateless shard"]
+  E --> P3["Plant … · stateless shard"]
+  E --> PN["Plant N · stateless shard"]
+  P1 --> B["🖥️ Fleet board · compound-first triage"]
+  P2 --> B
+  P3 --> B
+  PN --> B
+```
+
+| Plants | Cores | Cost / month | **$ / plant / month** |
+|---|---|---|---|
+| 10 | 1 | $30 | **$3.00** |
+| 100 | 1 | $30 | **$0.30** |
+| 1,000 | 1 | $30 | **$0.03** |
+| 10,000 | 2–3 | $60–90 | **< $0.01** |
+
+*Basis: a `$30/core-month` cloud vCPU, provisioned at a conservative 4× headroom over measured capacity (leaving room for the co-located per-request CPU — (de)serialization, GC, bursts). Risk-compute only; ingest/storage/networking scale separately. Digital-twin sites stand in for live OPC-UA / MQTT feeds — ingesting real data is a connector, not a rewrite.*
 
 ---
 
@@ -245,16 +334,40 @@ A **second** external exhibit comes from a *recognized third-party physics model
 | 🧪 **Modeled-physics replay** | EPA ALOHA methane dispersion, fixed ppm→%LEL (no y-scale; receptor distance disclosed + swept) — single sensor blind at 8.2 %LEL while compound fires | `/api/external/aloha-methane` |
 | 🔮 **Pre-mortem discovery** | searches the plant for lethal combinations that *haven't happened yet* | `/api/premortem` |
 | 🏭 **Fleet command** | the same engine across a fleet of plants on one board — the scalability story made concrete | `/api/fleet` |
+| 💵 **Measured scale economics** | times the engine live → plants-per-core + a $/plant/month cost curve | `/api/fleet/scale` |
+| 🔌 **Live OPC-UA ingest** | rebuilds gas readings off an OPC-UA wire and scores them through the same engine — real-protocol, not a file | `/api/opcua/session` |
 | 🚫 **Shift-left permit gate** | refuses a permit that would *create* a compound hazard — prevention at the permit desk, not detection after | `/api/permit-gate` |
 | 🔁 **Active-learning flywheel** | per-plant nuisance tuning from operator feedback, with a hard recall guardrail (compound always pages) | `/api/feedback` |
 | 💰 **Business impact** | EV-adjusted ROI — **₹115.5 Cr** per prevented incident, **~7.7× expected annual return** (1-in-15-yr) + insurance offset | response modal |
 | 🎛️ **Scenario editor** | toggle gas / ignition / personnel / blast-radius and watch the engine flip live | `/api/simulate` |
-| 🔌 **SCADA connector** | replay a real SCADA/permit CSV through the same engine — *a connector, not a rewrite* | `/api/ingest` |
+| 🔗 **SCADA connector** | replay a real SCADA/permit CSV through the same engine — *a connector, not a rewrite* | `/api/ingest` |
 | 📚 **Pattern intelligence** | mines recurring causal patterns across a near-miss + incident corpus | `/api/patterns` |
 | ✅ **Compliance & audit** | live OISD / DGMS / Factory-Act audit — per-zone deviations + corrective actions | `/api/compliance` |
 | 🛟 **Demo-safe** | cached/golden fallbacks keep the room functional if the LLM is rate-limited; **Judge Mode** jumps to the money shot | `TRINETRA_DEMO_MODE=1` |
 
-> **Full problem-statement coverage** — all six illustrative builds: three as the production core (**Compound Risk Engine · Digital Permit Intelligence · Emergency Response Orchestrator**) and three as focused, working MVPs (**Geospatial Safety Heatmap · Incident Pattern Intelligence · Quality & Compliance Audit Agent**) — across every suggested technology (multi-agent · geospatial · RAG · CV · IoT/SCADA · knowledge graph).
+## Full problem-statement coverage
+
+All six illustrative builds — three as the production core, three as focused working MVPs — across every suggested technology:
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#15110d','primaryTextColor':'#f7efe1','primaryBorderColor':'#ff6a1a','lineColor':'#8a7d6a','fontFamily':'ui-monospace, monospace'}}}%%
+flowchart LR
+  R["🛡️ Trinetra"]
+  R --> PC["Production core"]
+  R --> MV["Working MVPs"]
+  R --> TE["Technologies"]
+  PC --> PC1["Compound-Risk Engine"]
+  PC --> PC2["Digital Permit Intelligence"]
+  PC --> PC3["Emergency Response Orchestrator"]
+  MV --> MV1["Geospatial Safety Heatmap"]
+  MV --> MV2["Incident Pattern Intelligence"]
+  MV --> MV3["Quality & Compliance Audit"]
+  TE --> TE1["Multi-agent reasoning graph"]
+  TE --> TE2["RAG disaster memory"]
+  TE --> TE3["Computer vision · YOLOv8"]
+  TE --> TE4["Knowledge graph"]
+  TE --> TE5["IoT / SCADA / OPC-UA"]
+```
 
 ## The control room
 
@@ -262,7 +375,7 @@ A bespoke, instrument-grade HMI (Next.js 14 + a "foundry" design system — warm
 
 - **Geospatial plant schematic** — a continuous risk heat-field, flowing blast-radius links, worker-location markers, a 270° risk gauge.
 - **Plant / Fleet / Knowledge toggle** — the geospatial plant, the multi-plant fleet board, or the reasoning graph, in the main panel.
-- **Fleet command** — one engine across six plants, ranked compound-first, with the live aggregate (plants · workers · compound now · exposed · max lead).
+- **Fleet command** — one engine across many plants, ranked compound-first, with the live aggregate (plants · workers · compound now · exposed · max lead) and the measured cost curve.
 - **Threat panel** — score, level, projected breach (± confidence), the "why" factors, the ranked prescriptive intervention.
 - **Split-reality readout** — *Legacy: all clear* vs *Trinetra: compound alert · +N min*.
 - **Disaster-memory card**, **CCTV/YOLOv8 tile**, **scenario editor**, **SCADA connector**, **Safety-Intelligence chips** (compliance · patterns · pre-mortem · **permit gate** · **learning** · reasoning), and an auto-popping **autonomous-response modal**.
@@ -271,15 +384,15 @@ A bespoke, instrument-grade HMI (Next.js 14 + a "foundry" design system — warm
 
 ## Deployment — a connector, not a rewrite
 
-The digital twin and a real plant feed are the *same* interface — the engine cannot tell the difference:
+The digital twin and a real plant feed are the *same* interface — the engine cannot tell the difference. A live **OPC-UA bridge** (`/api/opcua/session`) and the **CSV connector** (`/api/ingest`) already prove it: real plant data enters the *same* engine through a connector, not a rewrite.
 
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#15110d','primaryTextColor':'#f7efe1','primaryBorderColor':'#ff6a1a','lineColor':'#8a7d6a','fontFamily':'ui-monospace, monospace'}}}%%
 flowchart LR
-  H["Plant historian<br/>OPC-UA / MQTT / PI"] --> E["Edge pre-filter"] --> C["SCADA CSV"] --> I["/api/ingest"] --> EN["Same compound engine<br/>O(zones)"] --> UI["Control room"]
+  H["Plant historian<br/>OPC-UA / MQTT / PI"] --> E["Edge pre-filter"] --> C["Connector<br/>/api/ingest · /api/opcua/session"] --> EN["Same compound engine<br/>O(zones) · ~50 µs / assessment"] --> UI["Control room"]
 ```
 
-The engine is `O(zones)` per frame: **measured ~0.6–0.7M sensor tags/sec on a single core** (`python throughput.py` — a noisy micro-benchmark; runs land in that band), so a 10,000-tag plant assesses in **~15 ms per 1 Hz frame — ≈65× real-time, no GPU**. The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable.
+The **fleet view** (`/api/fleet`) runs that same engine across many plants on one board: no per-site retraining, horizontally shardable, with live unit economics at `/api/fleet/scale`.
 
 ---
 
@@ -320,7 +433,7 @@ python benchmark.py                         # the headline metrics
 
 ## API reference
 
-FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint exists for push deployments; the demo control room replays precomputed frames so the timeline is scrubbable). Base: `http://127.0.0.1:8000`. *(Responses are UTF-8 JSON; some engine factor strings use en/em-dashes — view in a browser or a UTF-8 terminal, not a legacy cp1252 console, to avoid mojibake.)*
+FastAPI service — **30 REST routes + a WebSocket stream** (the stream endpoint exists for push deployments; the demo control room replays precomputed frames so the timeline is scrubbable). Base: `http://127.0.0.1:8000`. *(Responses are UTF-8 JSON; some engine factor strings use en/em-dashes — view in a browser or a UTF-8 terminal, not a legacy cp1252 console, to avoid mojibake.)*
 
 | Route | Purpose |
 |---|---|
@@ -331,19 +444,21 @@ FastAPI service — **27 REST routes + a WebSocket stream** (the stream endpoint
 | `WS  /ws` | live frame stream at a chosen speed |
 | `GET /api/simulate` | ad-hoc scenario from the editor's toggles |
 | `GET /api/ingest/sample` · `POST /api/ingest` | download / replay a SCADA-permit CSV |
+| `GET /api/opcua/session` | live OPC-UA bridge — reads gas tags off the wire and scores them |
 | `GET /api/incident/texas-city` · `…/texas-city.csv` | the CSB Texas City reconstruction + raw feed |
+| `GET /api/incident/jaipur` · `…/jaipur.csv` | the MB Lal Jaipur reconstruction + raw feed |
 | `GET /api/external/air-quality` · `…/air-quality.csv` | real measured CO (UCI #360, De Vito 2008) replayed + raw feed |
-| `GET /api/external/aloha-methane` · `…/aloha-methane.csv` | EPA ALOHA methane dispersion replayed (fixed ppm→%LEL, no y-scale; live `distance_sweep`) + raw feed |
+| `GET /api/external/aloha-methane` · `…/aloha-methane.csv` | EPA ALOHA methane dispersion replayed (fixed ppm→%LEL, live `distance_sweep`) + raw feed |
 | `GET /api/agents` | the 6-stage reasoning trace |
 | `GET /api/disaster-memory` | closest historical precedent + grounded briefing |
-| `GET /api/vision` | YOLOv8 person / zone-intrusion detection |
+| `GET /api/vision` · `/api/vision/feed` | YOLOv8 person / zone-intrusion — single frame + a looping recorded feed |
 | `GET /api/response` | autonomous response: actions, report, multilingual alerts, impact |
 | `GET /api/knowledge-graph` | the networkx knowledge graph (nodes + edges) |
 | `GET /api/patterns` | incident-pattern intelligence |
 | `GET /api/compliance` | live OISD / DGMS / Factory-Act audit |
 | `GET /api/ablation` | the three-tier ablation study |
 | `GET /api/premortem` | pre-mortem hazard discovery |
-| `GET /api/fleet` | multi-plant fleet rollup — the same engine across every site |
+| `GET /api/fleet` · `/api/fleet/scale` | multi-plant fleet rollup + measured plants-per-core / cost curve |
 | `GET /api/permit-gate` | shift-left permit gate — block / conditional / clear verdict |
 | `GET/POST /api/feedback` · `POST /api/feedback/reset` | operator-feedback flywheel — per-plant nuisance tuning |
 
@@ -361,18 +476,20 @@ trinetra/
 │   │   ├── agents/graph.py      # 🤖 LangGraph 6-stage reasoning graph
 │   │   ├── ai/                  # Gemini client · disaster-memory RAG · incident reports · patterns · golden fallbacks
 │   │   ├── kg/graph.py          # 🕸️ networkx knowledge graph
-│   │   ├── vision/detector.py   # 👁️ YOLOv8 detector
+│   │   ├── vision/detector.py   # 👁️ YOLOv8 detector (frame + recorded feed)
 │   │   ├── impact.py            # 💰 EV-adjusted ROI model
 │   │   ├── compliance.py        # ✅ OISD/DGMS/Factory-Act audit
 │   │   ├── premortem.py         # 🔮 pre-mortem hazard discovery
-│   │   ├── fleet.py             # 🏭 multi-plant fleet rollup (one engine, N sites)
+│   │   ├── fleet.py             # 🏭 multi-plant rollup + measured scale economics
+│   │   ├── opcua_bridge.py      # 🔌 live OPC-UA ingest
 │   │   ├── permit_gate.py       # 🚫 shift-left permit-issuance gate
 │   │   ├── feedback.py          # 🔁 operator-feedback / active-learning flywheel
-│   │   ├── replay.py            # 🔌 SCADA / real-incident CSV connector
+│   │   ├── replay.py            # 🔗 SCADA / real-incident CSV connector
 │   │   └── api/                 # FastAPI service + serialization
-│   ├── benchmark.py · ablation.py · test_robustness.py · test_generalization.py · smoke_api.py
+│   ├── benchmark.py · ablation.py · test_robustness.py · test_generalization.py
+│   ├── test_invariants.py · throughput.py · smoke_api.py
 ├── frontend/                    # Next.js 14 control room (app/ · components/ · lib/)
-├── docs/                        # architecture.svg · BACKTEST.md · deck · DEMO_SCRIPT.md
+├── docs/                        # architecture.svg · BACKTEST.md · EXTERNAL_DATA.md · deck · DEMO_SCRIPT.md
 └── scripts/demo.ps1             # one-command launcher
 ```
 
@@ -386,13 +503,15 @@ python benchmark.py            # 100% recall / 0% FP / 7.4 min
 python ablation.py             # 67% → 0% false alarms
 python test_robustness.py      # 10 sensor/permit fault modes
 python test_generalization.py  # 240 held-out scenarios
+python test_invariants.py      # 5 property-based engine invariants (Hypothesis)
+python throughput.py           # frame→alert latency percentiles + tags/sec
 python smoke_api.py            # REST + WebSocket smoke
 ```
 
 ## Honest caveats
 
-- The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` connector — proven by the Texas City / Jaipur replays and, most directly, by replaying a **real third-party measured dataset** (UCI #360 CO, De Vito 2008) and a **recognized third-party physics model** (EPA ALOHA methane dispersion, fixed ppm→%LEL) the engine never authored; see [docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md).
-- The 29 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe, and a single-sample O2-sensor dropout that must not fabricate an asphyxiation alert — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios) and **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur) address the "train = test" critique.
+- The demo runs on a **digital twin**, not a live plant — by necessity in a build sprint. It ingests standard SCADA/IoT/permit formats, so real-plant data enters the *same* engine through the `/api/ingest` and `/api/opcua/session` connectors — proven by the Texas City / Jaipur replays and, most directly, by replaying a **real third-party measured dataset** (UCI #360 CO, De Vito 2008) and a **recognized third-party physics model** (EPA ALOHA methane dispersion, fixed ppm→%LEL) the engine never authored; see [docs/EXTERNAL_DATA.md](docs/EXTERNAL_DATA.md).
+- The 29 benchmark scenarios were authored by us, but include **hard negatives** the engine must reject — among them inerted zones where all three explosion factors are present yet it is safe, and a single-sample O2-sensor dropout that must not fabricate an asphyxiation alert — and the engine also catches the **asphyxiation** hazard a flammable-only system misses. The held-out generalization run (240 unseen-seed scenarios), **two reconstructed real incidents** (CSB Texas City, MB Lal Jaipur), and the **property-tested invariants** address the "train = test" critique.
 - The headline metrics are measured on the **compound flag** (the lethal pattern), distinct from ordinary gas alarms — the value is the *combination* and the *lead time*.
 - The reasoning "agents" are **deterministic feature-extraction stages**, not autonomous LLM agents — a strength for a reproducible life-safety path.
 - Three of the six builds (geospatial, pattern-mining, compliance) are **focused MVPs**; the compound engine, permit intelligence and response orchestrator are the production core.
