@@ -1,4 +1,7 @@
 // Trinetra pitch deck generator (pptxgenjs). Output: ../Trinetra_Deck.pptx
+// Design: "Foundry" — an industrial, editorial, type-forward system. DIN display (Bahnschrift),
+// humanist grotesque body (Segoe UI), engineering mono (Cascadia Mono). Bold hero numerals, hairline
+// rules, generous negative space. Every number is engine-derived and matches the live system + docs.
 const pptxgen = require("pptxgenjs");
 const p = new pptxgen();
 p.defineLayout({ name: "W", width: 13.333, height: 7.5 });
@@ -6,560 +9,589 @@ p.layout = "W";
 p.author = "Saud Satopay";
 p.title = "Trinetra";
 
-// ---- palette ("Foundry": warm ink + molten-metal signature; matches the live UI) ----
-const BG = "0b0908", PANEL = "15110d", PANEL2 = "100c09", LINE = "3b2e22",
-  BRAND = "ff6a1a", RED = "ff2b4e", AMBER = "f5902b", WATCH = "efc23c", STEEL = "6b7886",
-  TEXT = "c6b9a6", DIM = "7c6f5e", BRIGHT = "f7efe1", LEGACY = "5d5347";
-// warm-tinted panel fills for accented cards
-const PANEL_CRIT = "1f0f0b", PANEL_AMBER = "1d1206", PANEL_STEEL = "14130f";
-const HEAD = "Trebuchet MS", MONO = "Consolas", BODY = "Calibri";
-const W = 13.333;
-const shadow = () => ({ type: "outer", color: "000000", blur: 9, offset: 3, angle: 90, opacity: 0.35 });
+// ---- palette ----------------------------------------------------------------
+const BG = "0B0908", PANEL = "151009", PANEL2 = "1C140C", CARD = "120D08",
+  LINE = "2A2118", LINE2 = "473726",
+  BRAND = "FF6A1A", BRAND2 = "FF8A3D", RED = "FF2B4E", GREEN = "3FC77D",
+  AMBER = "F5902B", STEEL = "7C8B9A", WHITE = "FBF6EC", T2 = "C6B9A6", T3 = "8A7B68";
 
-function S() { const s = p.addSlide(); s.background = { color: BG }; return s; }
-function kicker(s, t, x = 0.7, y = 0.55) {
-  s.addText(t, { x, y, w: 8, h: 0.3, fontFace: MONO, fontSize: 12, color: BRAND, charSpacing: 3, margin: 0 });
+// ---- type (all installed on Windows 10/11 + the user's PowerPoint) ----------
+const DISP = "Bahnschrift SemiBold";   // hero / headlines — DIN, industrial, modern
+const DISPL = "Bahnschrift Light";     // large, elegant
+const SUB = "Bahnschrift";             // subheads
+const BODY = "Segoe UI";               // body
+const BODYL = "Segoe UI Light";        // large body
+const MONO = "Cascadia Mono";          // labels / telemetry / data
+const W = 13.333, H = 7.5, MX = 0.85, CW = W - 2 * MX;
+
+let pageNo = 0;
+function S() { const s = p.addSlide(); s.background = { color: BG }; pageNo++; return s; }
+function rect(s, x, y, w, h, fill, line, lw) {
+  s.addShape(p.shapes.RECTANGLE, { x, y, w, h, fill: fill ? { color: fill } : { type: "none" },
+    line: line ? { color: line, width: lw || 1 } : { type: "none" } });
 }
-function title(s, t, x = 0.7, y = 0.92, w = 12, size = 34) {
-  s.addText(t, { x, y, w, h: 0.9, fontFace: HEAD, fontSize: size, bold: true, color: BRIGHT, margin: 0 });
-}
-function panel(s, x, y, w, h, fill = PANEL, line = LINE, rad = 0.09) {
-  s.addShape(p.shapes.ROUNDED_RECTANGLE, { x, y, w, h, rectRadius: rad, fill: { color: fill }, line: { color: line, width: 1 } });
-}
-function dot(s, x, y, c, r = 0.09) { s.addShape(p.shapes.OVAL, { x, y, w: r * 2, h: r * 2, fill: { color: c }, line: { type: "none" } }); }
-function mark(s, cx, cy, sc) { // triangle + eye
-  // Draw each edge as a LINE with a NON-NEGATIVE bounding box. A raw (w=c-a) goes negative when the
-  // segment runs right-to-left / bottom-to-top, which emits <a:ext cx="-..."> — an invalid-OOXML
-  // schema violation PowerPoint rejects ("found a problem with content"). Normalise to min-corner +
-  // |delta| and flip the anti-diagonal so the triangle is visually identical.
-  const t = (a, b, c, d) => s.addShape(p.shapes.LINE, {
+function hline(s, x, y, w, color, width) { s.addShape(p.shapes.LINE, { x, y, w, h: 0, line: { color: color || LINE, width: width || 1 } }); }
+function vline(s, x, y, h, color, width) { s.addShape(p.shapes.LINE, { x, y, w: 0, h, line: { color: color || LINE, width: width || 1 } }); }
+function dot(s, x, y, c, r) { r = r || 0.06; s.addShape(p.shapes.OVAL, { x: x - r, y: y - r, w: r * 2, h: r * 2, fill: { color: c }, line: { type: "none" } }); }
+function tx(s, t, o) { s.addText(t, Object.assign({ margin: 0, valign: "top" }, o)); }
+
+// the brand mark: triangle + eye, drawn with non-negative line extents (valid OOXML)
+function mark(s, cx, cy, sc, color) {
+  color = color || BRAND;
+  const seg = (a, b, c, d) => s.addShape(p.shapes.LINE, {
     x: Math.min(a, c), y: Math.min(b, d), w: Math.abs(c - a), h: Math.abs(d - b),
-    flipH: (c - a) * (d - b) < 0, line: { color: BRAND, width: 2 },
+    flipH: (c - a) * (d - b) < 0, line: { color, width: 2.25 },
   });
-  t(cx, cy - sc, cx + sc, cy + sc); t(cx + sc, cy + sc, cx - sc, cy + sc); t(cx - sc, cy + sc, cx, cy - sc);
-  s.addShape(p.shapes.OVAL, { x: cx - sc * 0.42, y: cy + sc * 0.05, w: sc * 0.84, h: sc * 0.55, fill: { type: "none" }, line: { color: BRAND, width: 1.5 } });
-  dot(s, cx - sc * 0.07, cy + sc * 0.22, BRAND, sc * 0.09);
+  seg(cx, cy - sc, cx + sc, cy + sc); seg(cx + sc, cy + sc, cx - sc, cy + sc); seg(cx - sc, cy + sc, cx, cy - sc);
+  s.addShape(p.shapes.OVAL, { x: cx - sc * 0.42, y: cy + sc * 0.06, w: sc * 0.84, h: sc * 0.52, fill: { type: "none" }, line: { color, width: 1.75 } });
+  dot(s, cx, cy + sc * 0.32, color, sc * 0.085);
 }
 
-// ============ S1 — TITLE ============
+// consistent chrome: hairlines top+bottom, wordmark, page index
+function chrome(s) {
+  hline(s, MX, 0.52, CW, LINE, 1);
+  hline(s, MX, H - 0.52, CW, LINE, 1);
+  tx(s, "TRINETRA", { x: MX, y: H - 0.49, w: 3, h: 0.3, fontFace: MONO, fontSize: 8, color: T3, charSpacing: 4, valign: "middle" });
+  tx(s, String(pageNo).padStart(2, "0") + " / 20", { x: W - MX - 2, y: H - 0.49, w: 2, h: 0.3, fontFace: MONO, fontSize: 8, color: T3, align: "right", charSpacing: 1, valign: "middle" });
+}
+function kicker(s, t, y) {
+  y = y == null ? 0.78 : y;
+  rect(s, MX, y + 0.04, 0.30, 0.035, BRAND);
+  tx(s, t, { x: MX + 0.44, y: y - 0.10, w: 11, h: 0.32, fontFace: MONO, fontSize: 10.5, color: BRAND, charSpacing: 3 });
+}
+function headline(s, t, o) {
+  o = o || {};
+  tx(s, t, { x: MX, y: o.y == null ? 1.06 : o.y, w: o.w || CW, h: o.h || 1.0, fontFace: o.face || DISP,
+    fontSize: o.size || 33, color: o.color || WHITE, charSpacing: o.cs || 0, lineSpacingMultiple: o.ls || 1.0, align: o.align || "left" });
+}
+function footnote(s, t) { tx(s, t, { x: MX, y: H - 1.02, w: CW, h: 0.4, fontFace: BODY, fontSize: 11, italic: true, color: T3, lineSpacingMultiple: 1.1 }); }
+
+// =====================================================================
+// 01 — TITLE
+// =====================================================================
 {
   const s = S();
-  mark(s, 6.66, 1.95, 0.5);
-  s.addText("TRINETRA", { x: 0, y: 2.4, w: W, h: 1.2, fontFace: HEAD, fontSize: 62, bold: true, color: BRIGHT, align: "center", charSpacing: 10, margin: 0 });
-  s.addText("THE THIRD EYE THAT SEES THE DANGER NO SINGLE SENSOR CAN", { x: 0, y: 3.7, w: W, h: 0.4, fontFace: MONO, fontSize: 13, color: BRAND, align: "center", charSpacing: 2, margin: 0 });
-  s.addText("AI compound-risk intelligence for zero-harm industrial operations", { x: 0, y: 4.15, w: W, h: 0.4, fontFace: BODY, fontSize: 16, color: DIM, align: "center", margin: 0 });
-  s.addText([
-    { text: "100% compound recall", options: { color: BRAND } }, { text: "    ·    ", options: { color: DIM } },
-    { text: "0% false-positive", options: { color: BRAND } }, { text: "    ·    ", options: { color: DIM } },
-    { text: "7.4 min mean early-warning", options: { color: BRAND } },
-  ], { x: 0, y: 5.7, w: W, h: 0.4, fontFace: MONO, fontSize: 13, align: "center", bold: true, margin: 0 });
-  s.addText("Saud Satopay   ·   ET AI Hackathon 2.0", { x: 0, y: 6.7, w: W, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, align: "center", margin: 0 });
+  mark(s, W / 2, 1.78, 0.52);
+  tx(s, "TRINETRA", { x: 0, y: 2.55, w: W, h: 1.25, fontFace: DISP, fontSize: 82, color: WHITE, align: "center", charSpacing: 8 });
+  rect(s, W / 2 - 1.1, 3.92, 2.2, 0.03, BRAND);
+  tx(s, "THE THIRD EYE THAT SEES THE DANGER NO SINGLE SENSOR CAN", { x: 0, y: 4.18, w: W, h: 0.35, fontFace: MONO, fontSize: 12, color: BRAND, align: "center", charSpacing: 2 });
+  tx(s, "AI compound-risk intelligence for zero-harm industrial operations", { x: 0, y: 4.66, w: W, h: 0.4, fontFace: BODYL, fontSize: 17, color: T2, align: "center" });
+  tx(s, [
+    { text: "100%", options: { fontFace: DISP, color: BRAND } }, { text: " compound recall", options: { fontFace: MONO, color: T2 } },
+    { text: "      0%", options: { fontFace: DISP, color: BRAND } }, { text: " false-positive", options: { fontFace: MONO, color: T2 } },
+    { text: "      7.4", options: { fontFace: DISP, color: BRAND } }, { text: " min mean lead", options: { fontFace: MONO, color: T2 } },
+  ], { x: 0, y: 5.95, w: W, h: 0.4, fontSize: 14, align: "center" });
+  tx(s, "SAUD SATOPAY   ·   ET AI HACKATHON 2026", { x: 0, y: 6.95, w: W, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3, align: "center", charSpacing: 2 });
 }
 
-// ============ S2 — PROBLEM ============
+// =====================================================================
+// 02 — PROBLEM
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "THE PROBLEM");
-  title(s, "Data present. Unacted upon.");
-  s.addText([
-    { text: "On 13 January 2025, eight workers died", options: { color: BRIGHT, bold: true, breakLine: true } },
-    { text: "in a coke-oven-battery explosion at the Visakhapatnam Steel Plant.", options: { color: TEXT, breakLine: true } },
-    { text: "", options: { breakLine: true } },
-    { text: "The gas sensors had data. The permits were logged. SCADA was running.", options: { color: TEXT, breakLine: true } },
+  const s = S(); chrome(s); kicker(s, "THE PROBLEM");
+  headline(s, "Data present.\nUnacted upon.", { size: 40, ls: 1.02, h: 1.8, w: 6.6 });
+  tx(s, [
+    { text: "On 13 January 2025, eight workers died", options: { color: WHITE, bold: true, breakLine: true } },
+    { text: "in a coke-oven-battery explosion at the Visakhapatnam Steel Plant.", options: { color: T2, breakLine: true } },
+    { text: " ", options: { breakLine: true, fontSize: 8 } },
+    { text: "The gas sensors had data. The permits were logged. SCADA was running.", options: { color: T2, breakLine: true } },
     { text: "No layer connected those signals in time.", options: { color: RED, bold: true } },
-  ], { x: 0.7, y: 2.2, w: 6.7, h: 3, fontFace: BODY, fontSize: 18, lineSpacingMultiple: 1.25, margin: 0, valign: "top" });
+  ], { x: MX, y: 3.35, w: 6.5, h: 2.6, fontFace: BODY, fontSize: 17, lineSpacingMultiple: 1.3 });
 
-  const cards = [["8", "workers killed at Vizag, Jan 2025", RED], ["3 / day", "deaths in India's registered factories (DGFASLI)", AMBER], ["0", "layers connected those signals in time", BRAND]];
-  let y = 2.05;
-  cards.forEach(([n, l, c]) => {
-    panel(s, 7.9, y, 4.7, 1.42);
-    s.addShape(p.shapes.RECTANGLE, { x: 7.9, y: y, w: 0.07, h: 1.42, fill: { color: c } });
-    s.addText(n, { x: 8.2, y: y + 0.2, w: 1.85, h: 1, fontFace: HEAD, fontSize: 33, bold: true, color: c, margin: 0, valign: "middle" });
-    s.addText(l, { x: 10.1, y: y + 0.2, w: 2.4, h: 1, fontFace: BODY, fontSize: 13, color: TEXT, margin: 0, valign: "middle" });
-    y += 1.62;
+  const items = [["8", "workers killed at Vizag · Jan 2025", RED], ["~3 / day", "deaths in India's registered factories (DGFASLI)", AMBER], ["0", "layers connected those signals in time", BRAND]];
+  let y = 1.95; const bx = 7.95;
+  items.forEach(([n, l, c]) => {
+    hline(s, bx, y, CW - (bx - MX), LINE);
+    tx(s, n, { x: bx, y: y + 0.14, w: 2.5, h: 0.95, fontFace: DISP, fontSize: 42, color: c });
+    tx(s, l, { x: bx + 2.55, y: y + 0.2, w: CW - (bx - MX) - 2.55, h: 0.85, fontFace: BODY, fontSize: 12.5, color: T2, valign: "middle", lineSpacingMultiple: 1.1 });
+    y += 1.52;
   });
+  hline(s, bx, y, CW - (bx - MX), LINE);
 }
 
-// ============ FIELD VALIDATION ============
+// =====================================================================
+// 03 — FIELD VALIDATION
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "VALIDATED BY THE FIELD");
-  title(s, "A veteran describes the exact failure mode");
-  // the verbatim quote — visually dominant, his words
-  panel(s, 0.7, 1.95, 11.93, 3.05, PANEL, LINE);
-  s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 1.95, w: 0.07, h: 3.05, fill: { color: BRAND } });
-  s.addText("In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were usually three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event — that's where experience, communication, and a strong safety culture make the difference.",
-    { x: 1.15, y: 2.3, w: 11.3, h: 2.05, fontFace: BODY, fontSize: 18, italic: true, color: BRIGHT, lineSpacingMultiple: 1.18, valign: "top", margin: 0 });
-  s.addText("— Nishat Mulla, Plant Manager · 30+ years across gas & heavy industry",
-    { x: 1.15, y: 4.5, w: 11.3, h: 0.35, fontFace: MONO, fontSize: 12.5, color: BRAND, margin: 0 });
-  // our bridge — visually subordinate, clearly OUR voice (not his)
-  panel(s, 0.7, 5.25, 11.93, 1.5, PANEL2, LINE);
-  s.addText("TRINETRA — OUR RESPONSE", { x: 1.0, y: 5.42, w: 6, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
-  s.addText([
+  const s = S(); chrome(s); kicker(s, "VALIDATED BY THE FIELD");
+  headline(s, "The pattern, in a veteran's words", { size: 31 });
+  vline(s, MX + 0.02, 2.15, 2.5, BRAND, 3);
+  tx(s, "“In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were usually three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event.”",
+    { x: MX + 0.4, y: 2.18, w: CW - 0.4, h: 2.0, fontFace: DISPL, fontSize: 22, color: WHITE, lineSpacingMultiple: 1.16 });
+  tx(s, "NISHAT MULLA   ·   PLANT MANAGER   ·   30+ YEARS ACROSS GAS & HEAVY INDUSTRY", { x: MX + 0.4, y: 4.32, w: CW - 0.4, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1 });
+
+  rect(s, MX, 5.1, CW, 1.5, PANEL, LINE);
+  rect(s, MX, 5.1, 0.05, 1.5, BRAND);
+  tx(s, "TRINETRA — OUR RESPONSE", { x: MX + 0.35, y: 5.3, w: 8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 2 });
+  tx(s, [
     { text: "Trinetra is that experience, encoded", options: { color: BRAND, bold: true } },
-    { text: " — it watches every zone 24/7 and flags the combination the moment it forms, so the catch never depends on the right person paying attention at 3 a.m. We don't replace safety culture; we enforce it consistently across every shift and handover.", options: { color: TEXT } },
-  ], { x: 1.0, y: 5.74, w: 11.4, h: 0.92, fontFace: BODY, fontSize: 13.5, lineSpacingMultiple: 1.14, valign: "top", margin: 0 });
-  s.addText("An independent practitioner's account of the failure mode — problem validation from 30+ years on the floor, in his own words.", { x: 0.7, y: 6.88, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
+    { text: " — it watches every zone 24/7 and flags the combination the moment it forms, so the catch never depends on the right person paying attention at 3 a.m. We enforce safety culture consistently across every shift and handover.", options: { color: T2 } },
+  ], { x: MX + 0.35, y: 5.66, w: CW - 0.7, h: 0.85, fontFace: BODY, fontSize: 13, lineSpacingMultiple: 1.18 });
+  tx(s, "Independent field validation of the problem — a practitioner, in his own words.", { x: MX, y: H - 0.95, w: CW, h: 0.3, fontFace: BODY, fontSize: 10.5, italic: true, color: T3 });
 }
 
-// ============ S3 — INSIGHT ============
+// =====================================================================
+// 04 — INSIGHT
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "THE INSIGHT");
-  title(s, "Compound risk");
-  const items = [["Rising flammable gas", "still below its alarm", STEEL], ["Active hot-work permit", "an ignition source", STEEL], ["Personnel present", "inside a confined space", STEEL]];
-  let x = 0.7;
-  items.forEach(([t, sub, c]) => {
-    panel(s, x, 2.5, 3.3, 1.7);
-    dot(s, x + 0.25, 2.78, c, 0.1);
-    s.addText(t, { x: x + 0.55, y: 2.7, w: 2.6, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: BRIGHT, margin: 0 });
-    s.addText(sub, { x: x + 0.25, y: 3.35, w: 2.85, h: 0.7, fontFace: BODY, fontSize: 14, color: DIM, margin: 0 });
-    s.addText("normal", { x: x + 0.25, y: 3.75, w: 2.85, h: 0.3, fontFace: MONO, fontSize: 10, color: STEEL, margin: 0 });
-    x += 3.55;
+  const s = S(); chrome(s); kicker(s, "THE INSIGHT");
+  tx(s, [
+    { text: "Three green lights.", options: { color: GREEN, breakLine: true } },
+    { text: "One lethal combination.", options: { color: RED } },
+  ], { x: MX, y: 1.4, w: CW, h: 2.0, fontFace: DISP, fontSize: 46, lineSpacingMultiple: 1.04 });
+
+  const items = [["RISING FLAMMABLE GAS", "still below its alarm"], ["ACTIVE HOT-WORK PERMIT", "an ignition source"], ["PERSONNEL PRESENT", "inside a confined space"]];
+  const cw = (CW - 0.8) / 3; let x = MX;
+  items.forEach(([t, sub]) => {
+    hline(s, x, 4.05, cw, LINE2);
+    dot(s, x + 0.12, 4.4, STEEL, 0.07);
+    tx(s, t, { x: x + 0.3, y: 4.25, w: cw - 0.3, h: 0.55, fontFace: SUB, fontSize: 14.5, color: WHITE, lineSpacingMultiple: 1.0 });
+    tx(s, sub, { x: x + 0.3, y: 4.85, w: cw - 0.3, h: 0.4, fontFace: BODY, fontSize: 12.5, color: T2 });
+    tx(s, "reads NORMAL", { x: x + 0.3, y: 5.25, w: cw - 0.3, h: 0.3, fontFace: MONO, fontSize: 9.5, color: STEEL, charSpacing: 1 });
+    x += cw + 0.4;
   });
-  s.addShape(p.shapes.RECTANGLE, { x: 6.5, y: 4.32, w: 0.33, h: 0.03, fill: { color: DIM } });
-  panel(s, 0.7, 4.55, 11.93, 1.5, PANEL_CRIT, RED);
-  s.addText("A lethal combination no single sensor flags", { x: 1.1, y: 4.75, w: 11, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: RED, margin: 0 });
-  s.addText("Three green lights. One lethal combination — minutes before it becomes critical.", { x: 1.1, y: 5.35, w: 11, h: 0.5, fontFace: BODY, fontSize: 15, color: TEXT, margin: 0 });
+  rect(s, MX, 5.95, CW, 0.62, CARD, RED);
+  tx(s, [
+    { text: "A lethal combination no single sensor flags  ", options: { color: RED, bold: true, fontFace: SUB } },
+    { text: "— detected minutes before it becomes critical.", options: { color: T2, fontFace: BODY } },
+  ], { x: MX + 0.35, y: 5.95, w: CW - 0.7, h: 0.62, fontSize: 15, valign: "middle" });
 }
 
-// ============ S4 — DEMO MOMENT ============
+// =====================================================================
+// 05 — THE MOMENT (split reality)
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "THE MOMENT");
-  title(s, "Split reality at T + 8 min");
-  // legacy
-  panel(s, 0.7, 2.2, 5.0, 3.9, PANEL, LINE);
-  s.addText("LEGACY SINGLE-SENSOR", { x: 1.0, y: 2.5, w: 4.4, h: 0.3, fontFace: MONO, fontSize: 12, color: DIM, charSpacing: 1, margin: 0 });
-  dot(s, 1.0, 3.45, STEEL, 0.16);
-  s.addText("ALL CLEAR", { x: 1.5, y: 3.25, w: 4, h: 0.6, fontFace: HEAD, fontSize: 30, bold: true, color: STEEL, margin: 0 });
-  s.addText("Every gas reads below its setpoint.", { x: 1.0, y: 4.2, w: 4.4, h: 0.4, fontFace: BODY, fontSize: 15, color: TEXT, margin: 0 });
-  s.addText("threshold detection only", { x: 1.0, y: 5.4, w: 4.4, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, margin: 0 });
-  // center
-  panel(s, 5.95, 3.25, 1.45, 1.8, PANEL2, BRAND);
-  s.addText("+6", { x: 5.95, y: 3.45, w: 1.45, h: 0.8, fontFace: HEAD, fontSize: 38, bold: true, color: BRAND, align: "center", margin: 0 });
-  s.addText("MIN", { x: 5.95, y: 4.25, w: 1.45, h: 0.3, fontFace: MONO, fontSize: 12, color: BRAND, align: "center", margin: 0 });
-  s.addText("early", { x: 5.95, y: 4.6, w: 1.45, h: 0.3, fontFace: MONO, fontSize: 10, color: DIM, align: "center", margin: 0 });
-  // trinetra
-  panel(s, 7.63, 2.2, 5.0, 3.9, PANEL_CRIT, RED);
-  s.addText("TRINETRA COMPOUND AI", { x: 7.93, y: 2.5, w: 4.4, h: 0.3, fontFace: MONO, fontSize: 12, color: BRAND, charSpacing: 1, margin: 0 });
-  dot(s, 7.93, 3.45, RED, 0.16);
-  s.addText("COMPOUND ALERT", { x: 8.43, y: 3.25, w: 4, h: 0.6, fontFace: HEAD, fontSize: 26, bold: true, color: RED, margin: 0 });
-  s.addText([
-    { text: "COB-1 critical · breach predicted ~36 min", options: { color: TEXT, breakLine: true } },
-    { text: "rising CH4 + hot-work permit + 3 personnel", options: { color: DIM } },
-  ], { x: 7.93, y: 4.2, w: 4.4, h: 0.8, fontFace: BODY, fontSize: 14, lineSpacingMultiple: 1.2, margin: 0 });
-  s.addText("multi-signal fusion", { x: 7.93, y: 5.4, w: 4.4, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, margin: 0 });
-  s.addText("Six minutes of warning — while every gas sensor still reads below its setpoint.", { x: 0.7, y: 6.45, w: 12, h: 0.4, fontFace: BODY, fontSize: 15, italic: true, color: DIM, margin: 0 });
+  const s = S(); chrome(s); kicker(s, "THE MOMENT");
+  headline(s, "Split reality at T + 8 min", { size: 33 });
+  // legacy (cold) | center | trinetra (hot)
+  tx(s, "LEGACY SINGLE-SENSOR", { x: MX, y: 2.5, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: STEEL, charSpacing: 1 });
+  dot(s, MX + 0.13, 3.55, STEEL, 0.13);
+  tx(s, "ALL CLEAR", { x: MX + 0.42, y: 3.12, w: 4.6, h: 0.8, fontFace: DISP, fontSize: 38, color: STEEL });
+  tx(s, "Every gas reads below its setpoint.", { x: MX, y: 4.25, w: 4.8, h: 0.4, fontFace: BODY, fontSize: 14, color: T2 });
+  tx(s, "threshold detection only", { x: MX, y: 5.5, w: 4.8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3 });
+
+  vline(s, W / 2 - 0.95, 2.55, 3.5, LINE);
+  tx(s, "+6", { x: W / 2 - 1.0, y: 3.0, w: 2.0, h: 1.1, fontFace: DISP, fontSize: 80, color: BRAND, align: "center" });
+  tx(s, "MIN EARLY", { x: W / 2 - 1.0, y: 4.18, w: 2.0, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, align: "center", charSpacing: 2 });
+  vline(s, W / 2 + 0.95, 2.55, 3.5, LINE);
+
+  const rx = W / 2 + 1.45;
+  rect(s, rx - 0.35, 2.3, W - MX - rx + 0.35, 3.6, CARD, null);
+  tx(s, "TRINETRA COMPOUND AI", { x: rx, y: 2.5, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1 });
+  dot(s, rx + 0.13, 3.55, RED, 0.13);
+  tx(s, "COMPOUND ALERT", { x: rx + 0.42, y: 3.18, w: 4.9, h: 0.7, fontFace: DISP, fontSize: 27, color: RED });
+  tx(s, [
+    { text: "COB-1 critical · breach predicted ~36 min", options: { color: WHITE, breakLine: true } },
+    { text: "rising CH4 + hot-work permit + 3 personnel", options: { color: T2 } },
+  ], { x: rx, y: 4.2, w: W - MX - rx, h: 0.8, fontFace: BODY, fontSize: 13.5, lineSpacingMultiple: 1.25 });
+  tx(s, "multi-signal fusion", { x: rx, y: 5.5, w: 4.8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3 });
+  footnote(s, "Six minutes of warning — while every gas sensor still reads below its setpoint.");
 }
 
-// ============ S5 — ARCHITECTURE ============
+// =====================================================================
+// 06 — ARCHITECTURE
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "HOW IT WORKS");
-  title(s, "One multi-modal brain");
-  const pills = [
+  const s = S(); chrome(s); kicker(s, "HOW IT WORKS");
+  headline(s, "One multi-modal brain", { size: 33 });
+  const cols = [
     ["Compound\nEngine", "fuses gas trend +\npermits + people", BRAND],
-    ["Vision", "person & zone-intrusion\n(monitoring layer)", BRIGHT],
-    ["Reasoning Graph", "LangGraph 6-stage\nauditable trace", BRIGHT],
-    ["Disaster RAG", "Gemini precedent\nmatching", BRIGHT],
+    ["Vision", "person & zone-intrusion\n(monitoring layer)", T2],
+    ["Reasoning\nGraph", "6-stage auditable\ntrace", T2],
+    ["Disaster\nRAG", "Gemini precedent\nmatching", T2],
     ["Response", "report + multilingual\nalerts", RED],
   ];
-  let x = 0.7; const w = 2.31, g = 0.18;
-  pills.forEach(([t, d, c], i) => {
-    panel(s, x, 2.4, w, 2.7);
-    s.addShape(p.shapes.RECTANGLE, { x, y: 2.4, w, h: 0.07, fill: { color: c } });
-    s.addText(t.replace(/\n/g, " "), { x: x + 0.18, y: 2.75, w: w - 0.36, h: 0.9, fontFace: HEAD, fontSize: 17, bold: true, color: BRIGHT, margin: 0, valign: "top" });
-    s.addText(d.replace(/\n/g, " "), { x: x + 0.18, y: 3.75, w: w - 0.36, h: 1.1, fontFace: BODY, fontSize: 13, color: DIM, margin: 0, valign: "top" });
-    x += w + g;
+  const cw = CW / 5; let x = MX;
+  cols.forEach(([t, d, c], i) => {
+    if (i > 0) vline(s, x, 2.4, 2.5, LINE);
+    rect(s, x + 0.18, 2.42, 0.4, 0.05, c);
+    tx(s, String(i + 1).padStart(2, "0"), { x: x + 0.18, y: 2.6, w: cw - 0.3, h: 0.3, fontFace: MONO, fontSize: 10, color: c });
+    tx(s, t.replace(/\n/g, "\n"), { x: x + 0.18, y: 2.95, w: cw - 0.32, h: 0.95, fontFace: SUB, fontSize: 17, color: WHITE, lineSpacingMultiple: 0.98 });
+    tx(s, d.replace(/\n/g, " "), { x: x + 0.18, y: 4.0, w: cw - 0.32, h: 0.9, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
+    x += cw;
   });
-  panel(s, 0.7, 5.5, 11.93, 1.0, PANEL2, BRAND);
-  s.addText([
-    { text: "Hybrid by design:  ", options: { color: BRAND, bold: true } },
-    { text: "a transparent, deterministic backbone makes the life-safety decision — the LLM only explains, retrieves precedent, and drafts reports. No black box in the loop.", options: { color: TEXT } },
-  ], { x: 1.0, y: 5.5, w: 11.3, h: 1.0, fontFace: BODY, fontSize: 15, valign: "middle", margin: 0 });
+  rect(s, MX, 5.45, CW, 1.0, PANEL, LINE);
+  rect(s, MX, 5.45, 0.05, 1.0, BRAND);
+  tx(s, [
+    { text: "Hybrid by design.  ", options: { color: BRAND, bold: true, fontFace: SUB } },
+    { text: "A transparent, deterministic backbone makes the life-safety decision — the LLM only explains, retrieves precedent, and drafts reports. No black box in the loop.", options: { color: T2, fontFace: BODY } },
+  ], { x: MX + 0.35, y: 5.45, w: CW - 0.7, h: 1.0, fontSize: 14.5, valign: "middle", lineSpacingMultiple: 1.15 });
 }
 
-// ============ S6 — DISASTER MEMORY ============
+// =====================================================================
+// 07 — DISASTER MEMORY
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "DIFFERENTIATOR");
-  title(s, "We've seen this death before");
-  panel(s, 0.7, 2.3, 4.0, 3.7, PANEL_CRIT, RED);
-  s.addText("81", { x: 0.7, y: 2.85, w: 4.0, h: 1.3, fontFace: HEAD, fontSize: 96, bold: true, color: RED, align: "center", margin: 0 });
-  s.addText("% MATCH", { x: 0.7, y: 4.15, w: 4.0, h: 0.4, fontFace: MONO, fontSize: 16, color: BRAND, align: "center", charSpacing: 2, margin: 0 });
-  s.addText("Visakhapatnam coke-oven\nexplosion · 2025 · 8 killed".replace(/\n/g, "  "), { x: 0.9, y: 4.8, w: 3.6, h: 0.8, fontFace: BODY, fontSize: 14, color: TEXT, align: "center", margin: 0 });
-  panel(s, 5.0, 2.3, 7.63, 2.55);
-  s.addText("GROUNDED BRIEFING", { x: 5.3, y: 2.55, w: 7, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
-  s.addText("“The present condition echoes the Visakhapatnam coke-oven explosion — rising CH4 alongside an active ignition source mirrors the precedent's root cause of unacted-upon warnings. The single most important action is the immediate cessation of hot-work and evacuation of personnel.”", { x: 5.3, y: 3.0, w: 7.05, h: 1.7, fontFace: BODY, fontSize: 16, color: BRIGHT, italic: true, margin: 0, valign: "top" });
-  // other precedents
+  const s = S(); chrome(s); kicker(s, "DIFFERENTIATOR");
+  headline(s, "We've seen this death before", { size: 33 });
+  tx(s, "81", { x: MX, y: 2.2, w: 4.0, h: 2.0, fontFace: DISP, fontSize: 150, color: RED });
+  tx(s, "% MATCH", { x: MX + 0.1, y: 4.35, w: 4.0, h: 0.4, fontFace: MONO, fontSize: 15, color: BRAND, charSpacing: 2 });
+  tx(s, "Visakhapatnam coke-oven explosion · 2025 · 8 killed", { x: MX, y: 4.78, w: 4.3, h: 0.6, fontFace: BODY, fontSize: 13, color: T2, lineSpacingMultiple: 1.15 });
+
+  vline(s, 5.7, 2.25, 2.95, LINE);
+  tx(s, "GROUNDED BRIEFING", { x: 6.05, y: 2.3, w: 6.5, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 2 });
+  tx(s, "“The present condition echoes the Visakhapatnam coke-oven explosion — rising CH4 alongside an active ignition source mirrors the precedent's root cause of unacted-upon warnings. The single most important action is the immediate cessation of hot-work and evacuation of personnel.”",
+    { x: 6.05, y: 2.72, w: CW - (6.05 - MX), h: 2.1, fontFace: BODYL, fontSize: 16, color: WHITE, lineSpacingMultiple: 1.22 });
   const others = [["73%", "Texas City refinery"], ["71%", "Hot-work ignition"], ["—", "Piper Alpha"]];
-  let x = 5.0;
+  let x = 6.05;
   others.forEach(([n, l]) => {
-    panel(s, x, 5.05, 2.45, 0.95, PANEL2);
-    s.addText(n, { x: x + 0.2, y: 5.2, w: 0.9, h: 0.65, fontFace: HEAD, fontSize: 22, bold: true, color: BRAND, margin: 0, valign: "middle" });
-    s.addText(l, { x: x + 1.0, y: 5.2, w: 1.35, h: 0.65, fontFace: BODY, fontSize: 12, color: DIM, margin: 0, valign: "middle" });
-    x += 2.59;
+    tx(s, n, { x, y: 5.45, w: 1.1, h: 0.5, fontFace: DISP, fontSize: 24, color: BRAND });
+    tx(s, l, { x, y: 5.98, w: 2.2, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3 });
+    x += 2.35;
   });
-  s.addText("Live conditions embedded with Gemini, matched against a corpus of real industrial disasters.", { x: 0.7, y: 6.3, w: 12, h: 0.4, fontFace: BODY, fontSize: 14, italic: true, color: DIM, margin: 0 });
+  footnote(s, "Live conditions embedded with Gemini, matched against a corpus of real industrial disasters.");
 }
 
-// ============ PRE-MORTEM (proactive discovery) ============
+// =====================================================================
+// 08 — PRE-MORTEM
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "PROACTIVE, NOT REACTIVE");
-  title(s, "Pre-mortem: the hazard that hasn't happened yet");
-  const stats = [["228", "placements searched", BRAND], ["136", "compound hazards found", RED], ["124", "cross-zone (walkdowns miss)", AMBER], ["92", "correctly cleared", STEEL]];
-  stats.forEach(([n, l, c], i) => {
-    const x = 0.7 + i * 3.0;
-    panel(s, x, 2.3, 2.85, 1.55);
-    s.addText(n, { x: x + 0.2, y: 2.5, w: 2.45, h: 0.7, fontFace: HEAD, fontSize: 34, bold: true, color: c, margin: 0 });
-    s.addText(l, { x: x + 0.2, y: 3.22, w: 2.5, h: 0.55, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", margin: 0 });
+  const s = S(); chrome(s); kicker(s, "PROACTIVE, NOT REACTIVE");
+  headline(s, "The hazard that hasn't happened yet", { size: 31 });
+  const stats = [["228", "placements searched", T2], ["136", "compound hazards found", RED], ["124", "cross-zone (walkdowns miss)", AMBER], ["92", "correctly cleared", STEEL]];
+  const cw = CW / 4; let x = MX;
+  stats.forEach(([n, l, c]) => {
+    hline(s, x, 2.35, cw - 0.3, LINE2);
+    tx(s, n, { x, y: 2.5, w: cw - 0.3, h: 0.95, fontFace: DISP, fontSize: 52, color: c });
+    tx(s, l, { x, y: 3.5, w: cw - 0.35, h: 0.6, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
+    x += cw;
   });
-  panel(s, 0.7, 4.1, 11.93, 1.7, PANEL_CRIT, RED);
-  s.addText("LARGEST-BLAST-RADIUS DISCOVERY", { x: 1.0, y: 4.3, w: 11, h: 0.3, fontFace: MONO, fontSize: 11, color: RED, charSpacing: 1, margin: 0 });
-  s.addText("Rising methane in Coke Oven Battery #1, hot work in the bay, and the crew working next door in the Gas Cleaning Plant — compound CRITICAL by T+10. The blast radius spans the gas-cleaning plant, the confined sump and the maintenance bay. No single zone looks dangerous on its own.", { x: 1.0, y: 4.64, w: 11.3, h: 1.05, fontFace: BODY, fontSize: 15, color: BRIGHT, valign: "top", margin: 0 });
-  s.addText("Trinetra runs its own deterministic engine as an oracle across the plant's blast-radius map — discovering the cross-zone compounds a zone-by-zone walkdown rates safe, before they occur.", { x: 0.7, y: 6.05, w: 12, h: 0.6, fontFace: BODY, fontSize: 13, italic: true, color: DIM, valign: "top", margin: 0 });
+  rect(s, MX, 4.5, CW, 1.35, CARD, RED);
+  rect(s, MX, 4.5, 0.05, 1.35, RED);
+  tx(s, "LARGEST-BLAST-RADIUS DISCOVERY", { x: MX + 0.35, y: 4.68, w: 11, h: 0.3, fontFace: MONO, fontSize: 10, color: RED, charSpacing: 1 });
+  tx(s, "Rising methane in Coke Oven Battery #1, hot work in the bay, and the crew working next door in the Gas Cleaning Plant — compound CRITICAL by T+10. The blast radius spans the gas-cleaning plant, the confined sump and the maintenance bay. No single zone looks dangerous on its own.",
+    { x: MX + 0.35, y: 5.02, w: CW - 0.7, h: 0.8, fontFace: BODY, fontSize: 13.5, color: WHITE, lineSpacingMultiple: 1.18 });
+  footnote(s, "The engine runs as an oracle across the plant's blast-radius map — discovering cross-zone compounds a zone-by-zone walkdown rates safe, before they occur.");
 }
 
-// ============ SHIFT-LEFT PERMIT GATE ============
+// =====================================================================
+// 09 — PERMIT GATE
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "PREVENTION, NOT DETECTION");
-  title(s, "Block the permit before it’s issued");
-  // left — the verdict
-  panel(s, 0.7, 2.2, 5.4, 4.35, PANEL_CRIT, RED);
-  s.addText("PERMIT DESK · HOT-WORK REQUEST · COB-1", { x: 1.0, y: 2.45, w: 4.8, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
-  s.addText("BLOCKED", { x: 1.0, y: 2.82, w: 4.8, h: 0.9, fontFace: HEAD, fontSize: 46, bold: true, color: RED, margin: 0 });
-  s.addShape(p.shapes.ROUNDED_RECTANGLE, { x: 1.0, y: 3.92, w: 1.55, h: 0.5, rectRadius: 0.05, fill: { color: PANEL2 }, line: { color: AMBER, width: 1 } });
-  s.addText("HIGH 80", { x: 1.0, y: 3.92, w: 1.55, h: 0.5, fontFace: MONO, fontSize: 12, color: AMBER, align: "center", valign: "middle", margin: 0 });
-  s.addText("→", { x: 2.55, y: 3.92, w: 0.5, h: 0.5, fontFace: HEAD, fontSize: 18, color: DIM, align: "center", valign: "middle", margin: 0 });
-  s.addShape(p.shapes.ROUNDED_RECTANGLE, { x: 3.05, y: 3.92, w: 2.8, h: 0.5, rectRadius: 0.05, fill: { color: PANEL2 }, line: { color: RED, width: 1 } });
-  s.addText("CRITICAL 100 · compound", { x: 3.05, y: 3.92, w: 2.8, h: 0.5, fontFace: MONO, fontSize: 11, color: RED, align: "center", valign: "middle", margin: 0 });
-  s.addText("Issuing this hot-work permit completes the lethal compound pattern — flammable gas + ignition + personnel — minutes before any single sensor would alarm.", { x: 1.0, y: 4.6, w: 4.8, h: 1.8, fontFace: BODY, fontSize: 14.5, color: BRIGHT, valign: "top", lineSpacingMultiple: 1.2, margin: 0 });
-  // right — conditions to issue safely
-  panel(s, 6.4, 2.2, 6.23, 4.35);
-  s.addText("CONDITIONS TO ISSUE SAFELY", { x: 6.7, y: 2.45, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1, margin: 0 });
-  s.addText([
+  const s = S(); chrome(s); kicker(s, "PREVENTION, NOT DETECTION");
+  headline(s, "Block the permit before it's issued", { size: 31 });
+  tx(s, "PERMIT DESK · HOT-WORK REQUEST · COB-1", { x: MX, y: 2.45, w: 6, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 1 });
+  tx(s, "BLOCKED", { x: MX - 0.03, y: 2.75, w: 5.4, h: 1.1, fontFace: DISP, fontSize: 66, color: RED });
+  // chips
+  rect(s, MX, 4.05, 1.5, 0.5, CARD, AMBER); tx(s, "HIGH 80", { x: MX, y: 4.05, w: 1.5, h: 0.5, fontFace: MONO, fontSize: 12, color: AMBER, align: "center", valign: "middle" });
+  tx(s, "→", { x: MX + 1.55, y: 4.05, w: 0.5, h: 0.5, fontFace: SUB, fontSize: 18, color: T3, align: "center", valign: "middle" });
+  rect(s, MX + 2.05, 4.05, 2.9, 0.5, CARD, RED); tx(s, "CRITICAL 100 · compound", { x: MX + 2.05, y: 4.05, w: 2.9, h: 0.5, fontFace: MONO, fontSize: 11, color: RED, align: "center", valign: "middle" });
+  tx(s, "Issuing this hot-work permit completes the lethal compound pattern — flammable gas + ignition + personnel — minutes before any single sensor would alarm.",
+    { x: MX, y: 4.85, w: 5.2, h: 1.4, fontFace: BODY, fontSize: 14, color: WHITE, lineSpacingMultiple: 1.25 });
+
+  vline(s, 6.55, 2.4, 3.85, LINE);
+  tx(s, "CONDITIONS TO ISSUE SAFELY", { x: 6.9, y: 2.5, w: 6, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
+  tx(s, [
     { text: "Gas-free certificate — flammable gas below alarm and falling (OISD-STD-105)", options: { breakLine: true } },
     { text: "Force-ventilate / purge the zone and re-test the atmosphere", options: { breakLine: true } },
     { text: "No flammable release developing in this zone or any blast-radius neighbour", options: { breakLine: true } },
     { text: "No entry while an ignition source is active in the blast radius (Factory Act §36 / §37)", options: {} },
-  ], { x: 6.7, y: 2.95, w: 5.65, h: 2.5, fontFace: BODY, fontSize: 14.5, color: TEXT, bullet: { code: "2192", indent: 18 }, lineSpacingMultiple: 1.35, margin: 0, valign: "top" });
-  s.addText("The inverse of detection: simulate the plant WITH the proposed permit, and refuse it if issuing it would create — or add people to — a compound hazard.", { x: 6.7, y: 5.5, w: 5.65, h: 0.9, fontFace: BODY, fontSize: 12.5, italic: true, color: DIM, valign: "top", margin: 0 });
-  s.addText("The Vizag hot-work permit, evaluated against that same rising atmosphere, is refused before the crew ever strikes an arc.", { x: 0.7, y: 6.75, w: 12, h: 0.4, fontFace: BODY, fontSize: 13, italic: true, color: DIM, margin: 0 });
+  ], { x: 6.9, y: 3.0, w: CW - (6.9 - MX), h: 2.6, fontFace: BODY, fontSize: 14, color: T2, bullet: { code: "2192", indent: 18 }, lineSpacingMultiple: 1.4 });
+  footnote(s, "The inverse of detection: simulate the plant WITH the proposed permit, and refuse it if issuing it would create — or add people to — a compound hazard.");
 }
 
-// ============ S7 — RESPONSE ============
+// =====================================================================
+// 10 — RESPONSE
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "AUTONOMOUS RESPONSE");
-  title(s, "Detect → draft → alert");
-  // report
-  panel(s, 0.7, 2.3, 6.1, 4.4);
-  s.addText("AUTO-DRAFTED INCIDENT REPORT", { x: 1.0, y: 2.55, w: 5.5, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1, margin: 0 });
-  s.addText([
-    { text: "1. Summary  ·  2. Conditions Detected", options: { color: TEXT, breakLine: true } },
-    { text: "3. Compound Risk Assessment", options: { color: TEXT, breakLine: true } },
-    { text: "4. Immediate Actions", options: { color: TEXT, breakLine: true } },
-    { text: "5. Regulatory References", options: { color: BRIGHT, bold: true, breakLine: true } },
-    { text: "    Factory Act 1948 §36 / §37 / §38", options: { color: BRAND, breakLine: true } },
-    { text: "    OISD-STD-105 (Work Permit System)", options: { color: BRAND, breakLine: true } },
-    { text: "6. Corrective Actions", options: { color: TEXT } },
-  ], { x: 1.0, y: 3.05, w: 5.5, h: 3.4, fontFace: BODY, fontSize: 15, lineSpacingMultiple: 1.3, margin: 0, valign: "top" });
-  // alert + actions
-  panel(s, 7.0, 2.3, 5.63, 2.05, PANEL_AMBER, AMBER);
-  s.addText("EVACUATION ALERT", { x: 7.3, y: 2.5, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: AMBER, charSpacing: 1, margin: 0 });
-  s.addText("Compound hazard in COB-1. Evacuate now. Do not operate hot-work or electrical equipment.", { x: 7.3, y: 2.85, w: 5.0, h: 0.8, fontFace: BODY, fontSize: 14, color: BRIGHT, margin: 0, valign: "top" });
-  ["English", "Telugu", "Hindi"].forEach((l, i) => {
-    s.addShape(p.shapes.ROUNDED_RECTANGLE, { x: 7.3 + i * 1.35, y: 3.75, w: 1.2, h: 0.4, rectRadius: 0.05, fill: { color: PANEL2 }, line: { color: AMBER, width: 1 } });
-    s.addText(l, { x: 7.3 + i * 1.35, y: 3.75, w: 1.2, h: 0.4, fontFace: MONO, fontSize: 11, color: AMBER, align: "center", valign: "middle", margin: 0 });
+  const s = S(); chrome(s); kicker(s, "AUTONOMOUS RESPONSE");
+  headline(s, "Detect → draft → alert", { size: 33 });
+  tx(s, "AUTO-DRAFTED INCIDENT REPORT", { x: MX, y: 2.5, w: 6, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
+  tx(s, [
+    { text: "1   Summary", options: { color: T2, breakLine: true } },
+    { text: "2   Conditions Detected", options: { color: T2, breakLine: true } },
+    { text: "3   Compound Risk Assessment", options: { color: T2, breakLine: true } },
+    { text: "4   Immediate Actions", options: { color: T2, breakLine: true } },
+    { text: "5   Regulatory References", options: { color: WHITE, bold: true, breakLine: true } },
+    { text: "      Factory Act 1948 §36 / §37 / §38", options: { color: BRAND, breakLine: true, fontFace: MONO, fontSize: 12 } },
+    { text: "      OISD-STD-105 (Work Permit System)", options: { color: BRAND, breakLine: true, fontFace: MONO, fontSize: 12 } },
+    { text: "6   Corrective Actions", options: { color: T2 } },
+  ], { x: MX, y: 2.95, w: 5.6, h: 3.4, fontFace: SUB, fontSize: 15.5, lineSpacingMultiple: 1.42 });
+
+  vline(s, 6.9, 2.4, 3.95, LINE);
+  tx(s, "EVACUATION ALERT", { x: 7.25, y: 2.5, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: AMBER, charSpacing: 1 });
+  tx(s, "Compound hazard in COB-1. Evacuate now. Do not operate hot-work or electrical equipment.", { x: 7.25, y: 2.85, w: CW - (7.25 - MX), h: 0.8, fontFace: BODY, fontSize: 14, color: WHITE, lineSpacingMultiple: 1.2 });
+  ["ENGLISH", "TELUGU", "HINDI"].forEach((l, i) => {
+    rect(s, 7.25 + i * 1.55, 3.75, 1.4, 0.42, CARD, AMBER);
+    tx(s, l, { x: 7.25 + i * 1.55, y: 3.75, w: 1.4, h: 0.42, fontFace: MONO, fontSize: 10, color: AMBER, align: "center", valign: "middle", charSpacing: 1 });
   });
-  panel(s, 7.0, 4.55, 5.63, 2.15, PANEL2);
-  s.addText("RESPONSE ACTIONS — PREPARED", { x: 7.3, y: 4.75, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
-  s.addText([
+  tx(s, "RESPONSE ACTIONS — PREPARED", { x: 7.25, y: 4.55, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 1 });
+  tx(s, [
     { text: "Suspend hot-work permit PTW-7741", options: { breakLine: true } },
     { text: "Evacuate & page response team", options: { breakLine: true } },
     { text: "Freeze sensor + CCTV evidence", options: { breakLine: true } },
     { text: "File preliminary incident report", options: {} },
-  ], { x: 7.3, y: 5.15, w: 5.0, h: 1.4, fontFace: BODY, fontSize: 14, color: TEXT, bullet: { code: "2713", indent: 18 }, lineSpacingMultiple: 1.25, margin: 0 });
+  ], { x: 7.25, y: 4.95, w: CW - (7.25 - MX), h: 1.3, fontFace: BODY, fontSize: 13.5, color: T2, bullet: { code: "2713", indent: 16 }, lineSpacingMultiple: 1.3 });
 }
 
-// ============ S8 — PROOF ============
+// =====================================================================
+// 11 — PROOF
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "THE PROOF");
-  title(s, "Measured, not claimed");
-  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 15 incl. inerted + O2 decoys", BRAND], ["7.4 min", "mean early-warning", "vs single-sensor baseline", AMBER]];
-  let x = 0.7;
+  const s = S(); chrome(s); kicker(s, "THE PROOF");
+  headline(s, "Measured, not claimed", { size: 33 });
+  const stats = [["100%", "compound recall", "14 / 14 hazards caught", BRAND], ["0%", "false-positive", "0 / 15 incl. inerted + O2 decoys", BRAND], ["7.4", "min mean lead", "median 6 · max 12 · vs baseline", AMBER]];
+  const cw = CW / 3; let x = MX;
   stats.forEach(([n, l, sub, c]) => {
-    panel(s, x, 2.3, 3.84, 2.2);
-    s.addText(n, { x: x + 0.2, y: 2.55, w: 3.44, h: 1.0, fontFace: HEAD, fontSize: 50, bold: true, color: c, align: "center", margin: 0 });
-    s.addText(l, { x: x + 0.2, y: 3.55, w: 3.44, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: BRIGHT, align: "center", margin: 0 });
-    s.addText(sub, { x: x + 0.2, y: 3.95, w: 3.44, h: 0.4, fontFace: MONO, fontSize: 11, color: DIM, align: "center", margin: 0 });
-    x += 4.04;
+    tx(s, n, { x, y: 2.35, w: cw - 0.3, h: 1.15, fontFace: DISP, fontSize: 70, color: c });
+    tx(s, l, { x, y: 3.62, w: cw - 0.3, h: 0.35, fontFace: SUB, fontSize: 16, color: WHITE });
+    tx(s, sub, { x, y: 4.02, w: cw - 0.3, h: 0.4, fontFace: MONO, fontSize: 10, color: T3 });
+    x += cw;
   });
   // vizag timeline
-  panel(s, 0.7, 4.85, 11.93, 1.75, PANEL2);
-  s.addText("VIZAG RECONSTRUCTION", { x: 1.0, y: 5.05, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
-  s.addShape(p.shapes.LINE, { x: 1.2, y: 6.1, w: 11.0, h: 0, line: { color: LINE, width: 1.5 } });
-  const tl = [[1.2, "t0", "normal", DIM], [4.4, "t8", "Trinetra: COMPOUND", BRAND], [9.6, "t14", "Legacy: gas alarm", RED]];
+  hline(s, MX, 5.2, CW, LINE2);
+  tx(s, "VIZAG RECONSTRUCTION", { x: MX, y: 4.7, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 2 });
+  const tl = [[MX + 0.1, "t0", "normal", STEEL], [MX + 3.6, "t8", "TRINETRA: COMPOUND", BRAND], [MX + 8.5, "t14", "LEGACY: gas alarm", RED]];
   tl.forEach(([px, t, l, c]) => {
-    dot(s, px - 0.07, 6.03, c, 0.08);
-    s.addText(t, { x: px - 0.4, y: 5.55, w: 0.8, h: 0.3, fontFace: MONO, fontSize: 12, bold: true, color: c, align: "center", margin: 0 });
-    s.addText(l, { x: px - 1.0, y: 6.2, w: 2.4, h: 0.3, fontFace: BODY, fontSize: 12, color: TEXT, align: "center", margin: 0 });
+    dot(s, px, 5.2, c, 0.075);
+    tx(s, t, { x: px - 0.4, y: 5.34, w: 1.4, h: 0.3, fontFace: MONO, fontSize: 12, color: c, bold: true });
+    tx(s, l, { x: px - 0.4, y: 5.62, w: 3.0, h: 0.3, fontFace: BODY, fontSize: 11.5, color: T2 });
   });
-  s.addText("+6 min lead", { x: 5.4, y: 5.55, w: 3.0, h: 0.3, fontFace: MONO, fontSize: 12, bold: true, color: BRAND, align: "center", margin: 0 });
+  tx(s, "+6 MIN LEAD", { x: MX + 4.4, y: 4.78, w: 3.6, h: 0.35, fontFace: DISP, fontSize: 16, color: BRAND, charSpacing: 1 });
+  footnote(s, "Deterministic (seed=42) · held-out: 100% recall / 3.3% FP over 240 unseen-seed scenarios · property-tested.");
 }
 
-// ============ REAL-INCIDENT VALIDATION ============
+// =====================================================================
+// 12 — REAL-INCIDENT VALIDATION
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "REPLAYED FROM TWO REAL INQUIRIES");
-  title(s, "Would it catch a real one? Twice.");
+  const s = S(); chrome(s); kicker(s, "REPLAYED FROM TWO REAL INQUIRIES");
+  headline(s, "Would it catch a real one? Twice.", { size: 31 });
   const cases = [
-    ["BP Texas City refinery", "U.S. CSB · 2005", "+10 min", "before the documented vapour-cloud ignition (T+20). 15 killed.", "Report 2005-04-I-TX"],
-    ["Indian Oil Jaipur depot", "MB Lal Committee · 2009", "+36 min", "before the documented ignition (T+48) of a long, undetected vapour build-up. 12 killed.", "MB Lal Committee report"],
+    ["BP TEXAS CITY REFINERY", "U.S. CSB · 2005 · Report 2005-04-I-TX", "+10", "min before the documented vapour-cloud ignition (T+20). 15 killed."],
+    ["INDIAN OIL JAIPUR DEPOT", "MB Lal Committee · 2009", "+36", "min before the documented ignition (T+48) of a long, undetected vapour build-up. 12 killed."],
   ];
-  let cx = 0.7;
-  cases.forEach(([name, src, lead, detail, cite]) => {
-    panel(s, cx, 2.3, 5.96, 3.5, PANEL_CRIT, RED);
-    s.addText(src.toUpperCase(), { x: cx + 0.35, y: 2.55, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
-    s.addText(name, { x: cx + 0.35, y: 2.86, w: 5.3, h: 0.5, fontFace: HEAD, fontSize: 22, bold: true, color: BRIGHT, margin: 0 });
-    s.addText(lead, { x: cx + 0.35, y: 3.5, w: 5.3, h: 0.9, fontFace: HEAD, fontSize: 52, bold: true, color: RED, margin: 0 });
-    s.addText("earlier", { x: cx + 0.35, y: 4.45, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
-    s.addText(detail, { x: cx + 0.35, y: 4.82, w: 5.3, h: 0.7, fontFace: BODY, fontSize: 13, color: TEXT, valign: "top", margin: 0 });
-    s.addText(cite, { x: cx + 0.35, y: 5.48, w: 5.3, h: 0.25, fontFace: MONO, fontSize: 9.5, color: DIM, margin: 0 });
-    cx += 6.16;
+  let x = MX; const cw = (CW - 0.6) / 2;
+  cases.forEach(([name, src, lead, detail]) => {
+    hline(s, x, 2.35, cw, LINE2);
+    tx(s, src, { x, y: 2.5, w: cw, h: 0.3, fontFace: MONO, fontSize: 10, color: T3 });
+    tx(s, name, { x, y: 2.82, w: cw, h: 0.5, fontFace: SUB, fontSize: 19, color: WHITE });
+    tx(s, [{ text: lead, options: { fontFace: DISP, fontSize: 72, color: RED } }, { text: "  earlier", options: { fontFace: MONO, fontSize: 13, color: BRAND } }],
+      { x, y: 3.45, w: cw, h: 1.1, valign: "bottom" });
+    tx(s, detail, { x, y: 4.7, w: cw - 0.2, h: 0.9, fontFace: BODY, fontSize: 13, color: T2, lineSpacingMultiple: 1.2 });
+    x += cw + 0.6;
   });
-  panel(s, 0.7, 6.0, 11.93, 0.95, PANEL2, BRAND);
-  s.addText([
-    { text: "Same engine, reconstructed inputs.  ", options: { color: BRAND, bold: true } },
-    { text: "Each inquiry's documented escalation is reconstructed into a SCADA feed and replayed through the live engine. Where the site had no gas detector (a finding in both), the documented vapour build-up is mapped to the flammable channel; the ignition and personnel are the inquiry's. In-app: connector → Texas City / Jaipur.", options: { color: TEXT } },
-  ], { x: 1.0, y: 6.0, w: 11.3, h: 0.95, fontFace: BODY, fontSize: 11.5, valign: "middle", margin: 0 });
+  rect(s, MX, 5.95, CW, 0.65, PANEL, LINE);
+  tx(s, [
+    { text: "Same engine, reconstructed inputs.  ", options: { color: BRAND, bold: true, fontFace: SUB } },
+    { text: "Each inquiry's documented escalation is replayed through the live engine; where a site had no gas detector (a finding in both), the vapour build-up maps to the flammable channel — ignition and personnel are the inquiry's.", options: { color: T2, fontFace: BODY } },
+  ], { x: MX + 0.35, y: 5.95, w: CW - 0.7, h: 0.65, fontSize: 11, valign: "middle", lineSpacingMultiple: 1.12 });
 }
 
-// ============ BUSINESS IMPACT (expected value) ============
+// =====================================================================
+// 13 — BUSINESS IMPACT
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "BUSINESS IMPACT");
-  title(s, "The math a buyer underwrites");
-  // left — per-incident avoided loss
-  panel(s, 0.7, 2.2, 5.4, 4.2);
-  s.addText("PER PREVENTED INCIDENT", { x: 1.0, y: 2.45, w: 4.8, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
-  s.addText("₹115.5 Cr", { x: 1.0, y: 2.8, w: 4.8, h: 0.95, fontFace: HEAD, fontSize: 46, bold: true, color: BRIGHT, margin: 0 });
-  s.addText("avoided loss — Vizag-class event", { x: 1.0, y: 3.72, w: 4.8, h: 0.3, fontFace: BODY, fontSize: 13, color: DIM, margin: 0 });
+  const s = S(); chrome(s); kicker(s, "BUSINESS IMPACT");
+  headline(s, "The math a buyer underwrites", { size: 31 });
+  tx(s, "PER PREVENTED INCIDENT", { x: MX, y: 2.45, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 1 });
+  tx(s, "₹115.5 Cr", { x: MX - 0.03, y: 2.75, w: 6, h: 1.15, fontFace: DISP, fontSize: 62, color: WHITE });
+  tx(s, "avoided loss — a Vizag-class event", { x: MX, y: 3.92, w: 5.5, h: 0.3, fontFace: BODY, fontSize: 13, color: T2 });
   [["Lives protected", "₹7.5 Cr"], ["Asset damage", "₹40 Cr"], ["Downtime (21 d)", "₹63 Cr"], ["Regulatory penalty", "₹5 Cr"]].forEach(([k, v], i) => {
-    const ly = 4.35 + i * 0.46;
-    s.addText(k, { x: 1.0, y: ly, w: 3.2, h: 0.34, fontFace: BODY, fontSize: 13, color: TEXT, valign: "middle", margin: 0 });
-    s.addText(v, { x: 4.0, y: ly, w: 1.8, h: 0.34, fontFace: MONO, fontSize: 13, color: BRAND, align: "right", valign: "middle", margin: 0 });
+    const ly = 4.55 + i * 0.44;
+    tx(s, k, { x: MX, y: ly, w: 3.4, h: 0.34, fontFace: BODY, fontSize: 13, color: T2, valign: "middle" });
+    tx(s, v, { x: MX + 3.4, y: ly, w: 1.8, h: 0.34, fontFace: MONO, fontSize: 13, color: BRAND, align: "right", valign: "middle" });
   });
-  // right — expected-value ROI
-  panel(s, 6.4, 2.2, 6.23, 2.75, PANEL2, BRAND);
-  s.addText("EXPECTED ANNUAL RETURN", { x: 6.7, y: 2.42, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1, margin: 0 });
-  s.addText("≈7.7×", { x: 6.7, y: 2.78, w: 1.7, h: 0.95, fontFace: HEAD, fontSize: 38, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
-  s.addText("expected annual return on the ₹1 Cr/plant/yr platform — even at a conservative 1-in-15-year event", { x: 8.45, y: 2.78, w: 3.95, h: 0.95, fontFace: BODY, fontSize: 13, color: TEXT, valign: "middle", margin: 0 });
+
+  vline(s, 7.0, 2.4, 3.95, LINE);
+  tx(s, "EXPECTED ANNUAL RETURN", { x: 7.35, y: 2.5, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
+  tx(s, "≈ 7.7×", { x: 7.32, y: 2.78, w: 5, h: 1.0, fontFace: DISP, fontSize: 52, color: WHITE });
+  tx(s, "on the ₹1 Cr / plant / yr platform — even at a conservative 1-in-15-year event", { x: 7.35, y: 3.85, w: CW - (7.35 - MX), h: 0.5, fontFace: BODY, fontSize: 12.5, color: T2, lineSpacingMultiple: 1.15 });
   [["1-in-30 yr", "3.9×"], ["1-in-15 yr", "7.7×"], ["1-in-8 yr", "14.4×"]].forEach(([f, r], i) => {
-    const sx = 6.7 + i * 2.0;
-    panel(s, sx, 3.9, 1.9, 0.88, PANEL);
-    s.addText(r, { x: sx, y: 4.0, w: 1.9, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: BRAND, align: "center", margin: 0 });
-    s.addText(f, { x: sx, y: 4.46, w: 1.9, h: 0.25, fontFace: MONO, fontSize: 9.5, color: DIM, align: "center", margin: 0 });
+    const sx = 7.35 + i * 1.85;
+    tx(s, r, { x: sx, y: 4.55, w: 1.7, h: 0.5, fontFace: DISP, fontSize: 22, color: BRAND });
+    tx(s, f, { x: sx, y: 5.08, w: 1.7, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3 });
   });
-  // insurance lever
-  panel(s, 6.4, 5.1, 6.23, 1.3, PANEL_STEEL, STEEL);
-  s.addText("+ INSURANCE LEVER", { x: 6.7, y: 5.28, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 11, color: STEEL, charSpacing: 1, margin: 0 });
-  s.addText("Recurring premium reduction of ₹0.4–1.2 Cr/yr (5–15% for continuous monitoring) — it offsets the platform cost whether or not an incident ever occurs.", { x: 6.7, y: 5.58, w: 5.7, h: 0.78, fontFace: BODY, fontSize: 12.5, color: TEXT, valign: "top", margin: 0 });
-  s.addText("Per-incident loss (lives + asset + downtime + penalty), every figure carries its basis, × a conservative event frequency — not a 116×-per-incident headline.", { x: 0.7, y: 6.6, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
+  hline(s, 7.35, 5.65, CW - (7.35 - MX), LINE);
+  tx(s, "+ insurance lever: a recurring ₹0.4–1.2 Cr/yr premium reduction (5–15% for continuous monitoring) offsets the platform cost whether or not an incident ever occurs.",
+    { x: 7.35, y: 5.78, w: CW - (7.35 - MX), h: 0.7, fontFace: BODY, fontSize: 11.5, color: T2, lineSpacingMultiple: 1.15 });
 }
 
-// ============ GO TO MARKET ============
+// =====================================================================
+// 14 — GO TO MARKET
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "GO TO MARKET");
-  title(s, "A wedge, a buyer, a trigger");
+  const s = S(); chrome(s); kicker(s, "GO TO MARKET");
+  headline(s, "A wedge, a buyer, a trigger", { size: 33 });
   [
-    ["Buyer", "Plant process-safety head / safety officer — owns permit-to-work and statutory compliance, carries the fatality risk.", BRAND],
-    ["Wedge", "Permit-to-work intelligence — one discrete, fundable pain — then expand to full gas + permit + CCTV + shift fusion.", BRIGHT],
-    ["Pricing", "~₹1 Cr / plant / yr — justified against a single downtime-day (~₹3 Cr) or one OISD / NGT penalty.", BRIGHT],
-    ["Trigger", "Post-LG-Polymers / Vizag regulatory pressure — DGMS scrutiny and mandatory near-miss reporting.", AMBER],
+    ["BUYER", "Plant process-safety head / safety officer — owns permit-to-work and statutory compliance, carries the fatality risk.", BRAND],
+    ["WEDGE", "Permit-to-work intelligence — one discrete, fundable pain — then expand to full gas + permit + CCTV + shift fusion.", WHITE],
+    ["PRICING", "~₹1 Cr / plant / yr — justified against a single downtime-day (~₹3 Cr) or one OISD / NGT penalty.", WHITE],
+    ["TRIGGER", "Post-LG-Polymers / Vizag regulatory pressure — DGMS scrutiny and mandatory near-miss reporting.", AMBER],
   ].forEach(([k, v, c], i) => {
-    const y = 2.3 + i * 1.04;
-    panel(s, 0.7, y, 11.93, 0.92);
-    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y, w: 0.07, h: 0.92, fill: { color: c } });
-    s.addText(k, { x: 1.0, y: y + 0.12, w: 2.0, h: 0.68, fontFace: HEAD, fontSize: 17, bold: true, color: c, valign: "middle", margin: 0 });
-    s.addText(v, { x: 3.0, y: y + 0.12, w: 9.4, h: 0.68, fontFace: BODY, fontSize: 14, color: TEXT, valign: "middle", margin: 0 });
+    const y = 2.4 + i * 0.86;
+    hline(s, MX, y, CW, LINE);
+    tx(s, k, { x: MX, y: y + 0.14, w: 2.0, h: 0.5, fontFace: SUB, fontSize: 15, color: c });
+    tx(s, v, { x: MX + 2.2, y: y + 0.12, w: CW - 2.2, h: 0.6, fontFace: BODY, fontSize: 13.5, color: T2, valign: "middle", lineSpacingMultiple: 1.12 });
   });
-  panel(s, 0.7, 6.5, 11.93, 0.7, PANEL2, BRAND);
-  s.addText([
-    { text: "The ask:  ", options: { color: BRAND, bold: true } },
-    { text: "1–2 design partners (steel / refining) for a 90-day pilot on a live permit-to-work + gas feed.", options: { color: BRIGHT } },
-  ], { x: 1.0, y: 6.5, w: 11.3, h: 0.7, fontFace: BODY, fontSize: 14, valign: "middle", margin: 0 });
+  hline(s, MX, 2.4 + 4 * 0.86, CW, LINE);
+  rect(s, MX, 6.05, CW, 0.6, BRAND);
+  tx(s, [
+    { text: "THE ASK    ", options: { color: BG, bold: true, fontFace: MONO, fontSize: 11 } },
+    { text: "1–2 design partners (steel / refining) for a 90-day pilot on a live permit-to-work + gas feed.", options: { color: BG, fontFace: SUB, fontSize: 15 } },
+  ], { x: MX + 0.35, y: 6.05, w: CW - 0.7, h: 0.6, valign: "middle" });
 }
 
-// ============ COMPETITIVE MOAT ============
+// =====================================================================
+// 15 — COMPETITIVE MOAT
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "WHY AN INCUMBENT CAN'T JUST SHIP IT");
-  title(s, "The moat is the fusion, not the sensors");
+  const s = S(); chrome(s); kicker(s, "WHY AN INCUMBENT CAN'T JUST SHIP IT");
+  headline(s, "The moat is the fusion, not the sensors", { size: 30 });
   [
-    ["Incumbents sell the silos", "Honeywell, Dräger, MSA, Hexagon sell gas detection, permit-to-work and CCTV as SEPARATE products. The danger lives in the seam BETWEEN them — exactly what no one owns end to end.", RED],
-    ["A deterministic pattern library", "The compound rules — flammable × ignition × personnel × oxidizer × blast-radius, encoded to real OISD / Factory-Act thresholds — are domain IP, not a model cloned from a public dataset.", BRAND],
-    ["A per-plant data moat", "Each plant's operator feedback tunes its own nuisance profile (the flywheel) — proprietary data that compounds per site and raises switching cost. An incumbent's fixed hardware doesn't learn.", BRAND],
-    ["Audit-grade by construction", "A transparent, deterministic core a safety officer can defend in a statutory audit. A pure-LLM bolt-on can't make a life-safety call a regulator will accept.", AMBER],
+    ["INCUMBENTS SELL SILOS", "Honeywell, Dräger, MSA, Hexagon sell gas detection, permit-to-work and CCTV as SEPARATE products. The danger lives in the seam BETWEEN them — exactly what no one owns end to end.", RED],
+    ["A DETERMINISTIC PATTERN LIBRARY", "Compound rules — flammable × ignition × personnel × oxidizer × blast-radius, encoded to real OISD / Factory-Act thresholds — are domain IP, not a model cloned from a public dataset.", BRAND],
+    ["A PER-PLANT DATA MOAT", "Each plant's operator feedback tunes its own nuisance profile — proprietary data that compounds per site and raises switching cost. An incumbent's fixed hardware doesn't learn.", BRAND],
+    ["AUDIT-GRADE BY CONSTRUCTION", "A transparent, deterministic core a safety officer can defend in a statutory audit. A pure-LLM bolt-on can't make a life-safety call a regulator will accept.", AMBER],
   ].forEach(([k, v, c], i) => {
-    const y = 2.3 + i * 1.05;
-    panel(s, 0.7, y, 11.93, 0.93);
-    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y, w: 0.07, h: 0.93, fill: { color: c } });
-    s.addText(k, { x: 1.0, y: y + 0.1, w: 3.5, h: 0.73, fontFace: HEAD, fontSize: 15.5, bold: true, color: c, valign: "middle", margin: 0 });
-    s.addText(v, { x: 4.6, y: y + 0.1, w: 7.8, h: 0.73, fontFace: BODY, fontSize: 12.5, color: TEXT, valign: "middle", margin: 0 });
+    const y = 2.35 + i * 0.92;
+    hline(s, MX, y, CW, LINE);
+    rect(s, MX, y + 0.14, 0.05, 0.55, c);
+    tx(s, k, { x: MX + 0.2, y: y + 0.13, w: 3.7, h: 0.62, fontFace: SUB, fontSize: 13.5, color: c, valign: "middle", lineSpacingMultiple: 1.0 });
+    tx(s, v, { x: MX + 4.0, y: y + 0.11, w: CW - 4.0, h: 0.66, fontFace: BODY, fontSize: 12, color: T2, valign: "middle", lineSpacingMultiple: 1.12 });
   });
-  panel(s, 0.7, 6.55, 11.93, 0.65, PANEL2, BRAND);
-  s.addText([
-    { text: "The wedge:  ", options: { color: BRAND, bold: true } },
-    { text: "land on permit-to-work intelligence — one fundable pain — then own the fused gas + permit + CCTV + shift layer the incumbents are structurally unable to assemble.", options: { color: BRIGHT } },
-  ], { x: 1.0, y: 6.55, w: 11.3, h: 0.65, fontFace: BODY, fontSize: 12.5, valign: "middle", margin: 0 });
+  hline(s, MX, 2.35 + 4 * 0.92, CW, LINE);
+  tx(s, [
+    { text: "The wedge:  ", options: { color: BRAND, bold: true, fontFace: SUB } },
+    { text: "land on permit-to-work intelligence — one fundable pain — then own the fused layer the incumbents are structurally unable to assemble.", options: { color: T2, fontFace: BODY } },
+  ], { x: MX, y: 6.25, w: CW, h: 0.4, fontSize: 12.5, valign: "middle" });
 }
 
-// ============ FLEET COMMAND (scalability) ============
+// =====================================================================
+// 16 — FLEET / SCALE (measured economics)
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "SCALES HORIZONTALLY");
-  title(s, "One engine. Every plant.");
-  const agg = [["6", "plants online", BRAND], ["7", "workers monitored", BRIGHT], ["2", "compound now", RED], ["5", "workers exposed", RED], ["+6m", "max lead", AMBER]];
-  let ax = 0.7; const aw = 2.24, ag = 0.18;
-  agg.forEach(([n, l, c]) => {
-    panel(s, ax, 2.3, aw, 1.2);
-    s.addText(n, { x: ax, y: 2.42, w: aw, h: 0.62, fontFace: HEAD, fontSize: 30, bold: true, color: c, align: "center", margin: 0 });
-    s.addText(l, { x: ax, y: 3.06, w: aw, h: 0.32, fontFace: MONO, fontSize: 9.5, color: DIM, align: "center", margin: 0 });
-    ax += aw + ag;
+  const s = S(); chrome(s); kicker(s, "SCALES HORIZONTALLY");
+  headline(s, "One engine. Every plant.", { size: 33 });
+  const stats = [["100", "plants · one engine", WHITE], ["$0.30", "per plant / month", GREEN], ["thousands", "plants per core", WHITE], ["0.05 ms", "p50 per assessment", BRAND]];
+  const cw = CW / 4; let x = MX;
+  stats.forEach(([n, l, c]) => {
+    hline(s, x, 2.4, cw - 0.3, LINE2);
+    tx(s, n, { x, y: 2.55, w: cw - 0.25, h: 0.95, fontFace: DISP, fontSize: n.length > 5 ? 34 : 48, color: c, valign: "middle" });
+    tx(s, l, { x, y: 3.55, w: cw - 0.3, h: 0.5, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
+    x += cw;
   });
-  const sites = [
-    ["Visakhapatnam Steel — Coke Ovens", "CRITICAL · COMPOUND", "+6m", RED, true],
-    ["Paradip Refinery — Coker Unit", "HIGH · COMPOUND", "+4m", RED, true],
-    ["Dahej Petrochemicals — Gas Cleaning", "HIGH · gas, no compound", "", AMBER, false],
-    ["Ennore Terminal — Utilities", "WATCH · gas, no compound", "", WATCH, false],
-    ["Bhilai Steel — Blast Furnace", "NORMAL · permits clear", "", STEEL, false],
-    ["Haldia — Pump House", "NORMAL · transient cleared", "", STEEL, false],
-  ];
-  let sy = 3.58;
-  sites.forEach(([name, status, lead, c, comp]) => {
-    panel(s, 0.7, sy, 11.93, 0.44, comp ? PANEL_CRIT : PANEL2, comp ? RED : LINE);
-    s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: sy, w: 0.06, h: 0.44, fill: { color: c } });
-    s.addText(name, { x: 0.95, y: sy, w: 6.3, h: 0.44, fontFace: HEAD, fontSize: 12.5, bold: true, color: BRIGHT, valign: "middle", margin: 0 });
-    s.addText(status, { x: 7.3, y: sy, w: 3.9, h: 0.44, fontFace: MONO, fontSize: 10.5, color: c, valign: "middle", margin: 0 });
-    if (lead) s.addText(lead + " lead", { x: 11.1, y: sy, w: 1.4, h: 0.44, fontFace: MONO, fontSize: 10.5, bold: true, color: BRAND, align: "right", valign: "middle", margin: 0 });
-    sy += 0.49;
+  // cost curve
+  tx(s, "MEASURED $/PLANT/MONTH — FALLS WITH SCALE", { x: MX, y: 4.5, w: 8, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
+  [["10 plants", "$3.00"], ["100 plants", "$0.30"], ["1,000 plants", "$0.03"], ["10,000 plants", "$0.009"]].forEach(([k, v], i) => {
+    const sx = MX + i * 3.05;
+    tx(s, v, { x: sx, y: 4.85, w: 2.8, h: 0.55, fontFace: DISP, fontSize: 26, color: WHITE });
+    tx(s, k, { x: sx, y: 5.45, w: 2.8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3 });
+    if (i < 3) tx(s, "›", { x: sx + 2.55, y: 4.85, w: 0.4, h: 0.55, fontFace: SUB, fontSize: 20, color: BRAND, align: "center" });
   });
-  s.addText("One shared compound engine across every site — O(zones) per plant, horizontally shardable. Digital-twin sites stand in for live OPC-UA / MQTT feeds; ingesting real plant data is a connector, not a rewrite.", { x: 0.7, y: 6.75, w: 12, h: 0.5, fontFace: BODY, fontSize: 12.5, italic: true, color: DIM, valign: "top", margin: 0 });
+  rect(s, MX, 6.0, CW, 0.6, PANEL, LINE);
+  tx(s, [
+    { text: "Stateless shards.  ", options: { color: BRAND, bold: true, fontFace: SUB } },
+    { text: "Each plant is independent — no shared state, no per-site model. The engine is O(zones); the fleet scales by adding plain workers. Digital-twin sites stand in for live OPC-UA / MQTT feeds — ingesting real data is a connector, not a rewrite.", options: { color: T2, fontFace: BODY } },
+  ], { x: MX + 0.35, y: 6.0, w: CW - 0.7, h: 0.6, fontSize: 11, valign: "middle", lineSpacingMultiple: 1.12 });
 }
 
-// ============ ACTIVE-LEARNING FLYWHEEL ============
+// =====================================================================
+// 17 — ACTIVE-LEARNING FLYWHEEL
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "IT EARNS ITS TRUST");
-  title(s, "Every plant learns its own nuisance profile");
+  const s = S(); chrome(s); kicker(s, "IT EARNS ITS TRUST");
+  headline(s, "Every plant learns its own nuisance profile", { size: 28 });
   const steps = ["Operator verdict", "Per-plant threshold", "Fewer nuisance pages", "Trust ↑ · faster action"];
-  let fx = 0.7; const fw = 2.74, fg = 0.4;
+  const cw = (CW - 1.2) / 4; let x = MX;
   steps.forEach((t, i) => {
-    panel(s, fx, 2.35, fw, 0.85, PANEL2);
-    s.addText(t, { x: fx + 0.1, y: 2.35, w: fw - 0.2, h: 0.85, fontFace: HEAD, fontSize: 13.5, bold: true, color: BRIGHT, align: "center", valign: "middle", margin: 0 });
-    if (i < 3) s.addText("→", { x: fx + fw, y: 2.35, w: fg, h: 0.85, fontFace: HEAD, fontSize: 18, color: BRAND, align: "center", valign: "middle", margin: 0 });
-    fx += fw + fg;
+    rect(s, x, 2.45, cw, 0.8, PANEL, LINE);
+    tx(s, t, { x: x + 0.12, y: 2.45, w: cw - 0.24, h: 0.8, fontFace: SUB, fontSize: 13, color: WHITE, align: "center", valign: "middle", lineSpacingMultiple: 1.0 });
+    if (i < 3) tx(s, "→", { x: x + cw, y: 2.45, w: 0.4, h: 0.8, fontFace: SUB, fontSize: 18, color: BRAND, align: "center", valign: "middle" });
+    x += cw + 0.4;
   });
-  // threshold bar
-  panel(s, 0.7, 3.5, 11.93, 1.4);
-  s.addText("NON-COMPOUND ALERT THRESHOLD · LEARNED PER PLANT", { x: 1.0, y: 3.68, w: 8, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 1, margin: 0 });
-  const tx = 1.0, tw = 7.0; // track represents score 40..60
-  s.addShape(p.shapes.ROUNDED_RECTANGLE, { x: tx, y: 4.1, w: tw, h: 0.6, rectRadius: 0.05, fill: { color: PANEL2 }, line: { color: LINE, width: 1 } });
-  s.addShape(p.shapes.RECTANGLE, { x: tx, y: 4.1, w: tw * 0.3, h: 0.6, fill: { color: "2a2118" }, line: { type: "none" } }); // 40->46 auto-ack
-  s.addShape(p.shapes.RECTANGLE, { x: tx + tw * 0.3 - 0.01, y: 4.1, w: 0.03, h: 0.6, fill: { color: BRAND }, line: { type: "none" } }); // marker
-  s.addText("40 · auto-ack", { x: tx + 0.12, y: 4.1, w: 2.0, h: 0.6, fontFace: MONO, fontSize: 10, color: DIM, valign: "middle", margin: 0 });
-  s.addText("46", { x: tx + tw * 0.3 - 0.45, y: 4.1, w: 0.9, h: 0.6, fontFace: MONO, fontSize: 13, bold: true, color: BRAND, align: "center", valign: "middle", margin: 0 });
-  s.addText("pages →", { x: tx + tw - 1.3, y: 4.1, w: 1.2, h: 0.6, fontFace: MONO, fontSize: 10, color: DIM, align: "right", valign: "middle", margin: 0 });
-  panel(s, 8.3, 4.1, 4.33, 0.6, PANEL_CRIT, RED);
-  s.addText("≥60  HIGH / CRITICAL / COMPOUND — ALWAYS PAGES", { x: 8.3, y: 4.1, w: 4.33, h: 0.6, fontFace: MONO, fontSize: 10.5, bold: true, color: RED, align: "center", valign: "middle", margin: 0 });
-  // bottom — guardrail + effect
-  panel(s, 0.7, 5.1, 5.85, 1.45, PANEL2, RED);
-  s.addText("RECALL GUARDRAIL", { x: 1.0, y: 5.28, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: RED, charSpacing: 1, margin: 0 });
-  s.addText("Compound, HIGH and CRITICAL alerts bypass the threshold entirely. Feedback can only ever damp non-compound nuisance pages — never reduce recall.", { x: 1.0, y: 5.62, w: 5.3, h: 0.85, fontFace: BODY, fontSize: 13, color: TEXT, valign: "top", margin: 0 });
-  panel(s, 6.78, 5.1, 5.85, 1.45, PANEL2);
-  s.addText("THE FLYWHEEL", { x: 7.08, y: 5.28, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 1, margin: 0 });
-  s.addText("A confirmed false alarm raises the threshold; a confirmed alert relaxes it. Each plant quietly auto-acknowledges its own routine excursions — fewer nuisance pages, faster action on the ones that matter.", { x: 7.08, y: 5.62, w: 5.3, h: 0.85, fontFace: BODY, fontSize: 13, color: TEXT, valign: "top", margin: 0 });
-  s.addText("The default engine is untouched — the benchmark (100% recall / 0% false-positive) is byte-identical with or without feedback.", { x: 0.7, y: 6.7, w: 12, h: 0.4, fontFace: BODY, fontSize: 12, italic: true, color: DIM, margin: 0 });
+  rect(s, MX, 3.65, 5.85, 2.0, PANEL, RED); rect(s, MX, 3.65, 0.05, 2.0, RED);
+  tx(s, "RECALL GUARDRAIL", { x: MX + 0.35, y: 3.85, w: 5.3, h: 0.3, fontFace: MONO, fontSize: 10, color: RED, charSpacing: 1 });
+  tx(s, "Compound, HIGH and CRITICAL alerts bypass the threshold entirely. Feedback can only ever damp non-compound nuisance pages — never reduce recall.", { x: MX + 0.35, y: 4.2, w: 5.25, h: 1.3, fontFace: BODY, fontSize: 13.5, color: T2, lineSpacingMultiple: 1.22 });
+  rect(s, MX + 6.05, 3.65, CW - 6.05, 2.0, PANEL, LINE); rect(s, MX + 6.05, 3.65, 0.05, 2.0, BRAND);
+  tx(s, "THE FLYWHEEL", { x: MX + 6.4, y: 3.85, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
+  tx(s, "A confirmed false alarm raises the threshold; a confirmed alert relaxes it. Each plant quietly auto-acknowledges its own routine excursions — fewer nuisance pages, faster action on the ones that matter.", { x: MX + 6.4, y: 4.2, w: CW - 6.4, h: 1.3, fontFace: BODY, fontSize: 13.5, color: T2, lineSpacingMultiple: 1.22 });
+  footnote(s, "The default engine is untouched — the benchmark (100% recall / 0% false-positive) is byte-identical with or without feedback.");
 }
 
-// ============ S9 — SCALE ============
+// =====================================================================
+// 18 — SCALE & DEPLOY
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "SCALE & DEPLOY");
-  title(s, "Sits over the sensors you already have");
+  const s = S(); chrome(s); kicker(s, "SCALE & DEPLOY");
+  headline(s, "Sits over the sensors you already have", { size: 30 });
   const pts = [["Standard formats", "Ingests SCADA / IoT / permit-to-work data as-is"], ["A connector, not a rewrite", "Digital twin → live plant swaps the data source, not the brain"], ["Auditable & hybrid", "Deterministic decisions a safety officer can defend in an audit"]];
-  let y = 2.35;
+  let y = 2.5;
   pts.forEach(([t, d]) => {
-    panel(s, 0.7, y, 6.8, 1.25);
-    dot(s, 1.0, y + 0.5, BRAND, 0.1);
-    s.addText(t, { x: 1.4, y: y + 0.18, w: 5.9, h: 0.4, fontFace: HEAD, fontSize: 18, bold: true, color: BRIGHT, margin: 0 });
-    s.addText(d, { x: 1.4, y: y + 0.62, w: 5.9, h: 0.5, fontFace: BODY, fontSize: 14, color: DIM, margin: 0 });
-    y += 1.42;
+    hline(s, MX, y, 6.6, LINE);
+    dot(s, MX + 0.1, y + 0.5, BRAND, 0.07);
+    tx(s, t, { x: MX + 0.35, y: y + 0.22, w: 6.2, h: 0.4, fontFace: SUB, fontSize: 17, color: WHITE });
+    tx(s, d, { x: MX + 0.35, y: y + 0.66, w: 6.2, h: 0.5, fontFace: BODY, fontSize: 13, color: T2 });
+    y += 1.2;
   });
-  panel(s, 7.9, 2.35, 4.73, 4.04, PANEL2, BRAND);
-  s.addText("WHERE IT DEPLOYS", { x: 8.2, y: 2.6, w: 4, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
+  hline(s, MX, y, 6.6, LINE);
+
+  const bx = 8.0;
+  vline(s, bx - 0.3, 2.5, 3.6, LINE);
+  tx(s, "WHERE IT DEPLOYS", { x: bx, y: 2.5, w: 4, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 2 });
   [["Steel", "coke ovens, blast furnaces"], ["Refining & Petrochem", "OISD permit-to-work regimes"], ["Mining", "confined-space & gas hazards"], ["Power & Chemicals", "asset-intensive operations"]].forEach(([t, d], i) => {
-    const yy = 3.1 + i * 0.82;
-    s.addText(t, { x: 8.2, y: yy, w: 4.2, h: 0.35, fontFace: HEAD, fontSize: 16, bold: true, color: BRIGHT, margin: 0 });
-    s.addText(d, { x: 8.2, y: yy + 0.34, w: 4.2, h: 0.35, fontFace: BODY, fontSize: 12, color: DIM, margin: 0 });
+    const yy = 3.05 + i * 0.8;
+    tx(s, t, { x: bx, y: yy, w: 4.5, h: 0.35, fontFace: SUB, fontSize: 16, color: WHITE });
+    tx(s, d, { x: bx, y: yy + 0.34, w: 4.5, h: 0.35, fontFace: BODY, fontSize: 12, color: T2 });
   });
 }
 
-// ============ REFERENCE ARCHITECTURE ============
+// =====================================================================
+// 19 — REFERENCE ARCHITECTURE
+// =====================================================================
 {
-  const s = S();
-  kicker(s, "DEPLOYS OVER YOUR STACK");
-  title(s, "A connector, not a rewrite");
+  const s = S(); chrome(s); kicker(s, "DEPLOYS OVER YOUR STACK");
+  headline(s, "A connector, not a rewrite", { size: 33 });
   const stages = [
     ["Plant historian", "OPC-UA / MQTT / PI\npermits · CCTV"],
     ["Edge pre-filter", "debounce + normalise\nat the plant edge"],
     ["Compound engine", "deterministic, O(zones)\nthe safety decision"],
     ["Control-room HMI", "split-reality view +\nautonomous response"],
   ];
-  const w = 2.74, g = 0.35;
+  const cw = (CW - 1.2) / 4; let x = MX;
   stages.forEach(([t, d], i) => {
-    const x = 0.7 + i * (w + g);
     const hot = i === 2;
-    panel(s, x, 2.6, w, 1.95, hot ? PANEL2 : PANEL, hot ? BRAND : LINE);
-    s.addText(t, { x: x + 0.2, y: 2.82, w: w - 0.4, h: 0.5, fontFace: HEAD, fontSize: 15, bold: true, color: hot ? BRAND : BRIGHT, margin: 0 });
-    s.addText(d, { x: x + 0.2, y: 3.38, w: w - 0.4, h: 1.0, fontFace: BODY, fontSize: 11.5, color: DIM, valign: "top", lineSpacingMultiple: 1.05, margin: 0 });
-    if (i < 3) s.addText("→", { x: x + w, y: 2.6, w: g, h: 1.95, fontFace: HEAD, fontSize: 20, color: BRAND, align: "center", valign: "middle", margin: 0 });
+    rect(s, x, 2.5, cw, 1.85, hot ? PANEL2 : PANEL, hot ? BRAND : LINE);
+    if (hot) rect(s, x, 2.5, cw, 0.05, BRAND);
+    tx(s, t, { x: x + 0.2, y: 2.72, w: cw - 0.4, h: 0.5, fontFace: SUB, fontSize: 15, color: hot ? BRAND : WHITE });
+    tx(s, d.replace(/\n/g, "\n"), { x: x + 0.2, y: 3.3, w: cw - 0.4, h: 0.95, fontFace: BODY, fontSize: 11.5, color: T2, lineSpacingMultiple: 1.15 });
+    if (i < 3) tx(s, "→", { x: x + cw, y: 2.5, w: 0.4, h: 1.85, fontFace: SUB, fontSize: 20, color: BRAND, align: "center", valign: "middle" });
+    x += cw + 0.4;
   });
-  // throughput
-  panel(s, 0.7, 4.95, 5.9, 1.65, PANEL2, BRAND);
-  s.addText("THROUGHPUT", { x: 1.0, y: 5.13, w: 5, h: 0.3, fontFace: MONO, fontSize: 11, color: BRAND, charSpacing: 2, margin: 0 });
-  s.addText("~0.65M tags / sec", { x: 1.0, y: 5.45, w: 5.4, h: 0.5, fontFace: HEAD, fontSize: 24, bold: true, color: BRIGHT, margin: 0 });
-  s.addText("measured (single-core micro-bench, ~0.6-0.7M) — a 10,000-tag plant assesses in ~15 ms per 1 Hz frame, ~65x real-time. O(zones), one instance per plant, no GPU in the life-safety path.", { x: 1.0, y: 5.98, w: 5.4, h: 0.6, fontFace: BODY, fontSize: 11, color: DIM, valign: "top", margin: 0 });
-  // properties
-  panel(s, 6.9, 4.95, 5.73, 1.65);
-  [["Standard formats", "ingests SCADA / IoT / permit data as-is"],
-   ["Edge or on-prem", "data never has to leave the plant"],
-   ["Deterministic core", "an auditable decision a safety officer can defend"]].forEach(([t, d], i) => {
-    const yy = 5.12 + i * 0.5;
-    dot(s, 7.18, yy + 0.11, BRAND, 0.07);
-    s.addText(t, { x: 7.45, y: yy, w: 5.0, h: 0.28, fontFace: HEAD, fontSize: 13, bold: true, color: BRIGHT, margin: 0 });
-    s.addText(d, { x: 7.45, y: yy + 0.24, w: 5.0, h: 0.26, fontFace: BODY, fontSize: 10.5, color: DIM, margin: 0 });
+  hline(s, MX, 4.85, CW, LINE2);
+  tx(s, "THROUGHPUT", { x: MX, y: 5.05, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 2 });
+  tx(s, [{ text: "~0.65M", options: { fontFace: DISP, fontSize: 34, color: WHITE } }, { text: "  tags / sec", options: { fontFace: MONO, fontSize: 14, color: T2 } }],
+    { x: MX, y: 5.4, w: 6, h: 0.6, valign: "bottom" });
+  tx(s, "single-core, measured — a 10,000-tag plant assesses in ~15 ms per 1 Hz frame (~65× real-time). No GPU in the life-safety path.",
+    { x: MX, y: 6.1, w: 6.2, h: 0.6, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.15 });
+  const bx = 7.4;
+  vline(s, bx - 0.3, 5.05, 1.55, LINE);
+  [["Standard formats", "ingests SCADA / IoT / permit data as-is"], ["Edge or on-prem", "data never has to leave the plant"], ["Deterministic core", "an auditable decision an officer can defend"]].forEach(([t, d], i) => {
+    const yy = 5.1 + i * 0.52;
+    dot(s, bx + 0.05, yy + 0.12, BRAND, 0.06);
+    tx(s, t, { x: bx + 0.3, y: yy, w: 5, h: 0.3, fontFace: SUB, fontSize: 13, color: WHITE });
+    tx(s, d, { x: bx + 0.3, y: yy + 0.25, w: 5, h: 0.3, fontFace: BODY, fontSize: 10.5, color: T2 });
   });
 }
 
-// ============ S10 — CLOSE ============
+// =====================================================================
+// 20 — CLOSE
+// =====================================================================
 {
   const s = S();
-  mark(s, 6.66, 1.65, 0.45);
-  s.addText("Three workers a day.\nThe data already exists.".replace(/\n/g, "\n"), { x: 0, y: 2.6, w: W, h: 1.5, fontFace: HEAD, fontSize: 40, bold: true, color: BRIGHT, align: "center", lineSpacingMultiple: 1.05, margin: 0 });
-  s.addText("Trinetra is the layer that acts — before, not after.", { x: 0, y: 4.5, w: W, h: 0.6, fontFace: HEAD, fontSize: 26, bold: true, color: BRAND, align: "center", margin: 0 });
-  s.addText([
-    { text: "100% recall", options: { color: BRAND } }, { text: "   ·   ", options: { color: DIM } },
-    { text: "0% false-positive", options: { color: BRAND } }, { text: "   ·   ", options: { color: DIM } },
-    { text: "7.4 min early-warning", options: { color: BRAND } },
-  ], { x: 0, y: 5.7, w: W, h: 0.4, fontFace: MONO, fontSize: 14, bold: true, align: "center", margin: 0 });
-  s.addText("TRINETRA   ·   Saud Satopay", { x: 0, y: 6.7, w: W, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, align: "center", charSpacing: 2, margin: 0 });
+  mark(s, W / 2, 1.5, 0.46);
+  tx(s, [
+    { text: "Three workers a day.", options: { color: WHITE, breakLine: true } },
+    { text: "The data already exists.", options: { color: WHITE } },
+  ], { x: 0, y: 2.5, w: W, h: 1.7, fontFace: DISP, fontSize: 42, align: "center", lineSpacingMultiple: 1.06 });
+  rect(s, W / 2 - 1.1, 4.35, 2.2, 0.03, BRAND);
+  tx(s, "Trinetra is the layer that acts — before, not after.", { x: 0, y: 4.62, w: W, h: 0.6, fontFace: DISPL, fontSize: 26, color: BRAND, align: "center" });
+  tx(s, [
+    { text: "100%", options: { fontFace: DISP, color: BRAND } }, { text: " recall", options: { fontFace: MONO, color: T2 } },
+    { text: "      0%", options: { fontFace: DISP, color: BRAND } }, { text: " false-positive", options: { fontFace: MONO, color: T2 } },
+    { text: "      7.4", options: { fontFace: DISP, color: BRAND } }, { text: " min lead", options: { fontFace: MONO, color: T2 } },
+  ], { x: 0, y: 5.75, w: W, h: 0.4, fontSize: 14, align: "center" });
+  tx(s, "TRINETRA   ·   SAUD SATOPAY", { x: 0, y: 6.85, w: W, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3, align: "center", charSpacing: 2 });
 }
 
 p.writeFile({ fileName: __dirname + "/../Trinetra_Deck.pptx" }).then(f => console.log("WROTE", f));
