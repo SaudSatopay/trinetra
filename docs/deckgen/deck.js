@@ -22,7 +22,7 @@ const SUB = "Bahnschrift";             // subheads
 const BODY = "Segoe UI";               // body
 const BODYL = "Segoe UI Light";        // large body
 const MONO = "Cascadia Mono";          // labels / telemetry / data
-const W = 13.333, H = 7.5, MX = 0.85, CW = W - 2 * MX, TOTAL = 21;
+const W = 13.333, H = 7.5, MX = 0.85, CW = W - 2 * MX, TOTAL = 16;
 
 let pageNo = 0;
 function S() { const s = p.addSlide(); s.background = { color: BG }; pageNo++; return s; }
@@ -231,19 +231,6 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
 }
 
 // =====================================================================
-// 06b — ARCHITECTURE · DETAIL (the full standalone diagram, embedded full-bleed)
-// PNG = ../architecture.png, rasterized from architecture.svg via Chrome headless. Re-render if the
-// SVG changes:  chrome --headless=new --force-device-scale-factor=2 --screenshot=architecture.png \
-//               --window-size=1200,860 file:///.../architecture.svg
-// =====================================================================
-{
-  const s = S();
-  // a self-contained poster (its own header/footer + matching dark bg); place it full-height and
-  // centred so the narrow side bands blend into the slide background.
-  s.addImage({ path: __dirname + "/../architecture.png", x: 1.435, y: 0, w: 10.463, h: 7.5 });
-}
-
-// =====================================================================
 // 07 — DISASTER MEMORY
 // =====================================================================
 {
@@ -268,51 +255,36 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
 }
 
 // =====================================================================
-// 08 — PRE-MORTEM
+// 08 — PREVENTION (pre-mortem + shift-left permit gate, merged)
 // =====================================================================
 {
-  const s = S(); chrome(s); kicker(s, "PROACTIVE, NOT REACTIVE");
-  headline(s, "The hazard that hasn't happened yet", { size: 31 });
-  const stats = [["228", "placements searched", T2], ["136", "compound hazards found", RED], ["124", "cross-zone (walkdowns miss)", AMBER], ["92", "correctly cleared", STEEL]];
-  const cw = CW / 4; let x = MX;
-  stats.forEach(([n, l, c]) => {
-    hline(s, x, 2.35, cw - 0.3, LINE2);
-    tx(s, n, { x, y: 2.5, w: cw - 0.3, h: 0.95, fontFace: DISP, fontSize: 52, color: c });
-    tx(s, l, { x, y: 3.5, w: cw - 0.35, h: 0.6, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
-    x += cw;
+  const s = S(); chrome(s); kicker(s, "PROACTIVE — PREVENT, DON'T JUST DETECT");
+  headline(s, "Find it early. Block it at the desk.", { size: 31 });
+
+  // LEFT — pre-mortem: the engine as an oracle over the blast-radius map
+  tx(s, "PRE-MORTEM · HAZARDS THAT HAVEN'T HAPPENED YET", { x: MX, y: 2.32, w: 5.6, h: 0.3, fontFace: MONO, fontSize: 9.5, color: BRAND, charSpacing: 1 });
+  const pm = [["228", "placements searched", T2], ["136", "compound hazards found", RED], ["124", "cross-zone · walkdowns miss", AMBER], ["92", "correctly cleared", STEEL]];
+  const pcw = 2.75;
+  pm.forEach(([n, l, c], i) => {
+    const cx = MX + (i % 2) * pcw, cy = 2.78 + Math.floor(i / 2) * 1.16;
+    tx(s, n, { x: cx, y: cy, w: pcw - 0.2, h: 0.7, fontFace: DISP, fontSize: 38, color: c });
+    tx(s, l, { x: cx, y: cy + 0.7, w: pcw - 0.15, h: 0.4, fontFace: BODY, fontSize: 11, color: T2, lineSpacingMultiple: 1.05 });
   });
-  rect(s, MX, 4.5, CW, 1.35, CARD, RED);
-  rect(s, MX, 4.5, 0.05, 1.35, RED);
-  tx(s, "LARGEST-BLAST-RADIUS DISCOVERY", { x: MX + 0.35, y: 4.68, w: 11, h: 0.3, fontFace: MONO, fontSize: 10, color: RED, charSpacing: 1 });
-  tx(s, "Rising methane in Coke Oven Battery #1, hot work in the bay, and the crew working next door in the Gas Cleaning Plant — compound CRITICAL by T+10. The blast radius spans the gas-cleaning plant, the confined sump and the maintenance bay. No single zone looks dangerous on its own.",
-    { x: MX + 0.35, y: 5.02, w: CW - 0.7, h: 0.8, fontFace: BODY, fontSize: 13.5, color: WHITE, lineSpacingMultiple: 1.18 });
-  footnote(s, "The engine runs as an oracle across the plant's blast-radius map — discovering cross-zone compounds a zone-by-zone walkdown rates safe, before they occur.");
-}
+  tx(s, "The engine runs as an oracle across the plant's blast-radius map — surfacing the cross-zone compounds a zone-by-zone walkdown rates safe, before they occur.",
+    { x: MX, y: 5.35, w: 5.5, h: 1.0, fontFace: BODY, fontSize: 12.5, color: T2, lineSpacingMultiple: 1.18 });
 
-// =====================================================================
-// 09 — PERMIT GATE
-// =====================================================================
-{
-  const s = S(); chrome(s); kicker(s, "PREVENTION, NOT DETECTION");
-  headline(s, "Block the permit before it's issued", { size: 31 });
-  tx(s, "PERMIT DESK · HOT-WORK REQUEST · COB-1", { x: MX, y: 2.45, w: 6, h: 0.3, fontFace: MONO, fontSize: 10, color: T3, charSpacing: 1 });
-  tx(s, "BLOCKED", { x: MX - 0.03, y: 2.75, w: 5.4, h: 1.1, fontFace: DISP, fontSize: 66, color: RED });
-  // chips
-  rect(s, MX, 4.05, 1.5, 0.5, CARD, AMBER); tx(s, "HIGH 80", { x: MX, y: 4.05, w: 1.5, h: 0.5, fontFace: MONO, fontSize: 12, color: AMBER, align: "center", valign: "middle" });
-  tx(s, "→", { x: MX + 1.55, y: 4.05, w: 0.5, h: 0.5, fontFace: SUB, fontSize: 18, color: T3, align: "center", valign: "middle" });
-  rect(s, MX + 2.05, 4.05, 2.9, 0.5, CARD, RED); tx(s, "CRITICAL 100 · compound", { x: MX + 2.05, y: 4.05, w: 2.9, h: 0.5, fontFace: MONO, fontSize: 11, color: RED, align: "center", valign: "middle" });
-  tx(s, "Issuing this hot-work permit completes the lethal compound pattern — flammable gas + ignition + personnel — minutes before any single sensor would alarm.",
-    { x: MX, y: 4.85, w: 5.2, h: 1.4, fontFace: BODY, fontSize: 14, color: WHITE, lineSpacingMultiple: 1.25 });
+  // RIGHT — shift-left permit gate: refuse the permit that would complete the pattern
+  vline(s, 6.75, 2.3, 3.95, LINE);
+  const rx = 7.1;
+  tx(s, "SHIFT-LEFT PERMIT GATE · HOT-WORK · COB-1", { x: rx, y: 2.32, w: 5.4, h: 0.3, fontFace: MONO, fontSize: 9.5, color: BRAND, charSpacing: 1 });
+  tx(s, "BLOCKED", { x: rx - 0.03, y: 2.7, w: 5.4, h: 1.0, fontFace: DISP, fontSize: 58, color: RED });
+  rect(s, rx, 3.92, 1.4, 0.5, CARD, AMBER); tx(s, "HIGH 80", { x: rx, y: 3.92, w: 1.4, h: 0.5, fontFace: MONO, fontSize: 11, color: AMBER, align: "center", valign: "middle" });
+  tx(s, "→", { x: rx + 1.45, y: 3.92, w: 0.45, h: 0.5, fontFace: SUB, fontSize: 17, color: T3, align: "center", valign: "middle" });
+  rect(s, rx + 1.95, 3.92, 2.95, 0.5, CARD, RED); tx(s, "CRITICAL 100 · compound", { x: rx + 1.95, y: 3.92, w: 2.95, h: 0.5, fontFace: MONO, fontSize: 10.5, color: RED, align: "center", valign: "middle" });
+  tx(s, "Simulate the plant WITH the proposed permit; refuse it if issuing it would create — or add people to — a compound hazard. The Vizag hot-work permit, against that atmosphere → BLOCKED.",
+    { x: rx, y: 4.72, w: 5.45, h: 1.5, fontFace: BODY, fontSize: 12.5, color: WHITE, lineSpacingMultiple: 1.2 });
 
-  vline(s, 6.55, 2.4, 3.85, LINE);
-  tx(s, "CONDITIONS TO ISSUE SAFELY", { x: 6.9, y: 2.5, w: 6, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
-  tx(s, [
-    { text: "Gas-free certificate — flammable gas below alarm and falling (OISD-STD-105)", options: { breakLine: true } },
-    { text: "Force-ventilate / purge the zone and re-test the atmosphere", options: { breakLine: true } },
-    { text: "No flammable release developing in this zone or any blast-radius neighbour", options: { breakLine: true } },
-    { text: "No entry while an ignition source is active in the blast radius (Factory Act §36 / §37)", options: {} },
-  ], { x: 6.9, y: 3.0, w: CW - (6.9 - MX), h: 2.6, fontFace: BODY, fontSize: 14, color: T2, bullet: { code: "2192", indent: 18 }, lineSpacingMultiple: 1.4 });
-  footnote(s, "The inverse of detection: simulate the plant WITH the proposed permit, and refuse it if issuing it would create — or add people to — a compound hazard.");
+  footnote(s, "Two ways to act before the alarm — discover the compound that hasn't formed yet, and refuse the permit that would complete it.");
 }
 
 // =====================================================================
@@ -433,23 +405,42 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
 }
 
 // =====================================================================
-// 14 — GO TO MARKET
+// BUSINESS — GO-TO-MARKET + MOAT (merged)
 // =====================================================================
 {
   const s = S(); chrome(s); kicker(s, "GO TO MARKET");
-  headline(s, "A wedge, a buyer, a trigger", { size: 33 });
+  headline(s, "A wedge, a buyer, a moat.", { size: 33 });
+
+  // LEFT — the play (go to market)
+  tx(s, "THE PLAY", { x: MX, y: 2.18, w: 5, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3, charSpacing: 2 });
   [
-    ["BUYER", "Plant process-safety head / safety officer — owns permit-to-work and statutory compliance, carries the fatality risk.", BRAND],
-    ["WEDGE", "Permit-to-work intelligence — one discrete, fundable pain — then expand to full gas + permit + CCTV + shift fusion.", WHITE],
-    ["PRICING", "~₹1 Cr / plant / yr — justified against a single downtime-day (~₹3 Cr) or one OISD / NGT penalty.", WHITE],
-    ["TRIGGER", "Post-LG-Polymers / Vizag regulatory pressure — DGMS scrutiny and mandatory near-miss reporting.", AMBER],
+    ["BUYER", "Plant process-safety head — owns permit-to-work + statutory compliance, carries the fatality risk.", BRAND],
+    ["WEDGE", "Permit-to-work intelligence — one fundable pain — then expand to full gas + permit + CCTV fusion.", WHITE],
+    ["PRICING", "~₹1 Cr / plant / yr — vs a single downtime-day (~₹3 Cr) or one OISD / NGT penalty.", WHITE],
+    ["TRIGGER", "Post-Vizag / LG-Polymers pressure — DGMS scrutiny + mandatory near-miss reporting.", AMBER],
   ].forEach(([k, v, c], i) => {
-    const y = 2.4 + i * 0.86;
-    hline(s, MX, y, CW, LINE);
-    tx(s, k, { x: MX, y: y + 0.14, w: 2.0, h: 0.5, fontFace: SUB, fontSize: 15, color: c });
-    tx(s, v, { x: MX + 2.2, y: y + 0.12, w: CW - 2.2, h: 0.6, fontFace: BODY, fontSize: 13.5, color: T2, valign: "middle", lineSpacingMultiple: 1.12 });
+    const y = 2.6 + i * 0.82;
+    hline(s, MX, y, 5.7, LINE);
+    tx(s, k, { x: MX, y: y + 0.11, w: 5.7, h: 0.3, fontFace: SUB, fontSize: 13, color: c });
+    tx(s, v, { x: MX, y: y + 0.40, w: 5.7, h: 0.42, fontFace: BODY, fontSize: 11, color: T2, lineSpacingMultiple: 1.08 });
   });
-  hline(s, MX, 2.4 + 4 * 0.86, CW, LINE);
+
+  // RIGHT — the moat
+  vline(s, 6.95, 2.2, 3.7, LINE);
+  const rx = 7.3;
+  tx(s, "WHY AN INCUMBENT CAN'T JUST SHIP IT", { x: rx, y: 2.18, w: 5.4, h: 0.3, fontFace: MONO, fontSize: 9.5, color: BRAND, charSpacing: 1 });
+  [
+    ["Incumbents sell silos", "Honeywell / Dräger / MSA sell gas, permits and CCTV SEPARATELY. The danger lives in the seam no one owns.", RED],
+    ["Deterministic & audit-grade", "Compound rules to real OISD / Factory-Act thresholds — domain IP a safety officer can defend in an audit, not a clonable model.", BRAND],
+    ["A per-plant data moat", "Operator feedback tunes each site's nuisance profile — proprietary data that compounds per site and raises switching cost.", BRAND],
+  ].forEach(([k, v, c], i) => {
+    const y = 2.62 + i * 1.06;
+    rect(s, rx, y + 0.03, 0.05, 0.8, c);
+    tx(s, k, { x: rx + 0.2, y: y, w: 5.2, h: 0.32, fontFace: SUB, fontSize: 13, color: c });
+    tx(s, v, { x: rx + 0.2, y: y + 0.32, w: 5.2, h: 0.72, fontFace: BODY, fontSize: 11, color: T2, lineSpacingMultiple: 1.1 });
+  });
+
+  // THE ASK
   rect(s, MX, 6.05, CW, 0.6, BRAND);
   tx(s, [
     { text: "THE ASK    ", options: { color: BG, bold: true, fontFace: MONO, fontSize: 11 } },
@@ -458,57 +449,52 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
 }
 
 // =====================================================================
-// 15 — COMPETITIVE MOAT
+// SCALE & DEPLOY — fleet economics + reference architecture (merged)
 // =====================================================================
 {
-  const s = S(); chrome(s); kicker(s, "WHY AN INCUMBENT CAN'T JUST SHIP IT");
-  headline(s, "The moat is the fusion, not the sensors", { size: 30 });
-  [
-    ["INCUMBENTS SELL SILOS", "Honeywell, Dräger, MSA, Hexagon sell gas detection, permit-to-work and CCTV as SEPARATE products. The danger lives in the seam BETWEEN them — exactly what no one owns end to end.", RED],
-    ["A DETERMINISTIC PATTERN LIBRARY", "Compound rules — flammable × ignition × personnel × oxidizer × blast-radius, encoded to real OISD / Factory-Act thresholds — are domain IP, not a model cloned from a public dataset.", BRAND],
-    ["A PER-PLANT DATA MOAT", "Each plant's operator feedback tunes its own nuisance profile — proprietary data that compounds per site and raises switching cost. An incumbent's fixed hardware doesn't learn.", BRAND],
-    ["AUDIT-GRADE BY CONSTRUCTION", "A transparent, deterministic core a safety officer can defend in a statutory audit. A pure-LLM bolt-on can't make a life-safety call a regulator will accept.", AMBER],
-  ].forEach(([k, v, c], i) => {
-    const y = 2.35 + i * 0.92;
-    hline(s, MX, y, CW, LINE);
-    rect(s, MX, y + 0.14, 0.05, 0.55, c);
-    tx(s, k, { x: MX + 0.2, y: y + 0.13, w: 3.7, h: 0.62, fontFace: SUB, fontSize: 13.5, color: c, valign: "middle", lineSpacingMultiple: 1.0 });
-    tx(s, v, { x: MX + 4.0, y: y + 0.11, w: CW - 4.0, h: 0.66, fontFace: BODY, fontSize: 12, color: T2, valign: "middle", lineSpacingMultiple: 1.12 });
-  });
-  hline(s, MX, 2.35 + 4 * 0.92, CW, LINE);
-  tx(s, [
-    { text: "The wedge:  ", options: { color: BRAND, bold: true, fontFace: SUB } },
-    { text: "land on permit-to-work intelligence — one fundable pain — then own the fused layer the incumbents are structurally unable to assemble.", options: { color: T2, fontFace: BODY } },
-  ], { x: MX, y: 6.25, w: CW, h: 0.4, fontSize: 12.5, valign: "middle" });
-}
+  const s = S(); chrome(s); kicker(s, "SCALES HORIZONTALLY · DEPLOYS OVER YOUR STACK");
+  headline(s, "One engine. Every plant. Measured.", { size: 31 });
 
-// =====================================================================
-// 16 — FLEET / SCALE (measured economics)
-// =====================================================================
-{
-  const s = S(); chrome(s); kicker(s, "SCALES HORIZONTALLY");
-  headline(s, "One engine. Every plant.", { size: 33 });
-  const stats = [["100", "plants · one engine", WHITE], ["$0.30", "per plant / month", GREEN], ["thousands", "plants per core", WHITE], ["0.05 ms", "p50 per assessment", BRAND]];
+  // measured economics — the hero numbers
+  const stats = [["100", "plants · one engine", WHITE], ["$0.30", "per plant / month", GREEN], ["~5,000", "plants per core", WHITE], ["~0.7M", "sensor-tags / sec", BRAND]];
   const cw = CW / 4; let x = MX;
   stats.forEach(([n, l, c]) => {
-    hline(s, x, 2.4, cw - 0.3, LINE2);
-    tx(s, n, { x, y: 2.55, w: cw - 0.25, h: 0.95, fontFace: DISP, fontSize: n.length > 5 ? 34 : 48, color: c, valign: "middle" });
-    tx(s, l, { x, y: 3.55, w: cw - 0.3, h: 0.5, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.1 });
+    hline(s, x, 2.05, cw - 0.3, LINE2);
+    tx(s, n, { x, y: 2.2, w: cw - 0.2, h: 0.7, fontFace: DISP, fontSize: n.length > 5 ? 32 : 44, color: c, valign: "middle" });
+    tx(s, l, { x, y: 3.0, w: cw - 0.3, h: 0.4, fontFace: BODY, fontSize: 11.5, color: T2, lineSpacingMultiple: 1.05 });
     x += cw;
   });
-  // cost curve
-  tx(s, "MEASURED $/PLANT/MONTH — FALLS WITH SCALE", { x: MX, y: 4.5, w: 8, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
-  [["10 plants", "$3.00"], ["100 plants", "$0.30"], ["1,000 plants", "$0.03"], ["10,000 plants", "$0.009"]].forEach(([k, v], i) => {
-    const sx = MX + i * 3.05;
-    tx(s, v, { x: sx, y: 4.85, w: 2.8, h: 0.55, fontFace: DISP, fontSize: 26, color: WHITE });
-    tx(s, k, { x: sx, y: 5.45, w: 2.8, h: 0.3, fontFace: MONO, fontSize: 10, color: T3 });
-    if (i < 3) tx(s, "›", { x: sx + 2.55, y: 4.85, w: 0.4, h: 0.55, fontFace: SUB, fontSize: 20, color: BRAND, align: "center" });
+
+  // cost curve — $/plant/month falls with scale
+  tx(s, "MEASURED $/PLANT/MONTH — FALLS WITH SCALE", { x: MX, y: 3.62, w: 8, h: 0.3, fontFace: MONO, fontSize: 9.5, color: BRAND, charSpacing: 1 });
+  [["10 plants", "$3.00"], ["100 plants", "$0.30"], ["1,000 plants", "$0.03"], ["10,000 plants", "< $0.01"]].forEach(([k, v], i) => {
+    const sx = MX + i * 3.0;
+    tx(s, v, { x: sx, y: 3.92, w: 2.7, h: 0.5, fontFace: DISP, fontSize: 23, color: WHITE });
+    tx(s, k, { x: sx, y: 4.45, w: 2.7, h: 0.3, fontFace: MONO, fontSize: 9.5, color: T3 });
+    if (i < 3) tx(s, "›", { x: sx + 2.5, y: 3.92, w: 0.4, h: 0.5, fontFace: SUB, fontSize: 18, color: BRAND, align: "center" });
   });
-  rect(s, MX, 6.0, CW, 0.6, PANEL, LINE);
-  tx(s, [
-    { text: "Stateless shards.  ", options: { color: BRAND, bold: true, fontFace: SUB } },
-    { text: "Each plant is independent — no shared state, no per-site model. The engine is O(zones); the fleet scales by adding plain workers. Digital-twin sites stand in for live OPC-UA / MQTT feeds — ingesting real data is a connector, not a rewrite.", options: { color: T2, fontFace: BODY } },
-  ], { x: MX + 0.35, y: 6.0, w: CW - 0.7, h: 0.6, fontSize: 11, valign: "middle", lineSpacingMultiple: 1.12 });
+
+  // deployment pipeline — a connector, not a rewrite
+  hline(s, MX, 5.02, CW, LINE);
+  tx(s, "A CONNECTOR, NOT A REWRITE", { x: MX, y: 5.12, w: 6, h: 0.3, fontFace: MONO, fontSize: 9.5, color: BRAND, charSpacing: 1 });
+  const stages = [
+    ["Historian", "OPC-UA / MQTT / PI"],
+    ["Edge pre-filter", "debounce + normalise"],
+    ["Connector", "ingest · OPC-UA"],
+    ["Compound engine", "deterministic · O(zones)"],
+    ["Control room", "split-reality HMI"],
+  ];
+  const pgap = 0.32, pw = (CW - 4 * pgap) / 5; let px = MX;
+  stages.forEach(([t, d], i) => {
+    const hot = i === 3;
+    rect(s, px, 5.5, pw, 0.82, hot ? PANEL2 : PANEL, hot ? BRAND : LINE);
+    if (hot) rect(s, px, 5.5, pw, 0.04, BRAND);
+    tx(s, t, { x: px + 0.1, y: 5.59, w: pw - 0.2, h: 0.3, fontFace: SUB, fontSize: 11, color: hot ? BRAND : WHITE });
+    tx(s, d, { x: px + 0.1, y: 5.89, w: pw - 0.2, h: 0.38, fontFace: BODY, fontSize: 8.5, color: T2, lineSpacingMultiple: 1.02 });
+    if (i < 4) tx(s, "→", { x: px + pw, y: 5.5, w: pgap, h: 0.82, fontFace: SUB, fontSize: 14, color: BRAND, align: "center", valign: "middle" });
+    px += pw + pgap;
+  });
+  footnote(s, "Stateless shards — no shared state, no per-site model; the engine is O(zones), so the fleet scales by adding plain workers. Deploys over steel · refining · petrochem · mining · power.");
 }
 
 // =====================================================================
@@ -532,71 +518,6 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
   tx(s, "THE FLYWHEEL", { x: MX + 6.4, y: 3.85, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 1 });
   tx(s, "A confirmed false alarm raises the threshold; a confirmed alert relaxes it. Each plant quietly auto-acknowledges its own routine excursions — fewer nuisance pages, faster action on the ones that matter.", { x: MX + 6.4, y: 4.2, w: CW - 6.4, h: 1.3, fontFace: BODY, fontSize: 13.5, color: T2, lineSpacingMultiple: 1.22 });
   footnote(s, "The default engine is untouched — the benchmark (100% recall / 0% false-positive) is byte-identical with or without feedback.");
-}
-
-// =====================================================================
-// 18 — SCALE & DEPLOY
-// =====================================================================
-{
-  const s = S(); chrome(s); kicker(s, "SCALE & DEPLOY");
-  headline(s, "Sits over the sensors you already have", { size: 30 });
-  const pts = [["Standard formats", "Ingests SCADA / IoT / permit-to-work data as-is"], ["A connector, not a rewrite", "Digital twin → live plant swaps the data source, not the brain"], ["Auditable & hybrid", "Deterministic decisions a safety officer can defend in an audit"]];
-  let y = 2.5;
-  pts.forEach(([t, d]) => {
-    hline(s, MX, y, 6.6, LINE);
-    dot(s, MX + 0.1, y + 0.5, BRAND, 0.07);
-    tx(s, t, { x: MX + 0.35, y: y + 0.22, w: 6.2, h: 0.4, fontFace: SUB, fontSize: 17, color: WHITE });
-    tx(s, d, { x: MX + 0.35, y: y + 0.66, w: 6.2, h: 0.5, fontFace: BODY, fontSize: 13, color: T2 });
-    y += 1.2;
-  });
-  hline(s, MX, y, 6.6, LINE);
-
-  const bx = 8.0;
-  vline(s, bx - 0.3, 2.5, 3.6, LINE);
-  tx(s, "WHERE IT DEPLOYS", { x: bx, y: 2.5, w: 4, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 2 });
-  [["Steel", "coke ovens, blast furnaces"], ["Refining & Petrochem", "OISD permit-to-work regimes"], ["Mining", "confined-space & gas hazards"], ["Power & Chemicals", "asset-intensive operations"]].forEach(([t, d], i) => {
-    const yy = 3.05 + i * 0.8;
-    tx(s, t, { x: bx, y: yy, w: 4.5, h: 0.35, fontFace: SUB, fontSize: 16, color: WHITE });
-    tx(s, d, { x: bx, y: yy + 0.34, w: 4.5, h: 0.35, fontFace: BODY, fontSize: 12, color: T2 });
-  });
-}
-
-// =====================================================================
-// 19 — REFERENCE ARCHITECTURE
-// =====================================================================
-{
-  const s = S(); chrome(s); kicker(s, "DEPLOYS OVER YOUR STACK");
-  headline(s, "A connector, not a rewrite", { size: 33 });
-  const stages = [
-    ["Plant historian", "OPC-UA / MQTT / PI\npermits · CCTV"],
-    ["Edge pre-filter", "debounce + normalise\nat the plant edge"],
-    ["Compound engine", "deterministic, O(zones)\nthe safety decision"],
-    ["Control-room HMI", "split-reality view +\nautonomous response"],
-  ];
-  const cw = (CW - 1.2) / 4; let x = MX;
-  stages.forEach(([t, d], i) => {
-    const hot = i === 2;
-    rect(s, x, 2.5, cw, 1.85, hot ? PANEL2 : PANEL, hot ? BRAND : LINE);
-    if (hot) rect(s, x, 2.5, cw, 0.05, BRAND);
-    tx(s, t, { x: x + 0.2, y: 2.72, w: cw - 0.4, h: 0.5, fontFace: SUB, fontSize: 15, color: hot ? BRAND : WHITE });
-    tx(s, d.replace(/\n/g, "\n"), { x: x + 0.2, y: 3.3, w: cw - 0.4, h: 0.95, fontFace: BODY, fontSize: 11.5, color: T2, lineSpacingMultiple: 1.15 });
-    if (i < 3) tx(s, "→", { x: x + cw, y: 2.5, w: 0.4, h: 1.85, fontFace: SUB, fontSize: 20, color: BRAND, align: "center", valign: "middle" });
-    x += cw + 0.4;
-  });
-  hline(s, MX, 4.85, CW, LINE2);
-  tx(s, "THROUGHPUT", { x: MX, y: 5.05, w: 5, h: 0.3, fontFace: MONO, fontSize: 10, color: BRAND, charSpacing: 2 });
-  tx(s, [{ text: "~0.65M", options: { fontFace: DISP, fontSize: 34, color: WHITE } }, { text: "  tags / sec", options: { fontFace: MONO, fontSize: 14, color: T2 } }],
-    { x: MX, y: 5.4, w: 6, h: 0.6, valign: "bottom" });
-  tx(s, "single-core, measured — a 10,000-tag plant assesses in ~15 ms per 1 Hz frame (~65× real-time). No GPU in the life-safety path.",
-    { x: MX, y: 6.1, w: 6.2, h: 0.6, fontFace: BODY, fontSize: 12, color: T2, lineSpacingMultiple: 1.15 });
-  const bx = 7.4;
-  vline(s, bx - 0.3, 5.05, 1.55, LINE);
-  [["Standard formats", "ingests SCADA / IoT / permit data as-is"], ["Edge or on-prem", "data never has to leave the plant"], ["Deterministic core", "an auditable decision an officer can defend"]].forEach(([t, d], i) => {
-    const yy = 5.1 + i * 0.52;
-    dot(s, bx + 0.05, yy + 0.12, BRAND, 0.06);
-    tx(s, t, { x: bx + 0.3, y: yy, w: 5, h: 0.3, fontFace: SUB, fontSize: 13, color: WHITE });
-    tx(s, d, { x: bx + 0.3, y: yy + 0.25, w: 5, h: 0.3, fontFace: BODY, fontSize: 10.5, color: T2 });
-  });
 }
 
 // =====================================================================
