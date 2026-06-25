@@ -23,7 +23,10 @@ TAGS = ("CH4", "CO", "H2S", "O2")
 async def run_session(scenario: str = "vizag", zone: str = "COB-1", minutes: int = 20) -> dict:
     """Stream a scenario's tags through a live OPC-UA server -> client round-trip into the engine.
     Returns the per-tick tape, the compound-alert minute vs the single-sensor minute, and the
-    read->decide latency percentiles (p50/p99). Every value the engine acts on came off the wire."""
+    read->decide latency percentiles (p50/p99). The engine scores the gas tags read back over the
+    wire (this zone's readings are rebuilt from the client reads, not the in-memory snapshot they
+    were published from); permits + personnel come from the permit-to-work system, published
+    alongside as OPC-UA tags."""
     from asyncua import Client, Server  # lazy: optional dep
 
     sim = PlantSimulator(scenario=SCENARIOS[scenario], dt_min=1.0, seed=42)
@@ -61,11 +64,15 @@ async def run_session(scenario: str = "vizag", zone: str = "COB-1", minutes: int
                     await svars[sp].write_value(float(z.gases[sp].value))
                 await s_hot.write_value(any(p.type == PermitType.HOT_WORK for p in z.active_permits))
                 await s_crew.write_value(int(z.worker_count))
-                # Trinetra reads them back over OPC-UA and the engine decides — time the read->decide path
+                # Trinetra reads them back over OPC-UA and the engine scores THOSE values — time the
+                # read->decide path. Rebuild this zone's gas readings from the wire reads so the engine
+                # genuinely consumes the OPC-UA data, not the in-memory snapshot it was published from.
                 t0 = time.perf_counter()
                 vals = {sp: await cvars[sp].read_value() for sp in TAGS}
                 await c_hot.read_value()
                 await c_crew.read_value()
+                for sp in TAGS:
+                    z.gases[sp].value = float(vals[sp])
                 zr = engine.assess(snap)[zone]
                 lat.append((time.perf_counter() - t0) * 1000.0)
                 comp = bool(zr.compound and zr.score >= 40)

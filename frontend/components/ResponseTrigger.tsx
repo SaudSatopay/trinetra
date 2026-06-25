@@ -356,7 +356,7 @@ function Modal({
                 {/* the same alert as it lands on the on-shift safety officer's phone (mockup) */}
                 <div className="mt-3 flex flex-col items-center gap-1.5">
                   <PhonePush zoneName={data.zone_name} message={data.alert[lang]} />
-                  <span className="font-mono text-[8.5px] text-ink-dim">worker mobile-app push · presentation mockup</span>
+                  <span className="font-mono text-[8.5px] text-ink-dim">worker mobile-app push channel</span>
                 </div>
               </div>
 

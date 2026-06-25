@@ -93,7 +93,8 @@ FLEET_SIZE = 100
 HORIZON = 45             # minutes simulated per site (to derive lead time over the full run)
 TAGS_PER_ZONE = 6        # 4 gas species + temperature + pressure (matches throughput.py)
 CORE_COST_USD_MO = 30.0  # a small dedicated cloud vCPU (~$0.04/core-hr x 730 h); stated, conservative
-PROVISION_HEADROOM = 4.0  # budget the engine at 1/4 of a core's measured capacity (ingest, ser/de, GC, bursts)
+PROVISION_HEADROOM = 4.0  # budget the risk engine at 1/4 of a core, leaving room for the co-located
+                          # per-request CPU on the same core (frame (de)serialization, GC, burst smoothing)
 # sizes carried out past the single-core ceiling so the table SHOWS the linear,
 # coordination-free horizontal scaling (cores cross over), not just a flat line.
 COST_FLEET_SIZES = [10, 50, 100, 500, 1000, 5000, 10000]
@@ -259,8 +260,8 @@ def measure_scale(n: int = FLEET_SIZE) -> dict:
     wall = time.perf_counter() - t0
     sustained = iters / wall  # plant-assessments / sec on one core
 
-    # at 1 Hz per plant, one core serves `sustained` plants; provision with headroom for
-    # the real work around the assess (ingest parse, (de)serialization, GC, bursts).
+    # at 1 Hz per plant, one core serves `sustained` plants; provision with headroom for the
+    # co-located per-request CPU on the same core ((de)serialization, GC pauses, burst smoothing).
     plants_per_core = max(1, int(sustained / PROVISION_HEADROOM))
 
     def _row(size: int) -> dict:
@@ -299,8 +300,10 @@ def measure_scale(n: int = FLEET_SIZE) -> dict:
                  "by adding plain workers (linear, no coordination).",
         "basis": "measured single-core CompoundRiskEngine.assess() over a representative snapshot "
                  "pool (every scenario, warmed trend history), confidence Monte-Carlo off (it is "
-                 "display-only). Core = a small dedicated cloud vCPU at ~$30/core-month, provisioned "
-                 "at 1/" + str(int(PROVISION_HEADROOM)) + "x of measured capacity for ingest, "
-                 "(de)serialization, GC and bursts. Risk-compute only — ingest/storage/networking "
-                 "scale roughly linearly and are not in this figure.",
+                 "display-only) — so plants/core is hardware-dependent; re-measured live here. Core = "
+                 "a small dedicated cloud vCPU at ~$30/core-month, provisioned at 1/"
+                 + str(int(PROVISION_HEADROOM)) + "x of measured capacity to leave room for the "
+                 "co-located per-request CPU on the same core ((de)serialization, GC, bursts). "
+                 "Risk-compute only — the separate ingest, storage and networking infrastructure "
+                 "scales roughly linearly and is not in this figure.",
     }

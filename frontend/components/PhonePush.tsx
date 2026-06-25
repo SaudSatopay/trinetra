@@ -100,7 +100,7 @@ export function PhonePush({
           </div>
         </div>
 
-        <div className="mt-2 text-center font-mono text-[7.5px] text-ink-dim">on-shift safety officer · slide to respond</div>
+        <div className="mt-2 text-center font-mono text-[7.5px] text-ink-dim">presentation mockup · not a live push</div>
       </div>
     </div>
   );

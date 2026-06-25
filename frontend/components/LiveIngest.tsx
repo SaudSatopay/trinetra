@@ -67,7 +67,7 @@ export function LiveIngest() {
           border: "1px solid color-mix(in srgb, var(--good) 34%, transparent)",
           background: "color-mix(in srgb, var(--good) 8%, transparent)",
         }}
-        title="Live OPC-UA ingest — the protocol a real SCADA/DCS exposes, read straight into the engine"
+        title="Live OPC-UA ingest (in-process demo server) — the protocol a real SCADA/DCS exposes, read straight into the engine"
       >
         <span className="soft-pulse h-1.5 w-1.5 rounded-full" style={{ background: "var(--good)" }} />
         OPC‑UA · {s.p50_ms}ms
@@ -141,9 +141,10 @@ export function LiveIngest() {
               </div>
 
               <div className="mt-2 font-mono text-[8.5px] leading-relaxed text-ink-dim">
-                tags: {(s.tags || []).join(" · ")} — every value the engine acts on came off the wire.
-                Self‑contained: an in‑process OPC‑UA server, no external broker. A live RTSP/historian feed
-                is the same client pointed at the plant.
+                tags: {(s.tags || []).join(" · ")} — the engine scores the gas tags read back over the wire
+                (permits + personnel come from the permit‑to‑work system, published alongside). Self‑contained:
+                an in‑process OPC‑UA server, no external broker; a live OPC‑UA / historian feed is the same
+                client pointed at the plant.
               </div>
             </div>
           </div>,
