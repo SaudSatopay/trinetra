@@ -26,7 +26,6 @@ interface Impact {
   fatalities_at_risk: number;
   precedent_toll: number;
   system_cost_annual_cr: number;
-  payback_years: number;
   ev?: EvModel;
   insurance?: { annual_value_cr: number[] };
 }

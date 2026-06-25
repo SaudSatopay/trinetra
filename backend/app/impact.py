@@ -90,8 +90,6 @@ def compute_impact(personnel: int, precedent_toll: int = 0, lead_min: int = 0) -
         "precedent_toll": precedent_toll,
         "lead_min": lead_min,
         "system_cost_annual_cr": annual_cr,
-        # one prevented incident covers this many years of platform cost (kept for reference)
-        "payback_years": round(total_cr / annual_cr) if annual_cr else 0,
         "ev": {
             "anchor_label": f"1-in-{ANCHOR_YEARS}-yr",
             "anchor_years": ANCHOR_YEARS,

@@ -119,5 +119,5 @@
     <text x="228" y="610" fill="#8a98a6">compound-hazard response path</text>
   </g>
   <text x="40" y="648" fill="#eaf2fa" font-size="13" font-weight="600">100% compound recall<tspan fill="#5f6e7e" font-weight="400">  ·  </tspan>0% false-positive<tspan fill="#5f6e7e" font-weight="400">  ·  </tspan>7.4 min mean early-warning</text>
-  <text x="40" y="668" fill="#5f6e7e" font-size="10" font-family="ui-monospace, monospace">25-scenario benchmark · deterministic (seed=42) · vs single-sensor baseline</text>
+  <text x="40" y="668" fill="#5f6e7e" font-size="10" font-family="ui-monospace, monospace">29-scenario benchmark · deterministic (seed=42) · vs single-sensor baseline</text>
 </svg>
