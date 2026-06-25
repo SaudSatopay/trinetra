@@ -22,7 +22,7 @@ const SUB = "Bahnschrift";             // subheads
 const BODY = "Segoe UI";               // body
 const BODYL = "Segoe UI Light";        // large body
 const MONO = "Cascadia Mono";          // labels / telemetry / data
-const W = 13.333, H = 7.5, MX = 0.85, CW = W - 2 * MX;
+const W = 13.333, H = 7.5, MX = 0.85, CW = W - 2 * MX, TOTAL = 21;
 
 let pageNo = 0;
 function S() { const s = p.addSlide(); s.background = { color: BG }; pageNo++; return s; }
@@ -52,7 +52,7 @@ function chrome(s) {
   hline(s, MX, 0.52, CW, LINE, 1);
   hline(s, MX, H - 0.52, CW, LINE, 1);
   tx(s, "TRINETRA", { x: MX, y: H - 0.49, w: 3, h: 0.3, fontFace: MONO, fontSize: 8, color: T3, charSpacing: 4, valign: "middle" });
-  tx(s, String(pageNo).padStart(2, "0") + " / 20", { x: W - MX - 2, y: H - 0.49, w: 2, h: 0.3, fontFace: MONO, fontSize: 8, color: T3, align: "right", charSpacing: 1, valign: "middle" });
+  tx(s, String(pageNo).padStart(2, "0") + " / " + TOTAL, { x: W - MX - 2, y: H - 0.49, w: 2, h: 0.3, fontFace: MONO, fontSize: 8, color: T3, align: "right", charSpacing: 1, valign: "middle" });
 }
 function kicker(s, t, y) {
   y = y == null ? 0.78 : y;
@@ -228,6 +228,19 @@ function arrow(s, x, y, h) { tx(s, "→", { x, y, w: 0.3, h, fontFace: SUB, font
   tx(s, "DETERMINISTIC · AUDITABLE · NO LLM IN THE DECISION", { x: 5.31, y: fy + fh + 0.08, w: 2.72, h: 0.25, fontFace: MONO, fontSize: 7.5, color: BRAND, align: "center", charSpacing: 0.5 });
 
   footnote(s, "Hybrid by design — the deterministic engine makes every life-safety call; the LLM layer only explains it, retrieves precedent, and drafts reports.");
+}
+
+// =====================================================================
+// 06b — ARCHITECTURE · DETAIL (the full standalone diagram, embedded full-bleed)
+// PNG = ../architecture.png, rasterized from architecture.svg via Chrome headless. Re-render if the
+// SVG changes:  chrome --headless=new --force-device-scale-factor=2 --screenshot=architecture.png \
+//               --window-size=1200,860 file:///.../architecture.svg
+// =====================================================================
+{
+  const s = S();
+  // a self-contained poster (its own header/footer + matching dark bg); place it full-height and
+  // centred so the narrow side bands blend into the slide background.
+  s.addImage({ path: __dirname + "/../architecture.png", x: 1.435, y: 0, w: 10.463, h: 7.5 });
 }
 
 // =====================================================================
