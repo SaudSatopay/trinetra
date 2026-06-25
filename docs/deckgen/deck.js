@@ -83,7 +83,7 @@ function mark(s, cx, cy, sc) { // triangle + eye
   s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 1.95, w: 0.07, h: 3.05, fill: { color: BRAND } });
   s.addText("In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were usually three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event — that's where experience, communication, and a strong safety culture make the difference.",
     { x: 1.15, y: 2.3, w: 11.3, h: 2.05, fontFace: BODY, fontSize: 18, italic: true, color: BRIGHT, lineSpacingMultiple: 1.18, valign: "top", margin: 0 });
-  s.addText("— Nishat [Surname], Plant Manager · 30+ years across gas & heavy industry",
+  s.addText("— Nishat Mulla, Plant Manager · 30+ years across gas & heavy industry",
     { x: 1.15, y: 4.5, w: 11.3, h: 0.35, fontFace: MONO, fontSize: 12.5, color: BRAND, margin: 0 });
   // our bridge — visually subordinate, clearly OUR voice (not his)
   panel(s, 0.7, 5.25, 11.93, 1.5, PANEL2, LINE);
