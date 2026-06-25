@@ -28,7 +28,14 @@ function panel(s, x, y, w, h, fill = PANEL, line = LINE, rad = 0.09) {
 }
 function dot(s, x, y, c, r = 0.09) { s.addShape(p.shapes.OVAL, { x, y, w: r * 2, h: r * 2, fill: { color: c }, line: { type: "none" } }); }
 function mark(s, cx, cy, sc) { // triangle + eye
-  const t = (a, b, c, d) => s.addShape(p.shapes.LINE, { x: a, y: b, w: c - a, h: d - b, line: { color: BRAND, width: 2 } });
+  // Draw each edge as a LINE with a NON-NEGATIVE bounding box. A raw (w=c-a) goes negative when the
+  // segment runs right-to-left / bottom-to-top, which emits <a:ext cx="-..."> — an invalid-OOXML
+  // schema violation PowerPoint rejects ("found a problem with content"). Normalise to min-corner +
+  // |delta| and flip the anti-diagonal so the triangle is visually identical.
+  const t = (a, b, c, d) => s.addShape(p.shapes.LINE, {
+    x: Math.min(a, c), y: Math.min(b, d), w: Math.abs(c - a), h: Math.abs(d - b),
+    flipH: (c - a) * (d - b) < 0, line: { color: BRAND, width: 2 },
+  });
   t(cx, cy - sc, cx + sc, cy + sc); t(cx + sc, cy + sc, cx - sc, cy + sc); t(cx - sc, cy + sc, cx, cy - sc);
   s.addShape(p.shapes.OVAL, { x: cx - sc * 0.42, y: cy + sc * 0.05, w: sc * 0.84, h: sc * 0.55, fill: { type: "none" }, line: { color: BRAND, width: 1.5 } });
   dot(s, cx - sc * 0.07, cy + sc * 0.22, BRAND, sc * 0.09);
