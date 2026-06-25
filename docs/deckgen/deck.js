@@ -73,6 +73,28 @@ function mark(s, cx, cy, sc) { // triangle + eye
   });
 }
 
+// ============ FIELD VALIDATION ============
+{
+  const s = S();
+  kicker(s, "VALIDATED BY THE FIELD");
+  title(s, "A veteran describes the exact failure mode");
+  // the verbatim quote — visually dominant, his words
+  panel(s, 0.7, 1.95, 11.93, 3.05, PANEL, LINE);
+  s.addShape(p.shapes.RECTANGLE, { x: 0.7, y: 1.95, w: 0.07, h: 3.05, fill: { color: BRAND } });
+  s.addText("In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were usually three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event — that's where experience, communication, and a strong safety culture make the difference.",
+    { x: 1.15, y: 2.3, w: 11.3, h: 2.05, fontFace: BODY, fontSize: 18, italic: true, color: BRIGHT, lineSpacingMultiple: 1.18, valign: "top", margin: 0 });
+  s.addText("— Nishat [Surname], Plant Manager · 30+ years across gas & heavy industry",
+    { x: 1.15, y: 4.5, w: 11.3, h: 0.35, fontFace: MONO, fontSize: 12.5, color: BRAND, margin: 0 });
+  // our bridge — visually subordinate, clearly OUR voice (not his)
+  panel(s, 0.7, 5.25, 11.93, 1.5, PANEL2, LINE);
+  s.addText("TRINETRA — OUR RESPONSE", { x: 1.0, y: 5.42, w: 6, h: 0.3, fontFace: MONO, fontSize: 11, color: DIM, charSpacing: 2, margin: 0 });
+  s.addText([
+    { text: "Trinetra is that experience, encoded", options: { color: BRAND, bold: true } },
+    { text: " — it watches every zone 24/7 and flags the combination the moment it forms, so the catch never depends on the right person paying attention at 3 a.m. We don't replace safety culture; we enforce it consistently across every shift and handover.", options: { color: TEXT } },
+  ], { x: 1.0, y: 5.74, w: 11.4, h: 0.92, fontFace: BODY, fontSize: 13.5, lineSpacingMultiple: 1.14, valign: "top", margin: 0 });
+  s.addText("An independent practitioner's account of the failure mode — problem validation from 30+ years on the floor, in his own words.", { x: 0.7, y: 6.88, w: 12, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: DIM, margin: 0 });
+}
+
 // ============ S3 — INSIGHT ============
 {
   const s = S();

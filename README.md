@@ -46,6 +46,12 @@ On **13 January 2025, eight workers died** in a coke-oven-battery explosion at t
 
 In India's registered factories alone, **about three workers die every day** ([DGFASLI / Ministry of Labour data](https://www.indiaspend.com/special-reports/3-workers-die-every-day-in-indian-factories-govt-data-show-850083)) — and that counts only the organised sector. The bottleneck is not missing sensors. It is the missing **intelligence layer**.
 
+> *"In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were usually three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event — that's where experience, communication, and a strong safety culture make the difference."*
+>
+> — **Nishat [Surname]**, Plant Manager · 30+ years across gas & heavy industry *(field validation of the problem — an industry veteran, in his own words)*
+
+**That unflagged combination is the gap Trinetra closes.** It encodes that veteran judgment and watches every zone 24/7 — so the catch never depends on the right person paying attention at 3 a.m.
+
 ## The thesis: compound risk
 
 Fatalities are rarely one sensor screaming. They are a **combination** that each looks normal:
