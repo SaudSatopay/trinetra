@@ -133,6 +133,39 @@
   .adet .tag{ font-family:var(--mono); font-size:7.2pt; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-ink); border:1px solid var(--brand); padding:1.6mm 3mm; }
   .adet .note{ font-family:var(--serif); font-size:9pt; color:var(--muted); font-style:italic; }
 
+  /* detailed architecture (page 5) */
+  .darch{ margin-top:5mm; }
+  .dlbl{ font-family:var(--mono); font-size:7.4pt; letter-spacing:.16em; text-transform:uppercase; color:var(--brand-ink); margin-bottom:2.4mm; }
+  .drow{ display:flex; align-items:stretch; gap:2.6mm; }
+  .dchip{ flex:1; border:1px solid var(--line); background:var(--card); padding:3mm 3mm; }
+  .dchip .ct{ font-family:var(--disp); font-weight:700; font-size:9.4pt; color:var(--ink); line-height:1.05; }
+  .dchip .cp{ font-family:var(--mono); font-size:6.8pt; color:var(--muted); margin-top:1.4mm; letter-spacing:.01em; line-height:1.35; }
+  .ddown{ text-align:center; color:var(--brand); font-family:var(--disp); font-weight:800; font-size:12pt; line-height:1; margin:1.8mm 0; }
+  .dwide{ border:1px solid var(--line); background:var(--card); padding:3.4mm 4mm; }
+  .dengine{ display:flex; gap:3mm; align-items:stretch; }
+  .dcore{ flex:1.95; border:2px solid var(--brand); border-top:4px solid var(--brand); background:#FBEFE0; padding:3.6mm 4mm 4mm; }
+  .dcore .ch{ font-family:var(--mono); font-size:7pt; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-ink); }
+  .dcore .cttl{ font-family:var(--disp); font-weight:800; font-size:12.5pt; color:var(--brand-ink); margin:1mm 0 3mm; }
+  .dstages{ display:flex; align-items:stretch; gap:1.4mm; }
+  .dstage{ flex:1; border:1px solid var(--brand-soft); background:#F7E8D6; padding:2.6mm 1.6mm; text-align:center; }
+  .dstage .sn{ font-family:var(--mono); font-size:6.4pt; color:var(--brand-ink); }
+  .dstage .st{ font-family:var(--disp); font-weight:700; font-size:8pt; color:var(--ink); margin-top:1mm; line-height:1.08; }
+  .dsarr{ align-self:center; color:var(--brand); font-weight:800; font-size:9pt; font-family:var(--disp); }
+  .dformula{ font-family:var(--mono); font-size:7.4pt; color:var(--ink2); margin-top:3mm; background:#F2E4D1; border-left:2px solid var(--brand); padding:2.2mm 3mm; line-height:1.5; }
+  .dformula b{ color:var(--brand-ink); }
+  .dbound{ font-family:var(--mono); font-size:6.6pt; letter-spacing:.08em; text-transform:uppercase; color:var(--brand-ink); margin-top:2.6mm; }
+  .dside{ flex:1; border:1px dashed var(--line2); background:var(--card); padding:3.6mm 3.8mm; display:flex; flex-direction:column; }
+  .dside .sh{ font-family:var(--mono); font-size:7pt; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-ink); }
+  .dside .ssub{ font-family:var(--serif); font-style:italic; font-size:8pt; color:var(--muted); margin:1.2mm 0 2mm; }
+  .dside ul{ margin:0; padding:0; list-style:none; }
+  .dside li{ font-family:var(--mono); font-size:7.2pt; color:var(--ink2); padding:1.6mm 0 1.6mm 4mm; position:relative; line-height:1.25; border-top:1px solid var(--line); }
+  .dside li:first-child{ border-top:0; padding-top:0; }
+  .dside li:before{ content:'+'; position:absolute; left:0; color:var(--brand-ink); font-weight:700; }
+  .dstack{ margin-top:4.5mm; background:var(--ink-dk); color:#E7DDCC; padding:4mm 4mm; display:flex; justify-content:space-between; gap:5mm; align-items:center; }
+  .dstack .sl{ font-family:var(--mono); font-size:7pt; letter-spacing:.02em; color:#CFC4B2; line-height:1.5; }
+  .dstack .sl b{ color:var(--brand2); }
+  .dstack .sm{ font-family:var(--mono); font-size:7pt; letter-spacing:.02em; color:var(--brand2); text-align:right; line-height:1.5; flex:0 0 auto; }
+
   /* ---------- proof ---------- */
   .proof{ display:flex; gap:7mm; align-items:center; background:var(--ink-dk); color:#fff; padding:8.5mm 8mm; margin-top:7mm; }
   .proof .hl{ flex:0 0 auto; }
@@ -401,34 +434,76 @@
       The digital twin and a real plant feed are the <b>same interface</b> — the engine cannot tell the difference. Real-plant data enters the deterministic core through a connector: a SCADA/permit CSV, or a live OPC-UA / MQTT historian feed.
     </p>
 
-    <div class="arch">
-      <div class="alyr">Intelligence layer · LLM-assisted · explains, never decides</div>
-      <div class="intel">
-        <div class="ih">ENRICHES THE VERDICT — IT DOES NOT MAKE IT</div>
-        <div class="ip">Vision (YOLOv8) &nbsp;·&nbsp; Disaster-Memory RAG (Gemini) &nbsp;·&nbsp; 6-stage reasoning graph (LangGraph) &nbsp;·&nbsp; Compliance &amp; permit-gate &nbsp;·&nbsp; Pre-mortem &nbsp;·&nbsp; Knowledge graph (27 nodes / 36 edges)</div>
+    <div class="darch">
+      <div class="dlbl">Data sources · the plant floor</div>
+      <div class="drow">
+        <div class="dchip"><div class="ct">Gas sensors</div><div class="cp">CH₄ · CO · H₂S · O₂<br>4&ndash;20 mA / OPC-UA</div></div>
+        <div class="dchip"><div class="ct">Permit-to-work</div><div class="cp">hot-work · confined<br>HSE system</div></div>
+        <div class="dchip"><div class="ct">CCTV</div><div class="cp">person · zone-intrusion<br>RTSP → YOLOv8</div></div>
+        <div class="dchip"><div class="ct">SCADA historian</div><div class="cp">tags · trends<br>OPC-UA · MQTT · PI</div></div>
+        <div class="dchip"><div class="ct">Shift logs</div><div class="cp">crew · handover<br>roster</div></div>
+      </div>
+      <div class="ddown">↓</div>
+
+      <div class="dwide">
+        <div class="dlbl" style="margin-bottom:1.6mm;">Ingest · digital twin / connector</div>
+        <div style="font-family:var(--mono); font-size:7.8pt; color:var(--ink2); line-height:1.4;">Edge pre-filter → normalise → one unified <b style="color:var(--brand-ink);">PlantSnapshot</b> per minute. &nbsp; The twin and a live feed are the same interface — <b style="color:var(--brand-ink);">/api/ingest</b> (CSV) · <b style="color:var(--brand-ink);">/api/opcua/session</b> (live wire).</div>
+      </div>
+      <div class="ddown">↓</div>
+
+      <div class="dengine">
+        <div class="dcore">
+          <div class="ch">The compound-risk engine · the core IP</div>
+          <div class="cttl">Deterministic compound scoring</div>
+          <div class="dstages">
+            <div class="dstage"><div class="sn">01</div><div class="st">Baseline subtract</div></div>
+            <div class="dsarr">→</div>
+            <div class="dstage"><div class="sn">02</div><div class="st">Feature extract</div></div>
+            <div class="dsarr">→</div>
+            <div class="dstage"><div class="sn">03</div><div class="st">Compound score</div></div>
+            <div class="dsarr">→</div>
+            <div class="dstage"><div class="sn">04</div><div class="st">Predict + prescribe</div></div>
+            <div class="dsarr">→</div>
+            <div class="dstage"><div class="sn">05</div><div class="st">Verdict gate</div></div>
+          </div>
+          <div class="dformula">score = 100 · raw · (1 + <b>ignition</b> + <b>personnel</b> + <b>confined</b>) &nbsp;→&nbsp; verdict · lead-time · ranked intervention · blast-radius</div>
+          <div class="dbound">■ Deterministic · auditable · reproducible at a fixed seed · no LLM in the decision</div>
+        </div>
+        <div class="dside">
+          <div class="sh">LLM-assist sidecar</div>
+          <div class="ssub">enriches the verdict, never makes it</div>
+          <ul>
+            <li>Vision — YOLOv8 person / zone-intrusion</li>
+            <li>Disaster-Memory RAG — Gemini · 81% Vizag</li>
+            <li>6-stage reasoning graph — LangGraph</li>
+            <li>Compliance + shift-left permit gate</li>
+            <li>Pre-mortem hazard discovery</li>
+            <li>Knowledge graph — networkx · 27 / 36</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ddown">↓</div>
+
+      <div class="dwide">
+        <div class="dlbl" style="margin-bottom:2.2mm;">Response orchestrator</div>
+        <div class="drow">
+          <div class="dchip" style="border-top:2px solid var(--brand);"><div class="ct" style="font-size:8.6pt;">Incident report</div><div class="cp">Factory Act §36/37/38 · OISD-STD-105</div></div>
+          <div class="dchip" style="border-top:2px solid var(--brand);"><div class="ct" style="font-size:8.6pt;">Multilingual alert</div><div class="cp">English · Telugu · Hindi</div></div>
+          <div class="dchip" style="border-top:2px solid var(--brand);"><div class="ct" style="font-size:8.6pt;">Multi-channel dispatch</div><div class="cp">PA · SMS · mobile · SCADA</div></div>
+          <div class="dchip" style="border-top:2px solid var(--brand);"><div class="ct" style="font-size:8.6pt;">Evidence freeze</div><div class="cp">sensor + CCTV snapshot</div></div>
+        </div>
+      </div>
+      <div class="ddown">↓</div>
+
+      <div class="dwide" style="background:var(--ink-dk);">
+        <div class="dlbl" style="margin-bottom:1.6mm; color:var(--brand2);">Control room</div>
+        <div style="font-family:var(--mono); font-size:7.8pt; color:#D8CDBB; line-height:1.4;">Next.js HMI — split-reality · plant · fleet · knowledge graph &nbsp;·&nbsp; served over <b style="color:var(--brand2);">FastAPI</b> — 30 REST endpoints + a WebSocket stream.</div>
       </div>
 
-      <div class="aflow">
-        <div class="abox"><div class="at">Data sources</div><div class="ad">Gas sensors<br>Permit-to-work<br>CCTV · shift logs<br>SCADA historian</div></div>
-        <div class="aarr">→</div>
-        <div class="abox"><div class="at">Ingest</div><div class="ad">OPC-UA · MQTT<br>CSV connector<br>Edge pre-filter<br>→ digital twin</div></div>
-        <div class="aarr">→</div>
-        <div class="abox core"><div class="at">Compound engine</div><div class="ad">gas level + trend<br>+ ignition + personnel<br>+ blast-radius · O₂ gate<br>→ verdict · lead · action</div></div>
-        <div class="aarr">→</div>
-        <div class="abox"><div class="at">Response</div><div class="ad">Incident report<br>Multilingual alert<br>Multi-channel dispatch<br>Evidence freeze</div></div>
-        <div class="aarr">→</div>
-        <div class="abox"><div class="at">Control room</div><div class="ad">Next.js HMI<br>split-reality view<br>plant · fleet<br>FastAPI REST + WS</div></div>
+      <div class="dstack">
+        <div class="sl"><b>Stack</b> &nbsp; Python · FastAPI · LangGraph · YOLOv8 · Gemini · networkx · Next.js · TypeScript</div>
+        <div class="sm">O(zones) / frame · ~50 µs p50 · 100 / 0 / +7.4 · seed-reproducible</div>
       </div>
-
-      <div class="adet">
-        <span class="tag">Deterministic · auditable · no LLM in the decision</span>
-        <span class="note">30 REST endpoints + a WebSocket stream &nbsp;·&nbsp; O(zones) per frame &nbsp;·&nbsp; reproducible at a fixed seed</span>
-      </div>
-    </div>
-
-    <div class="band" style="margin-top:9mm;">
-      <div class="lbl">The integration story</div>
-      <p>Trinetra sits <b>over the sensors a plant already has.</b> It ingests standard SCADA / IoT / permit formats, so going from digital twin to a live plant swaps the data source — not the brain. Proven by replaying two real public incident inquiries and a real third-party measured dataset through the same untuned engine.</p>
     </div>
 
     <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>04</b> / 07</span></div>
