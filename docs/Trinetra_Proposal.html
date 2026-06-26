@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trinetra — Compound-Risk Industrial Safety Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-dk:#14100B; --ink-dk2:#1E1610; --ink-dk3:#2A2016;
+    --paper:#F5EFE4; --paper2:#EDE5D6; --card:#F0E9DB;
+    --ink:#1A140D; --ink2:#3A3226; --muted:#6E6253; --line:#DAD0BE; --line2:#C8BBA4;
+    --brand:#FF6A1A; --brand2:#FF8A3D; --brand-ink:#C2531B; --brand-soft:#F4CFA6;
+    --red:#CB3A2A; --green:#2F7D4F; --amber:#BC7C1C; --steel:#71808E;
+    --disp:'Bricolage Grotesque',sans-serif; --serif:'Newsreader',Georgia,serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html,body{ margin:0; padding:0; background:#33373d; }
+  @page{ size:A4; margin:0; }
+  .page{ position:relative; width:210mm; height:296mm; overflow:hidden; background:var(--paper); color:var(--ink); page-break-after:always; font-family:var(--serif); }
+  .page:last-child{ page-break-after:avoid; }
+  .pad{ position:absolute; inset:0; padding:16mm 15mm; display:flex; flex-direction:column; }
+
+  /* ---------- shared type ---------- */
+  .kicker{ font-family:var(--mono); font-size:8pt; letter-spacing:.28em; text-transform:uppercase; color:var(--brand-ink); font-weight:600; }
+  .head{ display:flex; justify-content:space-between; align-items:baseline; }
+  .secno{ font-family:var(--mono); font-size:8.5pt; letter-spacing:.2em; color:var(--muted); }
+  h1.sec{ font-family:var(--disp); font-weight:800; font-size:29pt; line-height:.98; letter-spacing:-.02em; margin:3mm 0 0; color:var(--ink); }
+  h1.sec .em{ color:var(--brand-ink); }
+  .lead{ font-family:var(--serif); font-size:11.9pt; line-height:1.66; color:var(--ink2); }
+  .lead b{ color:var(--ink); font-weight:600; }
+  .mono{ font-family:var(--mono); }
+  .rule{ height:2.6px; width:52px; background:var(--brand); border:0; margin:4mm 0 0; }
+
+  /* ---------- COVER ---------- */
+  .cover{ background:var(--ink-dk); color:#EFE7D8; }
+  .cover .pad{ padding:17mm 15mm; z-index:2; }
+  .cover-top{ display:flex; justify-content:space-between; align-items:flex-start; font-family:var(--mono); font-size:8pt; letter-spacing:.2em; text-transform:uppercase; color:#9C8C77; z-index:3; }
+  .cover-top .badge{ color:var(--brand2); border:1px solid rgba(255,106,26,.5); padding:2.2mm 3.2mm; border-radius:1mm; }
+  .cover-mark{ position:absolute; right:-46mm; top:-30mm; width:220mm; height:220mm; z-index:1; }
+  .wordmark{ z-index:3; margin-top:auto; }
+  .wordmark .mk{ font-family:var(--disp); font-weight:800; font-size:80pt; letter-spacing:-.035em; line-height:.9; color:#fff; }
+  .wordmark .mk b{ color:var(--brand); font-weight:800; }
+  .tagline{ font-family:var(--disp); font-weight:600; font-size:15.5pt; letter-spacing:-.01em; color:var(--brand2); margin-top:4.5mm; }
+  .manifesto{ font-family:var(--serif); font-size:12pt; line-height:1.58; color:#D8CDBB; max-width:152mm; margin-top:7mm; }
+  .manifesto b{ color:#fff; font-weight:500; }
+  .eyebrow{ font-family:var(--mono); font-size:10.5pt; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--brand2); margin-bottom:5mm; z-index:3; }
+  .eyebrow::before{ content:''; display:inline-block; width:14mm; height:2px; background:var(--brand); vertical-align:middle; margin-right:4mm; margin-bottom:1.3mm; }
+  .cover-stat{ display:flex; gap:9mm; margin-top:9mm; z-index:3; }
+  .cover-stat .s .n{ font-family:var(--disp); font-weight:800; font-size:25pt; color:var(--brand2); line-height:1; }
+  .cover-stat .s .l{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.1em; text-transform:uppercase; color:#A1907B; margin-top:2mm; max-width:42mm; line-height:1.4; }
+  .cover-foot{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:10mm; z-index:3; border-top:1px solid rgba(255,255,255,.13); padding-top:5mm; }
+  .cover-foot .who{ font-family:var(--mono); font-size:8pt; letter-spacing:.04em; color:#CFC4B2; line-height:1.7; }
+  .cover-foot .who b{ color:var(--brand2); }
+  .cover-foot .ps{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.06em; color:#86775F; text-align:right; max-width:60mm; line-height:1.5; }
+
+  /* ---------- footer tag (content pages) ---------- */
+  .foot{ position:absolute; bottom:9mm; left:15mm; right:15mm; display:flex; justify-content:space-between; font-family:var(--mono); font-size:7pt; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); border-top:1px solid var(--line); padding-top:3mm; }
+  .foot b{ color:var(--brand-ink); }
+
+  /* ---------- stat cards ---------- */
+  .cards{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; margin-top:9mm; }
+  .card{ border:1px solid var(--line); border-top:3px solid var(--brand); padding:5mm 4.4mm; background:var(--card); }
+  .card .n{ font-family:var(--disp); font-weight:800; font-size:25pt; color:var(--ink); line-height:1; }
+  .card .n.rd{ color:var(--red); }
+  .card .l{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:3mm; line-height:1.5; }
+
+  /* ---------- pull-quote ---------- */
+  .quote{ margin-top:10mm; background:var(--ink-dk); color:#E7DDCC; padding:9mm 8mm; position:relative; }
+  .quote .qmk{ font-family:var(--disp); font-weight:800; color:var(--brand); font-size:30pt; line-height:.6; position:absolute; left:5mm; top:4mm; }
+  .quote p{ font-family:var(--serif); font-style:italic; font-size:12.6pt; line-height:1.56; margin:0; color:#EDE3D2; }
+  .quote .by{ font-family:var(--mono); font-size:8pt; letter-spacing:.06em; color:var(--brand2); margin-top:4mm; text-transform:uppercase; }
+  .quote .by s{ color:#9C8C77; text-decoration:none; }
+
+  /* ---------- anatomy / flow ---------- */
+  .flowlbl{ font-family:var(--mono); font-size:8pt; letter-spacing:.24em; text-transform:uppercase; color:var(--brand-ink); margin:11mm 0 4.5mm; }
+  .flowrow{ display:flex; align-items:stretch; gap:2.4mm; }
+  .fcell{ flex:1; border:1px solid var(--line); border-top:3px solid var(--ink-dk); padding:5mm 3.4mm; background:var(--card); min-height:38mm; }
+  .fcell .fi{ font-family:var(--mono); font-size:7.6pt; color:var(--brand-ink); }
+  .fcell .ft{ font-family:var(--disp); font-weight:700; font-size:10.6pt; color:var(--ink); margin:1.8mm 0 1.4mm; line-height:1.06; }
+  .fcell .fd{ font-family:var(--serif); font-size:8.7pt; line-height:1.4; color:var(--ink2); }
+  .farrow{ align-self:center; color:var(--brand); font-family:var(--disp); font-weight:800; font-size:13pt; }
+
+  /* ---------- combination (thesis) ---------- */
+  .combo{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; margin-top:7mm; }
+  .cmb{ border:1px solid var(--line); background:var(--card); padding:5mm 4.4mm; position:relative; }
+  .cmb .gl{ width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; }
+  .cmb .t{ font-family:var(--disp); font-weight:700; font-size:12pt; color:var(--ink); margin:3mm 0 1.5mm; line-height:1.08; }
+  .cmb .s{ font-family:var(--serif); font-size:9.6pt; line-height:1.4; color:var(--ink2); }
+  .cmb .tag{ font-family:var(--mono); font-size:7.4pt; letter-spacing:.1em; text-transform:uppercase; color:var(--steel); margin-top:2.6mm; }
+  .equals{ margin-top:5mm; background:var(--card); border:1px solid var(--red); padding:4.6mm 6mm; display:flex; align-items:center; gap:5mm; }
+  .equals .eq{ font-family:var(--disp); font-weight:800; font-size:20pt; color:var(--red); line-height:1; }
+  .equals .ex{ font-family:var(--serif); font-size:11.4pt; line-height:1.45; color:var(--ink); }
+  .equals .ex b{ color:var(--red); font-weight:600; font-family:var(--disp); }
+
+  /* ---------- split reality ---------- */
+  .splitlbl{ font-family:var(--mono); font-size:8pt; letter-spacing:.24em; text-transform:uppercase; color:var(--brand-ink); margin:8mm 0 3mm; }
+  .split svg{ display:block; width:100%; height:auto; }
+
+  /* ---------- dark statement band ---------- */
+  .band{ background:var(--ink-dk); color:#ECE2D1; padding:9mm 8mm; margin-top:10mm; }
+  .band .lbl{ font-family:var(--mono); font-size:8pt; letter-spacing:.24em; text-transform:uppercase; color:var(--brand2); }
+  .band p{ font-family:var(--serif); font-size:12.8pt; line-height:1.62; margin:3mm 0 0; color:#F1E8D8; }
+  .band p b{ color:var(--brand2); font-weight:500; }
+
+  /* ---------- solution pipeline + caps ---------- */
+  .pipe{ display:flex; align-items:stretch; gap:0; margin-top:9mm; }
+  .pstage{ flex:1; text-align:center; padding:6mm 2mm; border:1px solid var(--line); background:var(--card); border-top:3px solid var(--brand); }
+  .pstage .pn{ font-family:var(--mono); font-size:7.4pt; color:var(--brand-ink); letter-spacing:.1em; }
+  .pstage .pt{ font-family:var(--disp); font-weight:700; font-size:11.5pt; color:var(--ink); margin:2mm 0 1.4mm; }
+  .pstage .pd{ font-family:var(--mono); font-size:7.2pt; color:var(--muted); letter-spacing:.02em; line-height:1.3; }
+  .parr{ align-self:center; color:var(--brand); font-family:var(--disp); font-weight:800; font-size:14pt; padding:0 1.2mm; }
+  .caps{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; margin-top:9mm; }
+  .cap{ border:1px solid var(--line); border-left:3px solid var(--brand); background:var(--card); padding:5.6mm 4.6mm; }
+  .cap .ct{ font-family:var(--disp); font-weight:700; font-size:10.6pt; color:var(--ink); line-height:1.1; }
+  .cap .cs{ font-family:var(--serif); font-size:8.9pt; line-height:1.42; color:var(--ink2); margin-top:1.8mm; }
+
+  /* ---------- architecture ---------- */
+  .arch{ margin-top:9mm; }
+  .arch .alyr{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.14em; text-transform:uppercase; color:var(--brand-ink); margin-bottom:2.6mm; }
+  .intel{ border:1px dashed var(--line2); background:var(--card); padding:5.5mm 4.6mm; }
+  .intel .ih{ font-family:var(--mono); font-size:8pt; letter-spacing:.1em; color:var(--brand-ink); }
+  .intel .ip{ font-family:var(--mono); font-size:8.2pt; color:var(--ink2); margin-top:1.6mm; letter-spacing:.01em; line-height:1.5; }
+  .aflow{ display:flex; align-items:stretch; gap:0; margin-top:6mm; }
+  .abox{ flex:1; border:1px solid var(--line); background:var(--card); padding:6mm 3.6mm; min-height:36mm; }
+  .abox.core{ flex:1.35; border:2px solid var(--brand); border-top:4px solid var(--brand); background:#FBEFE0; }
+  .abox .at{ font-family:var(--disp); font-weight:700; font-size:10.4pt; color:var(--ink); }
+  .abox.core .at{ color:var(--brand-ink); }
+  .abox .ad{ font-family:var(--mono); font-size:7pt; color:var(--muted); margin-top:2mm; line-height:1.42; letter-spacing:.01em; }
+  .aarr{ align-self:center; color:var(--brand); font-family:var(--disp); font-weight:800; font-size:13pt; padding:0 1mm; }
+  .adet{ display:flex; justify-content:space-between; align-items:center; margin-top:5mm; }
+  .adet .tag{ font-family:var(--mono); font-size:7.2pt; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-ink); border:1px solid var(--brand); padding:1.6mm 3mm; }
+  .adet .note{ font-family:var(--serif); font-size:9pt; color:var(--muted); font-style:italic; }
+
+  /* ---------- proof ---------- */
+  .proof{ display:flex; gap:7mm; align-items:center; background:var(--ink-dk); color:#fff; padding:8.5mm 8mm; margin-top:7mm; }
+  .proof .hl{ flex:0 0 auto; }
+  .proof .hl .n{ font-family:var(--disp); font-weight:800; font-size:25pt; color:var(--brand2); line-height:1; }
+  .proof .hl .n2{ font-family:var(--disp); font-weight:800; font-size:25pt; color:#fff; line-height:1; margin-top:1mm; }
+  .proof .hl .n3{ font-family:var(--disp); font-weight:800; font-size:25pt; color:var(--brand2); line-height:1; margin-top:1mm; }
+  .proof .hl .lb{ font-family:var(--mono); font-size:7pt; letter-spacing:.06em; color:#A1907B; text-transform:uppercase; }
+  .proof .gap{ width:1px; background:rgba(255,255,255,.14); align-self:stretch; }
+  .proof .rt{ flex:1; }
+  .proof .rt .meta{ font-family:var(--serif); font-size:10.6pt; line-height:1.55; color:#D8CDBB; }
+  .proof .rt .meta b{ color:#fff; font-weight:500; }
+  .ab{ margin-top:10mm; }
+  .ab .abh{ font-family:var(--mono); font-size:8pt; letter-spacing:.16em; text-transform:uppercase; color:var(--brand-ink); margin-bottom:3mm; }
+  .abrow{ display:grid; grid-template-columns:54mm 1fr 16mm; align-items:center; gap:4mm; padding:4.2mm 0; border-top:1px solid var(--line); }
+  .abrow:last-child{ border-bottom:1px solid var(--line); }
+  .abrow .nm{ font-family:var(--disp); font-weight:700; font-size:9.6pt; color:var(--ink); }
+  .abrow .nm s{ font-family:var(--mono); font-weight:400; font-size:7.4pt; color:var(--muted); text-decoration:none; display:block; margin-top:.5mm; }
+  .abrow .barwrap{ height:9.5mm; background:var(--paper2); border:1px solid var(--line); position:relative; }
+  .abrow .barwrap i{ display:block; height:100%; }
+  .abrow .pct{ font-family:var(--disp); font-weight:800; font-size:12pt; text-align:right; }
+  .twocard{ display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-top:9mm; }
+  .pc{ border:1px solid var(--line); border-left:3px solid var(--brand); background:var(--card); padding:6mm 4.6mm; }
+  .pc .ph{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-ink); }
+  .pc .pbig{ font-family:var(--disp); font-weight:800; font-size:15pt; color:var(--ink); margin:1.8mm 0 1.4mm; }
+  .pc .pbig b{ color:var(--red); }
+  .pc p{ font-family:var(--serif); font-size:9pt; line-height:1.44; color:var(--ink2); margin:0; }
+
+  /* ---------- performance / scale ---------- */
+  .metrics{ display:flex; gap:3.5mm; margin-top:8.5mm; }
+  .mx{ flex:1; border:1px solid var(--line); border-left:3px solid var(--brand); background:var(--card); padding:5.8mm 4.6mm; }
+  .mx .n{ font-family:var(--disp); font-weight:800; font-size:19pt; color:var(--ink); line-height:1; }
+  .mx .n.g{ color:var(--green); }
+  .mx .l{ font-family:var(--mono); font-size:7.2pt; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-top:2.2mm; line-height:1.4; }
+  .curvelbl{ font-family:var(--mono); font-size:8pt; letter-spacing:.16em; text-transform:uppercase; color:var(--brand-ink); margin:11mm 0 3mm; }
+  .curve svg{ display:block; width:100%; height:auto; }
+  .deploy{ display:flex; flex-wrap:wrap; gap:2.4mm; margin-top:9.5mm; align-items:center; }
+  .deploy .dl{ font-family:var(--mono); font-size:8pt; letter-spacing:.16em; text-transform:uppercase; color:var(--brand-ink); margin-right:1mm; }
+  .deploy .pill{ font-family:var(--mono); font-size:8pt; color:var(--ink); background:var(--card); border:1px solid var(--line); padding:1.8mm 3mm; }
+
+  /* ---------- business ---------- */
+  .roi{ display:flex; gap:5mm; margin-top:6mm; align-items:stretch; }
+  .roi .big{ flex:0 0 64mm; background:var(--ink-dk); color:#fff; padding:5.5mm 6mm; }
+  .roi .big .h{ font-family:var(--mono); font-size:7.6pt; letter-spacing:.12em; text-transform:uppercase; color:var(--brand2); }
+  .roi .big .v{ font-family:var(--disp); font-weight:800; font-size:30pt; color:#fff; line-height:1; margin:2mm 0 1mm; }
+  .roi .big .s{ font-family:var(--serif); font-size:9.4pt; color:#D8CDBB; line-height:1.4; }
+  .roi .big .brk{ margin-top:4mm; border-top:1px solid rgba(255,255,255,.14); padding-top:3mm; }
+  .roi .big .brk .r{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:8pt; color:#CFC4B2; padding:.7mm 0; }
+  .roi .big .brk .r b{ color:var(--brand2); }
+  .roi .col{ flex:1; display:flex; flex-direction:column; gap:3mm; }
+  .gtm{ border-top:1px solid var(--line); padding-top:2.4mm; }
+  .gtm .k{ font-family:var(--disp); font-weight:700; font-size:9.6pt; color:var(--brand-ink); }
+  .gtm .v{ font-family:var(--serif); font-size:9.6pt; line-height:1.4; color:var(--ink2); margin-top:.6mm; }
+  .gtm .v b{ color:var(--ink); font-weight:600; }
+  .moat{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; margin-top:6mm; }
+  .mo{ border:1px solid var(--line); border-top:3px solid var(--ink-dk); background:var(--card); padding:4mm 4.2mm; }
+  .mo .mt{ font-family:var(--disp); font-weight:700; font-size:9.8pt; color:var(--ink); line-height:1.1; }
+  .mo .ms{ font-family:var(--serif); font-size:8.6pt; line-height:1.4; color:var(--ink2); margin-top:1.8mm; }
+  .ask{ margin-top:6mm; background:var(--brand); color:#fff; padding:4.6mm 6mm; display:flex; align-items:center; gap:5mm; }
+  .ask .al{ font-family:var(--mono); font-size:8.4pt; letter-spacing:.14em; text-transform:uppercase; color:#fff; font-weight:600; flex:0 0 auto; }
+  .ask .av{ font-family:var(--disp); font-weight:700; font-size:12.4pt; line-height:1.2; }
+  .close{ margin-top:auto; background:var(--ink-dk); color:#fff; padding:7.5mm 8mm; }
+  .close p{ font-family:var(--disp); font-weight:700; font-size:16pt; line-height:1.3; margin:0; letter-spacing:-.01em; }
+  .close p b{ color:var(--brand2); }
+  .endstamp{ display:flex; justify-content:space-between; align-items:center; margin-top:5mm; }
+  .endstamp .src{ font-family:var(--mono); font-size:6.6pt; line-height:1.5; color:var(--muted); max-width:120mm; }
+  .endstamp .stamp{ border:1.4px solid var(--brand); color:var(--brand-ink); font-family:var(--disp); font-weight:800; font-size:9.4pt; letter-spacing:.22em; text-transform:uppercase; padding:2.6mm 6mm; border-radius:1.6mm; display:flex; align-items:center; gap:3mm; white-space:nowrap; }
+  .endstamp .stamp .dot{ width:5px; height:5px; background:var(--brand); border-radius:50%; }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<section class="page cover">
+  <svg class="cover-mark" viewBox="0 0 220 220" fill="none">
+    <defs>
+      <radialGradient id="glow" cx="50%" cy="42%" r="55%">
+        <stop offset="0%" stop-color="#FF6A1A" stop-opacity="0.20"/>
+        <stop offset="55%" stop-color="#FF6A1A" stop-opacity="0.05"/>
+        <stop offset="100%" stop-color="#FF6A1A" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="110" cy="95" r="108" fill="url(#glow)"/>
+    <path d="M110 26 L182 158 L38 158 Z" stroke="#FF6A1A" stroke-opacity="0.22" stroke-width="1.4" fill="none"/>
+    <path d="M110 56 L156 142 L64 142 Z" stroke="#FF6A1A" stroke-opacity="0.16" stroke-width="1.1" fill="none"/>
+    <ellipse cx="110" cy="120" rx="30" ry="17" stroke="#FF8A3D" stroke-opacity="0.30" stroke-width="1.3" fill="none"/>
+    <circle cx="110" cy="120" r="6.5" fill="#FF6A1A" fill-opacity="0.42"/>
+  </svg>
+  <div class="pad">
+    <div class="cover-top">
+      <span>ET AI Hackathon 2.0 &nbsp;·&nbsp; Problem Statement 01</span>
+      <span class="badge">Industrial Safety Intelligence</span>
+    </div>
+
+    <div class="wordmark">
+      <div class="eyebrow">The third eye</div>
+      <div class="mk">TRI<b>N</b>ETRA</div>
+      <div class="tagline">The danger no single sensor can see.</div>
+      <div class="manifesto">
+        On <b>13 January 2025, eight workers died</b> in a coke-oven-battery explosion at the Visakhapatnam Steel Plant. The gas sensors had data. The permits were logged. SCADA was running. <b>No layer connected those signals in time.</b> Trinetra is the missing intelligence layer that fuses gas, permits, CCTV and shift logs into one real-time brain — and catches the lethal combinations every single system rates &ldquo;normal,&rdquo; <b>minutes before they kill.</b>
+      </div>
+
+      <div class="cover-stat">
+        <div class="s"><div class="n">100%</div><div class="l">compound-hazard recall</div></div>
+        <div class="s"><div class="n">0%</div><div class="l">false-positive rate</div></div>
+        <div class="s"><div class="n">+7.4 min</div><div class="l">mean early-warning</div></div>
+      </div>
+    </div>
+
+    <div class="cover-foot">
+      <div class="who">
+        <b>Saud Satopay</b> &nbsp;·&nbsp; solo build<br>
+        github.com/SaudSatopay/trinetra
+      </div>
+      <div class="ps">
+        A deterministic, auditable compound-risk engine for zero-harm operations.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 01 · PROBLEM ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">The Problem</span><span class="secno">01 / 07</span></div>
+    <h1 class="sec">Data present. <span class="em">Unacted upon.</span></h1>
+    <hr class="rule">
+    <p class="lead" style="margin-top:5mm; max-width:172mm;">
+      Fatalities in heavy industry are rarely one sensor screaming. They are a <b>combination</b> that each individual system rates as normal — rising gas still below its alarm, a routine hot-work permit, a crew in a confined space. Every silo is green. The plant is already lethal. The bottleneck is not missing sensors; it is the missing layer that reads them <b>together.</b>
+    </p>
+
+    <div class="cards">
+      <div class="card"><div class="n rd">8</div><div class="l">workers killed · Vizag coke-oven battery · Jan 2025</div></div>
+      <div class="card"><div class="n">~3 / day</div><div class="l">deaths in India&rsquo;s registered factories (DGFASLI)</div></div>
+      <div class="card"><div class="n">0</div><div class="l">layers connected the signals in time</div></div>
+    </div>
+
+    <div class="quote">
+      <span class="qmk">&ldquo;</span>
+      <p style="padding-left:6mm;">In more than 30 years in gas and heavy industry, the worst incidents were never one single failure. They were three or four small things lining up at the same time, each looking acceptable on its own. Most of the time, nothing actually flagged that combination before it became a serious event.</p>
+      <div class="by" style="padding-left:6mm;">Nishat Mulla &nbsp;·&nbsp; Plant Manager &nbsp;·&nbsp; <s>30+ years across gas &amp; heavy industry</s></div>
+    </div>
+
+    <div class="flowlbl">Anatomy of the silent window — Vizag, reconstructed</div>
+    <div class="flowrow">
+      <div class="fcell"><div class="fi">t + 0</div><div class="ft">Permit opens</div><div class="fd">Hot-work permit issued in the coke-oven battery. An ignition source, by the book.</div></div>
+      <div class="farrow">→</div>
+      <div class="fcell"><div class="fi">t + 3</div><div class="ft">Gas rises</div><div class="fd">Methane climbs — but stays below every single-sensor setpoint. All clear.</div></div>
+      <div class="farrow">→</div>
+      <div class="fcell"><div class="fi">t + 5</div><div class="ft">Crew enters</div><div class="fd">Three workers in the confined space beneath. Each system, in isolation, normal.</div></div>
+      <div class="farrow">→</div>
+      <div class="fcell"><div class="fi">t + 14</div><div class="ft">First alarm</div><div class="fd">A single gas sensor finally trips — minutes too late to clear the floor.</div></div>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>01</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 02 · THESIS ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">The Thesis · Compound Risk</span><span class="secno">02 / 07</span></div>
+    <h1 class="sec">Three green lights. <span class="em">One lethal combination.</span></h1>
+    <hr class="rule">
+    <p class="lead" style="margin-top:5mm; max-width:172mm;">
+      Trinetra&rsquo;s core insight is that danger lives in the <b>interaction</b> of signals, not in any one of them. Three readings, each individually acceptable, multiply into a hazard no threshold dashboard will ever flag:
+    </p>
+
+    <div class="combo">
+      <div class="cmb"><span class="gl"></span><div class="t">Rising flammable gas</div><div class="s">Climbing, but still below its alarm setpoint.</div><div class="tag">reads normal</div></div>
+      <div class="cmb"><span class="gl"></span><div class="t">Active hot-work permit</div><div class="s">A live ignition source in the zone.</div><div class="tag">reads normal</div></div>
+      <div class="cmb"><span class="gl"></span><div class="t">Personnel present</div><div class="s">A crew inside the confined space.</div><div class="tag">reads normal</div></div>
+    </div>
+    <div class="equals">
+      <span class="eq">=</span>
+      <span class="ex"><b>A lethal combination no single sensor flags</b> — detected, and acted on, minutes before it becomes critical.</span>
+    </div>
+
+    <div class="splitlbl">The moment that matters — legacy vs. Trinetra on the Vizag reconstruction</div>
+    <div class="split">
+      <svg viewBox="0 0 700 196" fill="none" font-family="'IBM Plex Mono', monospace">
+        <!-- baseline axis -->
+        <line x1="40" y1="170" x2="660" y2="170" stroke="#C8BBA4" stroke-width="1.2"/>
+        <!-- ticks -->
+        <g fill="#6E6253" font-size="11">
+          <line x1="60"  y1="166" x2="60"  y2="174" stroke="#C8BBA4"/><text x="60"  y="188" text-anchor="middle">t0</text>
+          <line x1="360" y1="166" x2="360" y2="174" stroke="#C8BBA4"/><text x="360" y="188" text-anchor="middle">t8</text>
+          <line x1="600" y1="166" x2="600" y2="174" stroke="#C8BBA4"/><text x="600" y="188" text-anchor="middle">t14</text>
+        </g>
+        <!-- LEGACY track -->
+        <text x="40" y="40" fill="#71808E" font-size="11" letter-spacing="1.5">LEGACY · SINGLE-SENSOR</text>
+        <rect x="60" y="50" width="540" height="14" fill="#E6DECF"/>
+        <rect x="60" y="50" width="540" height="14" fill="none" stroke="#C8BBA4"/>
+        <circle cx="600" cy="57" r="7" fill="#CB3A2A"/>
+        <text x="585" y="40" fill="#CB3A2A" font-size="11" text-anchor="end">first gas alarm</text>
+        <text x="64" y="60.5" fill="#71808E" font-size="9.5">ALL CLEAR — every gas below its setpoint</text>
+        <!-- TRINETRA track -->
+        <text x="40" y="92" fill="#C2531B" font-size="11" letter-spacing="1.5">TRINETRA · COMPOUND AI</text>
+        <rect x="60" y="102" width="300" height="14" fill="#F0E1CF"/>
+        <rect x="360" y="102" width="240" height="14" fill="#FF6A1A"/>
+        <rect x="60" y="102" width="540" height="14" fill="none" stroke="#C8BBA4"/>
+        <circle cx="360" cy="109" r="7" fill="#FF6A1A"/>
+        <text x="366" y="98" fill="#C2531B" font-size="10.5">COMPOUND ALERT · breach predicted</text>
+        <text x="470" y="112.5" fill="#fff" font-size="9" text-anchor="middle">screaming for 6 minutes already</text>
+        <!-- +6 gap -->
+        <line x1="360" y1="132" x2="600" y2="132" stroke="#FF6A1A" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="480" y="150" fill="#C2531B" font-size="14" font-family="'Bricolage Grotesque',sans-serif" font-weight="800" text-anchor="middle">+6 MIN EARLY WARNING</text>
+      </svg>
+    </div>
+
+    <div class="band">
+      <div class="lbl">Why it matters</div>
+      <p>Six minutes is the window an operator gets to <b>suspend the permit and clear the floor</b> before ignition — while every gas sensor still reads green. The decision is made by a transparent, deterministic engine; the language model never makes the life-safety call.</p>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>02</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 03 · SOLUTION ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">The Solution</span><span class="secno">03 / 07</span></div>
+    <h1 class="sec">A deterministic brain that <span class="em">fuses the signals.</span></h1>
+    <hr class="rule">
+    <p class="lead" style="margin-top:5mm; max-width:172mm;">
+      A hybrid by design. A reproducible, baseline-subtracted scoring engine makes every safety decision; the language model only explains it, retrieves precedent, and drafts the report. Each frame flows through one pipeline:
+    </p>
+
+    <div class="pipe">
+      <div class="pstage"><div class="pn">01</div><div class="pt">Sense</div><div class="pd">gas · permits<br>CCTV · shift logs</div></div>
+      <div class="parr">→</div>
+      <div class="pstage"><div class="pn">02</div><div class="pt">Fuse</div><div class="pd">compound-risk<br>scoring</div></div>
+      <div class="parr">→</div>
+      <div class="pstage"><div class="pn">03</div><div class="pt">Predict</div><div class="pd">time-to-threshold<br>extrapolation</div></div>
+      <div class="parr">→</div>
+      <div class="pstage"><div class="pn">04</div><div class="pt">Prescribe</div><div class="pd">ranked counter-<br>factual action</div></div>
+      <div class="parr">→</div>
+      <div class="pstage"><div class="pn">05</div><div class="pt">Act</div><div class="pd">alert · report<br>evacuate</div></div>
+    </div>
+
+    <div class="caps">
+      <div class="cap"><div class="ct">Compound-risk fusion</div><div class="cs">Catches danger <b>below</b> single-sensor thresholds — context multiplies the gas signal.</div></div>
+      <div class="cap"><div class="ct">Predictive time-to-threshold</div><div class="cs">Extrapolates the trend to a live breach countdown. Anticipatory, not reactive.</div></div>
+      <div class="cap"><div class="ct">Prescriptive intervention</div><div class="cs">Ranks the single most effective action by counterfactual risk reduction.</div></div>
+      <div class="cap"><div class="ct">Cross-zone blast radius</div><div class="cs">Ignition and personnel propagate to adjacent zones via the zone-adjacency graph.</div></div>
+      <div class="cap"><div class="ct">Disaster-memory RAG</div><div class="cs">Matches live conditions to a corpus of 8 real disasters — an 81% Vizag match.</div></div>
+      <div class="cap"><div class="ct">Autonomous response</div><div class="cs">Drafts an OISD/Factory-Act report and a multilingual evacuation alert.</div></div>
+    </div>
+
+    <div class="band">
+      <div class="lbl">Why hybrid</div>
+      <p>Industry juries rightly distrust a language model making a life-safety call. So the <b>decision is a transparent, reproducible score</b> with explicit thresholds — auditable by a safety officer, defensible in a statutory review. If the model is down, the safety call is unaffected.</p>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>03</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 04 · ARCHITECTURE ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">System Architecture</span><span class="secno">04 / 07</span></div>
+    <h1 class="sec">A connector, <span class="em">not a rewrite.</span></h1>
+    <hr class="rule">
+    <p class="lead" style="margin-top:5mm; max-width:172mm;">
+      The digital twin and a real plant feed are the <b>same interface</b> — the engine cannot tell the difference. Real-plant data enters the deterministic core through a connector: a SCADA/permit CSV, or a live OPC-UA / MQTT historian feed.
+    </p>
+
+    <div class="arch">
+      <div class="alyr">Intelligence layer · LLM-assisted · explains, never decides</div>
+      <div class="intel">
+        <div class="ih">ENRICHES THE VERDICT — IT DOES NOT MAKE IT</div>
+        <div class="ip">Vision (YOLOv8) &nbsp;·&nbsp; Disaster-Memory RAG (Gemini) &nbsp;·&nbsp; 6-stage reasoning graph (LangGraph) &nbsp;·&nbsp; Compliance &amp; permit-gate &nbsp;·&nbsp; Pre-mortem &nbsp;·&nbsp; Knowledge graph (27 nodes / 36 edges)</div>
+      </div>
+
+      <div class="aflow">
+        <div class="abox"><div class="at">Data sources</div><div class="ad">Gas sensors<br>Permit-to-work<br>CCTV · shift logs<br>SCADA historian</div></div>
+        <div class="aarr">→</div>
+        <div class="abox"><div class="at">Ingest</div><div class="ad">OPC-UA · MQTT<br>CSV connector<br>Edge pre-filter<br>→ digital twin</div></div>
+        <div class="aarr">→</div>
+        <div class="abox core"><div class="at">Compound engine</div><div class="ad">gas level + trend<br>+ ignition + personnel<br>+ blast-radius · O₂ gate<br>→ verdict · lead · action</div></div>
+        <div class="aarr">→</div>
+        <div class="abox"><div class="at">Response</div><div class="ad">Incident report<br>Multilingual alert<br>Multi-channel dispatch<br>Evidence freeze</div></div>
+        <div class="aarr">→</div>
+        <div class="abox"><div class="at">Control room</div><div class="ad">Next.js HMI<br>split-reality view<br>plant · fleet<br>FastAPI REST + WS</div></div>
+      </div>
+
+      <div class="adet">
+        <span class="tag">Deterministic · auditable · no LLM in the decision</span>
+        <span class="note">30 REST endpoints + a WebSocket stream &nbsp;·&nbsp; O(zones) per frame &nbsp;·&nbsp; reproducible at a fixed seed</span>
+      </div>
+    </div>
+
+    <div class="band" style="margin-top:9mm;">
+      <div class="lbl">The integration story</div>
+      <p>Trinetra sits <b>over the sensors a plant already has.</b> It ingests standard SCADA / IoT / permit formats, so going from digital twin to a live plant swaps the data source — not the brain. Proven by replaying two real public incident inquiries and a real third-party measured dataset through the same untuned engine.</p>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>04</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 05 · PROOF ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">The Proof</span><span class="secno">05 / 07</span></div>
+    <h1 class="sec">Measured, <span class="em">not claimed.</span></h1>
+    <hr class="rule">
+
+    <div class="proof">
+      <div class="hl">
+        <div class="n">100%</div><div class="lb">compound recall · 14/14</div>
+        <div class="n2">0%</div><div class="lb">false-positive · 0/15</div>
+        <div class="n3">+7.4</div><div class="lb">min mean lead</div>
+      </div>
+      <div class="gap"></div>
+      <div class="rt">
+        <div class="meta">
+          Across <b>29 labelled scenarios</b> — 14 genuine compound hazards and 15 hard negatives — Trinetra caught every real hazard with zero false alarms, a median <b>6</b> and up to <b>12</b> minutes ahead of the legacy system. The hardest negatives carry all three explosion factors yet are physically safe (inerted, no oxidizer); held as true negatives on physics, not rules. Deterministic at a fixed seed — every figure here reproduces.
+        </div>
+      </div>
+    </div>
+
+    <div class="ab">
+      <div class="abh">Ablation — context is what earns the precision (false-alarm rate at the same 7.4-min lead)</div>
+      <div class="abrow">
+        <div class="nm">Single-sensor threshold<s>the incumbent</s></div>
+        <div class="barwrap"><i style="width:73%; background:var(--steel);"></i></div>
+        <div class="pct" style="color:var(--steel);">73%</div>
+      </div>
+      <div class="abrow">
+        <div class="nm">Gas-trend rule<s>early, but context-blind</s></div>
+        <div class="barwrap"><i style="width:67%; background:var(--amber);"></i></div>
+        <div class="pct" style="color:var(--amber);">67%</div>
+      </div>
+      <div class="abrow">
+        <div class="nm">Trinetra<s>full compound fusion</s></div>
+        <div class="barwrap"><i style="width:2%; background:var(--green);"></i></div>
+        <div class="pct" style="color:var(--green);">0%</div>
+      </div>
+    </div>
+
+    <div class="twocard">
+      <div class="pc">
+        <div class="ph">Held-out generalization</div>
+        <div class="pbig">100% <span style="font-size:10pt;color:var(--muted);">recall ·</span> 3.3% <span style="font-size:10pt;color:var(--muted);">FP</span></div>
+        <p><b>240 randomized scenarios</b> at unseen simulator seeds the thresholds were never tuned on. Answers the &ldquo;train = test&rdquo; critique — it is not overfit to the curated 29. Plus 10/10 fault-mode checks and 5/5 property-based invariants.</p>
+      </div>
+      <div class="pc">
+        <div class="ph">Real incidents &amp; real data — same engine, no tuning</div>
+        <div class="pbig"><b>+10</b> <span style="font-size:10pt;color:var(--muted);">Texas City ·</span> <b>+36</b> <span style="font-size:10pt;color:var(--muted);">Jaipur</span></div>
+        <p>Reconstructed from the U.S. CSB (2005) and MB Lal (2009) inquiries — fires minutes before each documented ignition. And on <b>real measured CO</b> (UCI #360, De Vito 2008) and a modeled <b>EPA ALOHA</b> methane release the engine never authored, the compound alert holds while a single 10%-LEL sensor stays blind.</p>
+      </div>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>05</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 06 · PERFORMANCE & SCALE ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">Performance &amp; Scale</span><span class="secno">06 / 07</span></div>
+    <h1 class="sec">One engine. Every plant. <span class="em">Measured.</span></h1>
+    <hr class="rule">
+    <p class="lead" style="margin-top:5mm; max-width:172mm;">
+      Real-time on commodity hardware, and the unit economics fall with the fleet. Both are measured live, not asserted — the engine is <b>O(zones)</b> and stateless per plant, so the fleet scales horizontally by adding plain workers.
+    </p>
+
+    <div class="metrics">
+      <div class="mx"><div class="n">~50 µs</div><div class="l">p50 frame → alert · single core, no GPU</div></div>
+      <div class="mx"><div class="n">~0.7M</div><div class="l">sensor-tags / sec on one core</div></div>
+      <div class="mx"><div class="n">~70×</div><div class="l">real-time for a 10,000-tag plant</div></div>
+      <div class="mx"><div class="n g">$0.30</div><div class="l">per plant / month at 100 plants</div></div>
+    </div>
+
+    <div class="curvelbl">Measured $/plant/month — falls with scale (one engine, ~5,000 plants per core)</div>
+    <div class="curve">
+      <svg viewBox="0 0 700 150" fill="none" font-family="'IBM Plex Mono', monospace">
+        <line x1="40" y1="120" x2="660" y2="120" stroke="#C8BBA4" stroke-width="1.2"/>
+        <!-- steps -->
+        <g>
+          <rect x="70"  y="20"  width="96" height="100" fill="#FF6A1A"/>
+          <rect x="226" y="64"  width="96" height="56"  fill="#FF8A3D"/>
+          <rect x="382" y="98"  width="96" height="22"  fill="#E0A06A"/>
+          <rect x="538" y="110" width="96" height="10"  fill="#E0A06A"/>
+        </g>
+        <g font-family="'Bricolage Grotesque',sans-serif" font-weight="800" fill="#1A140D" font-size="17" text-anchor="middle">
+          <text x="118" y="14">$3.00</text>
+          <text x="274" y="58">$0.30</text>
+          <text x="430" y="92">$0.03</text>
+          <text x="586" y="104">&lt; $0.01</text>
+        </g>
+        <g fill="#6E6253" font-size="10.5" text-anchor="middle">
+          <text x="118" y="136">10 plants</text>
+          <text x="274" y="136">100 plants</text>
+          <text x="430" y="136">1,000 plants</text>
+          <text x="586" y="136">10,000 plants</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="deploy">
+      <span class="dl">Deploys over</span>
+      <span class="pill">Steel — coke ovens · blast furnaces</span>
+      <span class="pill">Refining &amp; petrochem — OISD permit regimes</span>
+      <span class="pill">Mining — confined-space &amp; gas</span>
+      <span class="pill">Power &amp; chemicals</span>
+    </div>
+
+    <div class="band" style="margin-top:8mm;">
+      <div class="lbl">Stateless shards</div>
+      <p>No shared state, no per-site model. A live <b>OPC-UA bridge</b> and the CSV connector already prove that ingesting real plant data is a connector, not a rewrite. The fleet board triages every site compound-first on one pane of glass — <b>no per-site retraining.</b></p>
+    </div>
+
+    <div class="foot"><span>Trinetra &nbsp;·&nbsp; Compound-Risk Industrial Safety Intelligence</span><span><b>06</b> / 07</span></div>
+  </div>
+</section>
+
+<!-- ============================ 07 · BUSINESS & VISION ============================ -->
+<section class="page">
+  <div class="pad">
+    <div class="head"><span class="kicker">Business &amp; Vision</span><span class="secno">07 / 07</span></div>
+    <h1 class="sec">The math a buyer <span class="em">underwrites.</span></h1>
+    <hr class="rule">
+
+    <div class="roi">
+      <div class="big">
+        <div class="h">Per prevented incident</div>
+        <div class="v">₹115.5 Cr</div>
+        <div class="s">avoided loss — a Vizag-class event.</div>
+        <div class="brk">
+          <div class="r"><span>Lives protected</span><b>₹7.5 Cr</b></div>
+          <div class="r"><span>Asset damage</span><b>₹40 Cr</b></div>
+          <div class="r"><span>Downtime (21 d)</span><b>₹63 Cr</b></div>
+          <div class="r"><span>Regulatory penalty</span><b>₹5 Cr</b></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="gtm"><div class="k">BUYER</div><div class="v">Plant process-safety head — owns permit-to-work and statutory compliance, <b>carries the fatality risk.</b></div></div>
+        <div class="gtm"><div class="k">WEDGE</div><div class="v">Permit-to-work intelligence — one fundable pain — then expand to full gas + permit + CCTV fusion.</div></div>
+        <div class="gtm"><div class="k">PRICING</div><div class="v"><b>~₹1 Cr / plant / yr</b> — versus a single downtime-day (~₹3 Cr) or one OISD / NGT penalty. <b>~7.7×</b> expected annual return even at a conservative 1-in-15-year event, plus a recurring insurance-premium offset.</div></div>
+        <div class="gtm"><div class="k">TRIGGER</div><div class="v">Post-Vizag / LG-Polymers regulatory pressure — DGMS scrutiny and mandatory near-miss reporting.</div></div>
+      </div>
+    </div>
+
+    <div class="moat">
+      <div class="mo"><div class="mt">Incumbents sell silos</div><div class="ms">Honeywell, Dräger and MSA sell gas, permits and CCTV separately. The danger lives in the seam no one owns end to end.</div></div>
+      <div class="mo"><div class="mt">Deterministic &amp; audit-grade</div><div class="ms">Compound rules to real OISD / Factory-Act thresholds — domain IP a safety officer can defend in an audit, not a clonable model.</div></div>
+      <div class="mo"><div class="mt">A per-plant data moat</div><div class="ms">Operator feedback tunes each site&rsquo;s nuisance profile — proprietary data that compounds per site and raises switching cost.</div></div>
+    </div>
+
+    <div class="ask">
+      <span class="al">The Ask</span>
+      <span class="av">1–2 design partners (steel / refining) for a 90-day pilot on a live permit-to-work + gas feed.</span>
+    </div>
+
+    <div class="close">
+      <p>Three workers a day. The data to stop it already exists. Six minutes is the difference between an evacuation and a funeral — and <b>Trinetra is the layer that acts on it. Before, not after.</b></p>
+    </div>
+
+    <div class="endstamp">
+      <div class="src">Sources: CSB Report 2005-04-I-TX (Texas City); MB Lal Committee (Jaipur, 2009); De Vito et al. 2008, UCI #360 (DOI 10.24432/C5K603); EPA/NOAA ALOHA 5.4.7; DGFASLI / Ministry of Labour. Field validation: an industry veteran, in his own words — problem validation, not a customer endorsement. Every metric reproducible from the runnable harnesses in the repository.</div>
+      <div class="stamp"><span class="dot"></span> Trinetra · Saud Satopay</div>
+    </div>
+
+  </div>
+</section>
+
+</body>
+</html>
